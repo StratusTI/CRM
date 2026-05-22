@@ -1,26 +1,414 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-heading: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* ── Graphite Nocturne ──────────────────────────────────────────────
+   Light theme kept tasteful so toggling never breaks; the product
+   ships dark (see app/layout.tsx). Accent across both: citron lime. */
+:root {
+  --background: oklch(0.985 0.002 277);
+  --foreground: oklch(0.205 0.01 277);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.205 0.01 277);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.205 0.01 277);
+  --primary: oklch(0.83 0.18 122);
+  --primary-foreground: oklch(0.24 0.05 130);
+  --secondary: oklch(0.965 0.003 277);
+  --secondary-foreground: oklch(0.26 0.01 277);
+  --muted: oklch(0.965 0.003 277);
+  --muted-foreground: oklch(0.52 0.012 277);
+  --accent: oklch(0.96 0.01 122);
+  --accent-foreground: oklch(0.26 0.03 130);
+  --destructive: oklch(0.585 0.22 25);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(0.91 0.004 277);
+  --input: oklch(0.91 0.004 277);
+  --ring: oklch(0.83 0.18 122);
+  --chart-1: oklch(0.83 0.18 122);
+  --chart-2: oklch(0.72 0.13 184);
+  --chart-3: oklch(0.66 0.15 250);
+  --chart-4: oklch(0.62 0.2 305);
+  --chart-5: oklch(0.77 0.16 70);
+  --radius: 0.65rem;
+  --sidebar: oklch(0.975 0.003 277);
+  --sidebar-foreground: oklch(0.205 0.01 277);
+  --sidebar-primary: oklch(0.83 0.18 122);
+  --sidebar-primary-foreground: oklch(0.24 0.05 130);
+  --sidebar-accent: oklch(0.95 0.004 277);
+  --sidebar-accent-foreground: oklch(0.205 0.01 277);
+  --sidebar-border: oklch(0.91 0.004 277);
+  --sidebar-ring: oklch(0.83 0.18 122);
+}
+
+.dark {
+  /* outermost chrome */
+  --sidebar: oklch(0.158 0.005 277);
+  --sidebar-foreground: oklch(0.93 0.003 277);
+  --sidebar-primary: oklch(0.9 0.19 123);
+  --sidebar-primary-foreground: oklch(0.22 0.05 130);
+  --sidebar-accent: oklch(0.255 0.006 277);
+  --sidebar-accent-foreground: oklch(0.96 0.003 277);
+  --sidebar-border: oklch(1 0 0 / 7%);
+  --sidebar-ring: oklch(0.9 0.19 123);
+
+  /* inset content panel — a notch lighter than the chrome */
+  --background: oklch(0.188 0.005 277);
+  --foreground: oklch(0.93 0.003 277);
+  --card: oklch(0.214 0.006 277);
+  --card-foreground: oklch(0.93 0.003 277);
+  --popover: oklch(0.224 0.006 277);
+  --popover-foreground: oklch(0.93 0.003 277);
+
+  --primary: oklch(0.9 0.19 123);
+  --primary-foreground: oklch(0.22 0.05 130);
+  --secondary: oklch(0.255 0.006 277);
+  --secondary-foreground: oklch(0.93 0.003 277);
+  --muted: oklch(0.247 0.006 277);
+  --muted-foreground: oklch(0.66 0.01 277);
+  --accent: oklch(0.27 0.007 277);
+  --accent-foreground: oklch(0.96 0.003 277);
+  --destructive: oklch(0.65 0.2 22);
+  --destructive-foreground: oklch(0.97 0.01 22);
+  --border: oklch(1 0 0 / 8%);
+  --input: oklch(1 0 0 / 11%);
+  --ring: oklch(0.9 0.19 123);
+
+  --chart-1: oklch(0.9 0.19 123);
+  --chart-2: oklch(0.78 0.13 184);
+  --chart-3: oklch(0.7 0.15 250);
+  --chart-4: oklch(0.68 0.2 305);
+  --chart-5: oklch(0.8 0.16 70);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "cv11", "ss01";
+  }
+  /* Headings carry slightly tighter tracking for a precise, SaaS feel. */
+  h1,
+  h2,
+  h3 {
+    @apply font-heading tracking-tight;
+  }
+  /* Numerals are tabular & monospaced wherever density matters. */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+  ::selection {
+    background: color-mix(in oklch, var(--primary) 30%, transparent);
+    color: var(--foreground);
+  }
+
+  /* Refined, themed scrollbars — thin and unobtrusive. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklch, var(--foreground) 18%, transparent)
+      transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  *::-webkit-scrollbar-thumb {
+    background-color: color-mix(in oklch, var(--foreground) 16%, transparent);
+    border-radius: 9999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(in oklch, var(--foreground) 28%, transparent);
   }
 }
 
-body {
-  background: var(--background);
+@layer utilities {
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Atmospheric gradient mesh anchored to the accent — for auth, empty
+     states and any full-bleed canvas. */
+  .bg-mesh {
+    background-color: var(--background);
+    background-image:
+      radial-gradient(
+        58rem 42rem at 12% -12%,
+        color-mix(in oklch, var(--primary) 16%, transparent),
+        transparent 60%
+      ),
+      radial-gradient(
+        46rem 40rem at 112% 8%,
+        color-mix(in oklch, var(--chart-3) 14%, transparent),
+        transparent 55%
+      ),
+      radial-gradient(
+        40rem 40rem at 50% 120%,
+        color-mix(in oklch, var(--chart-4) 10%, transparent),
+        transparent 60%
+      );
+  }
+
+  /* Fine film-grain overlay; pair with `relative`. */
+  .grain::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.5;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.35'/%3E%3C/svg%3E");
+  }
+
+  /* Hairline grid texture for canvases that want a touch of structure. */
+  .bg-grid {
+    background-image:
+      linear-gradient(
+        to right,
+        color-mix(in oklch, var(--foreground) 5%, transparent) 1px,
+        transparent 1px
+      ),
+      linear-gradient(
+        to bottom,
+        color-mix(in oklch, var(--foreground) 5%, transparent) 1px,
+        transparent 1px
+      );
+    background-size: 44px 44px;
+  }
+}
+
+@keyframes nx-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@utility animate-rise {
+  animation: nx-rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ---- Tiptap rich text (body editor) ---- */
+.tiptap {
+  font-size: 0.875rem;
+  line-height: 1.6;
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+}
+.tiptap:focus {
+  outline: none;
+}
+.tiptap > * + * {
+  margin-top: 0.5rem;
+}
+.tiptap p {
+  margin: 0;
+}
+.tiptap h1 {
+  font-size: 1.6rem;
+  font-weight: 650;
+  line-height: 1.2;
+}
+.tiptap h2 {
+  font-size: 1.35rem;
+  font-weight: 650;
+  line-height: 1.25;
+}
+.tiptap h3 {
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+.tiptap h4 {
+  font-size: 1rem;
+  font-weight: 600;
+}
+.tiptap h5 {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.tiptap h6 {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted-foreground);
+}
+.tiptap ul,
+.tiptap ol {
+  padding-left: 1.25rem;
+}
+.tiptap ul {
+  list-style: disc;
+}
+.tiptap ol {
+  list-style: decimal;
+}
+.tiptap blockquote {
+  border-left: 3px solid var(--border);
+  padding-left: 0.75rem;
+  color: var(--muted-foreground);
+}
+.tiptap pre {
+  background: var(--muted);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.8rem;
+  overflow-x: auto;
+}
+.tiptap code {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.85em;
+}
+.tiptap pre code {
+  background: none;
+  padding: 0;
+}
+.tiptap :not(pre) > code {
+  background: var(--muted);
+  border-radius: 0.25rem;
+  padding: 0.1rem 0.3rem;
+}
+.tiptap hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 0.75rem 0;
+}
+.tiptap a {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.tiptap img,
+.tiptap .rt-media {
+  max-width: 100%;
+  border-radius: 0.5rem;
+}
+.tiptap video.rt-media,
+.tiptap audio.rt-media {
+  width: 100%;
+}
+.tiptap ul[data-type="taskList"] {
+  list-style: none;
+  padding-left: 0.25rem;
+}
+.tiptap ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+.tiptap ul[data-type="taskList"] li > label {
+  margin-top: 0.15rem;
+}
+.tiptap ul[data-type="taskList"] li > div {
+  flex: 1 1 auto;
+}
+.tiptap table {
+  border-collapse: collapse;
+  width: 100%;
+  table-layout: fixed;
+  margin: 0.5rem 0;
+}
+.tiptap th,
+.tiptap td {
+  position: relative;
+  border: 1px solid var(--border);
+  padding: 0.35rem 0.5rem;
+  vertical-align: top;
+}
+.tiptap th {
+  background: var(--muted);
+  font-weight: 600;
+  text-align: left;
+}
+.tiptap .selectedCell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: color-mix(in oklch, var(--primary) 15%, transparent);
+  pointer-events: none;
+}
+.tiptap .column-resize-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: -1px;
+  width: 2px;
+  background: var(--primary);
+}
+.tiptap [data-type="details"] {
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 0.25rem 0.5rem;
+}
+.tiptap [data-type="details"] summary {
+  cursor: pointer;
+  font-weight: 500;
+}
+.tiptap [data-type="detailsContent"] {
+  padding-left: 0.5rem;
 }
