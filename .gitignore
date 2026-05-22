@@ -9,8 +9,6 @@
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
-
-# testing
 /coverage
 
 # next.js
@@ -19,6 +17,7 @@
 
 # production
 /build
+/dist
 
 # misc
 .DS_Store
@@ -30,8 +29,19 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files
 .env*
+.env
+!.env.example
+
+# secrets (SOPS + age)
+secrets/*.env
+!secrets/*.enc.env
+*.key
+
+# redis TLS certs (generated locally, never committed)
+redis-tls/*
+!redis-tls/generate.sh
 
 # vercel
 .vercel
@@ -39,3 +49,15 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+*storybook.log
+storybook-static
+
+# lighthouse CI
+.lighthouseci/
+
+# AI Agents & Skills
+.agents*
+.claude
+/docs
+CLAUDE.md

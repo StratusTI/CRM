@@ -1,8 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  basePath: '/crm',
-allowedDevOrigins: ['painel.stratustelecom.com.br'],
+  serverExternalPackages: ["@prisma/client"],
+  cacheComponents: true,
+  experimental: {
+    webpackMemoryOptimizations: true,
+  },
 };
 
 export default nextConfig;
