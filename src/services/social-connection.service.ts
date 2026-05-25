@@ -108,10 +108,19 @@ export const SocialConnectionService = {
     const account = await provider.fetchAccount(tokens.value);
     if (!account.ok) return account;
 
+    // Provedores como o Facebook trocam o token do usuário por um token de
+    // sub-conta (Page token) — é esse que persistimos quando presente.
+    const override = account.value.accessTokenOverride ?? null;
+    const effectiveAccessToken =
+      override?.accessToken ?? tokens.value.accessToken;
+    const effectiveExpiresAt = override
+      ? override.expiresAt
+      : tokens.value.expiresAt;
+
     let accessToken: string;
     let refreshToken: string | null;
     try {
-      accessToken = encryptToken(tokens.value.accessToken);
+      accessToken = encryptToken(effectiveAccessToken);
       refreshToken = tokens.value.refreshToken
         ? encryptToken(tokens.value.refreshToken)
         : null;
@@ -127,7 +136,7 @@ export const SocialConnectionService = {
       accountName: account.value.name,
       accessToken,
       refreshToken,
-      tokenExpiresAt: tokens.value.expiresAt,
+      tokenExpiresAt: effectiveExpiresAt,
       scope: tokens.value.scope,
     });
     if (!saved.ok) return saved;

@@ -194,6 +194,49 @@ describe("SocialConnectionService.completeConnect", () => {
     );
   });
 
+  it("persiste o token de sub-conta quando fetchAccount devolve override (Facebook Page)", async () => {
+    oauthState.verifyOauthState.mockReturnValue(
+      ok({ slug: "acme", platform: "FACEBOOK", nonce: "n", exp: Date.now() }),
+    );
+    memberOfWorkspace();
+    provider.exchangeCode.mockResolvedValue(
+      ok({
+        accessToken: "USER_TOKEN",
+        refreshToken: null,
+        expiresAt: null,
+        scope: "pages_manage_posts",
+      }),
+    );
+    const pageExpiry = new Date("2026-08-01T00:00:00.000Z");
+    provider.fetchAccount.mockResolvedValue(
+      ok({
+        externalId: "page-1",
+        name: "Acme Page",
+        accessTokenOverride: {
+          accessToken: "PAGE_TOKEN",
+          expiresAt: pageExpiry,
+        },
+      }),
+    );
+    socialRepo.upsertByPlatform.mockResolvedValue(ok({ id: "c1" }));
+
+    const result = await SocialConnectionService.completeConnect("u1", {
+      platform: "FACEBOOK",
+      code: "code",
+      state: "s",
+    });
+
+    expect(result.ok).toBe(true);
+    expect(socialRepo.upsertByPlatform).toHaveBeenCalledWith(
+      expect.objectContaining({
+        platform: "FACEBOOK",
+        externalAccountId: "page-1",
+        accessToken: "enc(PAGE_TOKEN)",
+        tokenExpiresAt: pageExpiry,
+      }),
+    );
+  });
+
   it("propaga falha da troca do code", async () => {
     oauthState.verifyOauthState.mockReturnValue(
       ok({ slug: "acme", platform: "INSTAGRAM", nonce: "n", exp: Date.now() }),

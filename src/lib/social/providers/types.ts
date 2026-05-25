@@ -13,6 +13,16 @@ export type TokenSet = {
 export type SocialAccount = {
   externalId: string;
   name: string | null;
+  /**
+   * Alguns provedores trocam o token do usuário por um token de sub-conta após
+   * descobrir a conta (ex.: Facebook Page token via `/me/accounts`). Quando
+   * presente, este token substitui o de `exchangeCode` no que é persistido — é
+   * com ele que se posta e se lê insights. `null`/ausente = usa o token original.
+   */
+  accessTokenOverride?: {
+    accessToken: string;
+    expiresAt: Date | null;
+  } | null;
 };
 
 /**
