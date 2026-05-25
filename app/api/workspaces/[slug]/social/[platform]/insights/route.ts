@@ -2,9 +2,11 @@ import type { NextRequest } from "next/server";
 import { badRequest, validationError } from "@/src/errors/app-error";
 import { getAuthSession } from "@/src/lib/auth-session";
 import { FacebookInsightsRangeSchema } from "@/src/schemas/facebook.schema";
+import { GoogleAnalyticsInsightsRangeSchema } from "@/src/schemas/google-analytics.schema";
 import { parsePlatformSlug } from "@/src/schemas/social-connection.schema";
 import { YoutubeInsightsRangeSchema } from "@/src/schemas/youtube.schema";
 import { FacebookService } from "@/src/services/facebook.service";
+import { GoogleAnalyticsService } from "@/src/services/google-analytics.service";
 import { YoutubeService } from "@/src/services/youtube.service";
 import { handleError, successResponse } from "@/utils/http-response";
 
@@ -39,6 +41,21 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       return handleError(validationError("Janela de tempo inválida"));
     }
     const result = await FacebookService.getInsights(userId, slug, range.data);
+    return result.ok
+      ? successResponse(result.value)
+      : handleError(result.error);
+  }
+
+  if (platform === "GOOGLE_ANALYTICS") {
+    const range = GoogleAnalyticsInsightsRangeSchema.safeParse(rawRange);
+    if (!range.success) {
+      return handleError(validationError("Janela de tempo inválida"));
+    }
+    const result = await GoogleAnalyticsService.getInsights(
+      userId,
+      slug,
+      range.data,
+    );
     return result.ok
       ? successResponse(result.value)
       : handleError(result.error);

@@ -13,6 +13,7 @@ export const SocialPlatformSchema = z.enum([
   "FACEBOOK",
   "TIKTOK",
   "YOUTUBE",
+  "GOOGLE_ANALYTICS",
 ]);
 
 export type SocialPlatform = z.infer<typeof SocialPlatformSchema>;

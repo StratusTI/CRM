@@ -1,5 +1,6 @@
 import type { SocialPlatform } from "@/src/schemas/social-connection.schema";
 import { facebookProvider } from "./facebook";
+import { googleAnalyticsProvider } from "./google-analytics";
 import { instagramProvider } from "./instagram";
 import { tiktokProvider } from "./tiktok";
 import type { SocialProvider } from "./types";
@@ -11,6 +12,7 @@ const PROVIDERS: Record<SocialPlatform, SocialProvider> = {
   FACEBOOK: facebookProvider,
   TIKTOK: tiktokProvider,
   YOUTUBE: youtubeProvider,
+  GOOGLE_ANALYTICS: googleAnalyticsProvider,
 };
 
 /** Provedor de uma plataforma (sempre existe — o enum é fechado). */

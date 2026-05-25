@@ -1,5 +1,6 @@
 import {
   Facebook01Icon,
+  GoogleIcon,
   InstagramIcon,
   TiktokIcon,
   YoutubeIcon,
@@ -46,5 +47,12 @@ export const SOCIAL_PLATFORM_META: SocialPlatformMeta[] = [
     label: "YouTube",
     icon: YoutubeIcon,
     color: "bg-red-600",
+  },
+  {
+    platform: "GOOGLE_ANALYTICS",
+    slug: "google_analytics",
+    label: "Google Analytics",
+    icon: GoogleIcon,
+    color: "bg-orange-500",
   },
 ];

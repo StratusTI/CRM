@@ -345,6 +345,7 @@ enum SocialPlatform {
   FACEBOOK
   TIKTOK
   YOUTUBE
+  GOOGLE_ANALYTICS
 }
 
 enum SocialConnectionStatus {
