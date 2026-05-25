@@ -1,0 +1,544 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Nexo CRM — API pública",
+    "version": "1.0.0",
+    "description": "Endpoints acessíveis sem sessão de usuário do CRM: autenticação (better-auth), ingestão server-to-server por chave de API e callbacks de OAuth social."
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "Mesma origem da aplicação"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Integração",
+      "description": "Ingestão server-to-server por chave de API."
+    },
+    {
+      "name": "Autenticação",
+      "description": "Sessões e credenciais (better-auth)."
+    },
+    {
+      "name": "OAuth social",
+      "description": "Callbacks e mídia do fluxo de conexão social."
+    }
+  ],
+  "paths": {
+    "/api/integrations/people": {
+      "post": {
+        "tags": [
+          "Integração"
+        ],
+        "summary": "Ingestão em lote de pessoas",
+        "description": "Recebe contatos de outros sistemas da empresa. A workspace e o autor são resolvidos pela própria chave de API. Cada item é processado de forma independente: a falha de um não aborta os demais (ver relatório).",
+        "security": [
+          {
+            "integrationApiKey": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IngestPeopleRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Relatório da ingestão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "const": true
+                    },
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/IngestPeopleReport"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "statusCode",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Chave de API ausente ou inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Payload inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/sign-up/email": {
+      "post": {
+        "tags": [
+          "Autenticação"
+        ],
+        "summary": "Cadastro por e-mail e senha",
+        "description": "Powered by better-auth. Cria a conta e inicia a sessão (cookie).",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 8
+                  }
+                },
+                "required": [
+                  "name",
+                  "email",
+                  "password"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Sessão criada"
+          },
+          "422": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/sign-in/email": {
+      "post": {
+        "tags": [
+          "Autenticação"
+        ],
+        "summary": "Login por e-mail e senha",
+        "description": "Powered by better-auth. Inicia a sessão (cookie).",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "email",
+                  "password"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Sessão criada"
+          },
+          "401": {
+            "description": "Credenciais inválidas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/sign-out": {
+      "post": {
+        "tags": [
+          "Autenticação"
+        ],
+        "summary": "Logout",
+        "description": "Powered by better-auth. Encerra a sessão atual.",
+        "responses": {
+          "200": {
+            "description": "Sessão encerrada"
+          }
+        }
+      }
+    },
+    "/api/auth/get-session": {
+      "get": {
+        "tags": [
+          "Autenticação"
+        ],
+        "summary": "Sessão atual",
+        "description": "Powered by better-auth. Retorna a sessão e o usuário, ou null.",
+        "responses": {
+          "200": {
+            "description": "Sessão atual (ou null)"
+          }
+        }
+      }
+    },
+    "/api/auth/{path}": {
+      "parameters": [
+        {
+          "name": "path",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "description": "Sub-rota do better-auth (catch-all)"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Autenticação"
+        ],
+        "summary": "Catch-all do better-auth (GET)",
+        "description": "O better-auth expõe várias rotas sob /api/auth (OAuth social, verificação, etc.). Consulte a documentação do better-auth para o conjunto completo.",
+        "responses": {
+          "200": {
+            "description": "Depende da sub-rota"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Autenticação"
+        ],
+        "summary": "Catch-all do better-auth (POST)",
+        "responses": {
+          "200": {
+            "description": "Depende da sub-rota"
+          }
+        }
+      }
+    },
+    "/api/social/callback/{platform}": {
+      "parameters": [
+        {
+          "name": "platform",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "description": "Plataforma social (instagram, facebook, tiktok, youtube, google-analytics)"
+        }
+      ],
+      "get": {
+        "tags": [
+          "OAuth social"
+        ],
+        "summary": "Callback de OAuth da rede social",
+        "description": "Alvo do redirect do provedor. Troca o `code` por tokens, persiste a conexão e redireciona (302) de volta para Configurações.",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "error",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redireciona para /{slug}/settings"
+          }
+        }
+      }
+    },
+    "/api/social/blob/{token}": {
+      "parameters": [
+        {
+          "name": "token",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "description": "Token efêmero que identifica o upload"
+        }
+      ],
+      "get": {
+        "tags": [
+          "OAuth social"
+        ],
+        "summary": "Serve uma mídia carregada",
+        "description": "Expõe temporariamente o binário de um upload para o provedor consumir (ex.: imagem do Instagram via Graph API).",
+        "responses": {
+          "200": {
+            "description": "Conteúdo binário",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Token inválido ou expirado"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "integrationApiKey": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Chave de API da workspace, no header `Authorization: Bearer <token>`. Gerada em /api/workspaces/{slug}/integration-keys (API privada)."
+      }
+    },
+    "schemas": {
+      "ErrorResponse": {
+        "type": "object",
+        "description": "Envelope de erro padrão da API.",
+        "properties": {
+          "success": {
+            "const": false
+          },
+          "statusCode": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "details": {}
+            },
+            "required": [
+              "code"
+            ]
+          }
+        },
+        "required": [
+          "success",
+          "statusCode",
+          "message",
+          "error"
+        ]
+      },
+      "IngestPeopleRequest": {
+        "type": "object",
+        "properties": {
+          "people": {
+            "minItems": 1,
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                },
+                "emails": {
+                  "default": [],
+                  "maxItems": 20,
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "maxLength": 320,
+                    "format": "email",
+                    "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                  }
+                },
+                "phones": {
+                  "default": [],
+                  "maxItems": 20,
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40
+                  }
+                },
+                "city": {
+                  "type": "string",
+                  "maxLength": 120
+                },
+                "jobTitle": {
+                  "type": "string",
+                  "maxLength": 160
+                },
+                "linkedin": {
+                  "type": "string"
+                },
+                "avatar": {
+                  "type": "string"
+                },
+                "companyId": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "name"
+              ]
+            }
+          }
+        },
+        "required": [
+          "people"
+        ]
+      },
+      "IngestPeopleReport": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "number"
+          },
+          "created": {
+            "type": "number"
+          },
+          "failed": {
+            "type": "number"
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "index": {
+                      "type": "number"
+                    },
+                    "status": {
+                      "type": "string",
+                      "const": "created"
+                    },
+                    "id": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "index",
+                    "status",
+                    "id"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "index": {
+                      "type": "number"
+                    },
+                    "status": {
+                      "type": "string",
+                      "const": "failed"
+                    },
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "index",
+                    "status",
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            }
+          }
+        },
+        "required": [
+          "total",
+          "created",
+          "failed",
+          "results"
+        ],
+        "additionalProperties": false
+      }
+    }
+  }
+}

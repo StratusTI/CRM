@@ -53,6 +53,10 @@ export const ERROR_CODES = {
   SOCIAL_NO_PAGE: { code: "SOCIAL_NO_PAGE", status: 400 },
   SOCIAL_IG_NOT_LINKED: { code: "SOCIAL_IG_NOT_LINKED", status: 400 },
 
+  // Integration API key domain
+  INTEGRATION_KEY_INVALID: { code: "INTEGRATION_KEY_INVALID", status: 401 },
+  INTEGRATION_KEY_NOT_FOUND: { code: "INTEGRATION_KEY_NOT_FOUND", status: 404 },
+
   // Server Errors (500)
   INTERNAL_SERVER_ERROR: { code: "INTERNAL_SERVER_ERROR", status: 500 },
   DATABASE_ERROR: { code: "DATABASE_ERROR", status: 500 },
