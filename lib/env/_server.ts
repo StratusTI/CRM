@@ -12,8 +12,7 @@ const serverEnv = {
   HUGEICONS_TOKEN: process.env.HUGEICONS_TOKEN,
   // Conexão de redes sociais (OAuth). Opcionais: cada provedor só fica
   // disponível quando suas credenciais estão presentes (ver isConfigured()).
-  INSTAGRAM_CLIENT_ID: process.env.INSTAGRAM_CLIENT_ID || undefined,
-  INSTAGRAM_CLIENT_SECRET: process.env.INSTAGRAM_CLIENT_SECRET || undefined,
+  // Instagram reaproveita FACEBOOK_APP_ID/SECRET (Instagram Graph API via FB Login).
   FACEBOOK_APP_ID: process.env.FACEBOOK_APP_ID || undefined,
   FACEBOOK_APP_SECRET: process.env.FACEBOOK_APP_SECRET || undefined,
   // ID da configuração do "Login do Facebook para Empresas" (Business Login).
@@ -40,8 +39,6 @@ const serverEnvSchema = z.object({
     .optional(),
   GOOGLE_CLIENT_SECRET: z.string().min(10).startsWith("GOCSPX-").optional(),
   HUGEICONS_TOKEN: z.string().regex(/^[A-F0-9]{8}(-[A-F0-9]{8}){3}$/),
-  INSTAGRAM_CLIENT_ID: z.string().min(1).optional(),
-  INSTAGRAM_CLIENT_SECRET: z.string().min(1).optional(),
   FACEBOOK_APP_ID: z.string().min(1).optional(),
   FACEBOOK_APP_SECRET: z.string().min(1).optional(),
   FACEBOOK_CONFIG_ID: z.string().min(1).optional(),
@@ -65,8 +62,6 @@ export const {
   GOOGLE_CLIENT_ID,
   GOOGLE_CLIENT_SECRET,
   HUGEICONS_TOKEN,
-  INSTAGRAM_CLIENT_ID,
-  INSTAGRAM_CLIENT_SECRET,
   FACEBOOK_APP_ID,
   FACEBOOK_APP_SECRET,
   FACEBOOK_CONFIG_ID,

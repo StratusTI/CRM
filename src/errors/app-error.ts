@@ -116,3 +116,7 @@ export const socialScopeMissing = (
 export const socialNoPage = (
   message = "Nenhuma Página foi concedida. Reconecte e selecione uma Página do Facebook.",
 ): AppError => appError("SOCIAL_NO_PAGE", message);
+
+export const socialIgNotLinked = (
+  message = "Nenhuma Página possui conta do Instagram Business/Creator vinculada. Vincule no Facebook e reconecte.",
+): AppError => appError("SOCIAL_IG_NOT_LINKED", message);

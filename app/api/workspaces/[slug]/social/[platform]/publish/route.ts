@@ -4,10 +4,12 @@ import { badRequest, validationError } from "@/src/errors/app-error";
 import { getAuthSession } from "@/src/lib/auth-session";
 import { TIKTOK_SINGLE_CHUNK_MAX_BYTES } from "@/src/lib/social/tiktok/client";
 import { PublishPostSchema } from "@/src/schemas/facebook.schema";
+import { PublishInstagramPostSchema } from "@/src/schemas/instagram.schema";
 import { parsePlatformSlug } from "@/src/schemas/social-connection.schema";
 import { PublishTiktokVideoSchema } from "@/src/schemas/tiktok.schema";
 import { PublishVideoSchema } from "@/src/schemas/youtube.schema";
 import { FacebookService } from "@/src/services/facebook.service";
+import { InstagramService } from "@/src/services/instagram.service";
 import { TiktokService } from "@/src/services/tiktok.service";
 import { YoutubeService } from "@/src/services/youtube.service";
 import { handleError, successResponse } from "@/utils/http-response";
@@ -31,6 +33,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   if (
     platform !== "YOUTUBE" &&
     platform !== "FACEBOOK" &&
+    platform !== "INSTAGRAM" &&
     platform !== "TIKTOK"
   ) {
     return handleError(badRequest("Plataforma não suportada"));
@@ -128,6 +131,45 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       {
         bytes: await file.arrayBuffer(),
         contentType: file.type || "video/mp4",
+      },
+    );
+    if (!result.ok) return handleError(result.error);
+    return successResponse(result.value, 201);
+  }
+
+  /* -------------------------------- Instagram ------------------------------- */
+  if (platform === "INSTAGRAM") {
+    const imageField = form.get("image");
+    if (!(imageField instanceof File) || imageField.size === 0) {
+      return handleError(
+        badRequest(
+          "Imagem obrigatória — o Instagram exige mídia para publicar",
+        ),
+      );
+    }
+    if (imageField.size > MAX_IMAGE_BYTES) {
+      return handleError(badRequest("Imagem excede o tamanho máximo (10 MB)"));
+    }
+
+    const parsedIg = PublishInstagramPostSchema.safeParse({
+      caption: form.get("caption") ?? undefined,
+    });
+    if (!parsedIg.success) {
+      return handleError(
+        validationError(
+          "Dados da publicação inválidos",
+          z.flattenError(parsedIg.error),
+        ),
+      );
+    }
+
+    const result = await InstagramService.publishPost(
+      userId,
+      slug,
+      parsedIg.data,
+      {
+        bytes: await imageField.arrayBuffer(),
+        contentType: imageField.type || "image/jpeg",
       },
     );
     if (!result.ok) return handleError(result.error);
