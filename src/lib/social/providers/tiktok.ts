@@ -3,8 +3,20 @@ import { ok, type Result } from "@/src/lib/result";
 import { expiresInToDate, getJson, postForm } from "./http";
 import type { SocialAccount, SocialProvider, TokenSet } from "./types";
 
-/** TikTok Login Kit v2. */
-const SCOPE = "user.info.basic";
+/**
+ * TikTok Login Kit v2. Escopos: identidade (`user.info.basic`), perfil/bio
+ * (`user.info.profile`), estatísticas do criador (`user.info.stats`), listar
+ * vídeos (`video.list`) e publicar (`video.publish`). Ao mudar esta lista, contas
+ * já conectadas precisam reconectar para reconsentir — o service detecta scope
+ * ausente. `video.publish` exige auditoria do app pela TikTok para postar público.
+ */
+const SCOPE = [
+  "user.info.basic",
+  "user.info.profile",
+  "user.info.stats",
+  "video.list",
+  "video.publish",
+].join(",");
 
 export const tiktokProvider: SocialProvider = {
   platform: "TIKTOK",
@@ -59,6 +71,30 @@ export const tiktokProvider: SocialProvider = {
     return ok({
       externalId: user?.open_id ?? "unknown",
       name: user?.display_name ?? null,
+    });
+  },
+
+  async refreshAccessToken(refreshToken): Promise<Result<TokenSet>> {
+    const result = await postForm<{
+      access_token: string;
+      refresh_token?: string;
+      expires_in?: number;
+      scope?: string;
+    }>("https://open.tiktokapis.com/v2/oauth/token/", {
+      client_key: TIKTOK_CLIENT_KEY ?? "",
+      client_secret: TIKTOK_CLIENT_SECRET ?? "",
+      grant_type: "refresh_token",
+      refresh_token: refreshToken,
+    });
+    if (!result.ok) return result;
+
+    return ok({
+      accessToken: result.value.access_token,
+      // A TikTok devolve um novo refresh token a cada renovação; o service
+      // preserva o atual quando vier null.
+      refreshToken: result.value.refresh_token ?? null,
+      expiresAt: expiresInToDate(result.value.expires_in),
+      scope: result.value.scope ?? SCOPE,
     });
   },
 };

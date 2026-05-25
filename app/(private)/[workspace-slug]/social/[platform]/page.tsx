@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { PagePlaceholder } from "@/components/page-placeholder";
 import { PageShell } from "@/components/page-shell";
 import { FacebookStudio } from "@/components/social/facebook-studio";
+import { TiktokStudio } from "@/components/social/tiktok-studio";
 import { YoutubeStudio } from "@/components/social/youtube-studio";
 import { SOCIAL_PLATFORM_META } from "@/components/social-platforms";
 
@@ -20,6 +21,8 @@ export default async function SocialPlatformPage({
         <YoutubeStudio slug={slug} />
       ) : meta.platform === "FACEBOOK" ? (
         <FacebookStudio slug={slug} />
+      ) : meta.platform === "TIKTOK" ? (
+        <TiktokStudio slug={slug} />
       ) : (
         <PagePlaceholder
           title={meta.label}

@@ -2,10 +2,13 @@ import type { NextRequest } from "next/server";
 import { z } from "zod";
 import { badRequest, validationError } from "@/src/errors/app-error";
 import { getAuthSession } from "@/src/lib/auth-session";
+import { TIKTOK_SINGLE_CHUNK_MAX_BYTES } from "@/src/lib/social/tiktok/client";
 import { PublishPostSchema } from "@/src/schemas/facebook.schema";
 import { parsePlatformSlug } from "@/src/schemas/social-connection.schema";
+import { PublishTiktokVideoSchema } from "@/src/schemas/tiktok.schema";
 import { PublishVideoSchema } from "@/src/schemas/youtube.schema";
 import { FacebookService } from "@/src/services/facebook.service";
+import { TiktokService } from "@/src/services/tiktok.service";
 import { YoutubeService } from "@/src/services/youtube.service";
 import { handleError, successResponse } from "@/utils/http-response";
 
@@ -25,7 +28,11 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   const userId = session.value.user.id;
   const platform = parsePlatformSlug(platformSlug);
 
-  if (platform !== "YOUTUBE" && platform !== "FACEBOOK") {
+  if (
+    platform !== "YOUTUBE" &&
+    platform !== "FACEBOOK" &&
+    platform !== "TIKTOK"
+  ) {
     return handleError(badRequest("Plataforma não suportada"));
   }
 
@@ -79,6 +86,48 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       {
         bytes: await file.arrayBuffer(),
         contentType: file.type || "video/*",
+      },
+    );
+    if (!result.ok) return handleError(result.error);
+    return successResponse(result.value, 201);
+  }
+
+  /* --------------------------------- TikTok --------------------------------- */
+  if (platform === "TIKTOK") {
+    const file = form.get("file");
+    if (!(file instanceof File) || file.size === 0) {
+      return handleError(badRequest("Arquivo de vídeo ausente"));
+    }
+    if (file.size > TIKTOK_SINGLE_CHUNK_MAX_BYTES) {
+      return handleError(badRequest("Vídeo excede o tamanho máximo (64 MB)"));
+    }
+
+    const asBool = (value: FormDataEntryValue | null): boolean =>
+      value === "true" || value === "on" || value === "1";
+
+    const parsedTiktok = PublishTiktokVideoSchema.safeParse({
+      title: form.get("title") ?? undefined,
+      privacyLevel: form.get("privacyLevel") ?? undefined,
+      disableComment: asBool(form.get("disableComment")),
+      disableDuet: asBool(form.get("disableDuet")),
+      disableStitch: asBool(form.get("disableStitch")),
+    });
+    if (!parsedTiktok.success) {
+      return handleError(
+        validationError(
+          "Dados da publicação inválidos",
+          z.flattenError(parsedTiktok.error),
+        ),
+      );
+    }
+
+    const result = await TiktokService.publishVideo(
+      userId,
+      slug,
+      parsedTiktok.data,
+      {
+        bytes: await file.arrayBuffer(),
+        contentType: file.type || "video/mp4",
       },
     );
     if (!result.ok) return handleError(result.error);
