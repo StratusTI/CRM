@@ -1,3 +1,4 @@
+import { dash } from "@better-auth/infra";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import {
@@ -7,7 +8,6 @@ import {
   GOOGLE_CLIENT_SECRET,
 } from "@/lib/env/_server";
 import { prisma } from "@/src/lib/prisma";
-import { dash } from "@better-auth/infra";
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {

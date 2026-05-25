@@ -73,7 +73,8 @@ describe("YoutubeService.getOverview", () => {
 
     const result = await YoutubeService.getOverview("u1", "acme");
     expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.error.code).toBe("SOCIAL_CONNECTION_NOT_FOUND");
+    if (!result.ok)
+      expect(result.error.code).toBe("SOCIAL_CONNECTION_NOT_FOUND");
   });
 
   it("usa o token vigente quando não expirou e chama o cliente", async () => {
@@ -176,7 +177,11 @@ describe("YoutubeService.publishVideo", () => {
   it("exige escopo de upload", async () => {
     memberOfWorkspace();
     socialRepo.findByWorkspaceAndPlatform.mockResolvedValue(
-      ok(connection({ scope: "https://www.googleapis.com/auth/youtube.readonly" })),
+      ok(
+        connection({
+          scope: "https://www.googleapis.com/auth/youtube.readonly",
+        }),
+      ),
     );
 
     const result = await YoutubeService.publishVideo(
@@ -198,7 +203,12 @@ describe("YoutubeService.publishVideo", () => {
     const result = await YoutubeService.publishVideo(
       "u1",
       "acme",
-      { title: "Meu vídeo", description: "desc", privacyStatus: "public", tags: ["a"] },
+      {
+        title: "Meu vídeo",
+        description: "desc",
+        privacyStatus: "public",
+        tags: ["a"],
+      },
       { bytes, contentType: "video/mp4" },
     );
     expect(result.ok).toBe(true);
