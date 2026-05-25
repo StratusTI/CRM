@@ -7,11 +7,13 @@ import {
   GOOGLE_CLIENT_SECRET,
 } from "@/lib/env/_server";
 import { prisma } from "@/src/lib/prisma";
+import { dash } from "@better-auth/infra";
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
+  plugins: [dash()],
   secret: BETTER_AUTH_SECRET,
   baseURL: BETTER_AUTH_URL,
   emailAndPassword: { enabled: true },
