@@ -1,8 +1,10 @@
 import type { NextRequest } from "next/server";
 import { badRequest, validationError } from "@/src/errors/app-error";
 import { getAuthSession } from "@/src/lib/auth-session";
+import { FacebookInsightsRangeSchema } from "@/src/schemas/facebook.schema";
 import { parsePlatformSlug } from "@/src/schemas/social-connection.schema";
 import { YoutubeInsightsRangeSchema } from "@/src/schemas/youtube.schema";
+import { FacebookService } from "@/src/services/facebook.service";
 import { YoutubeService } from "@/src/services/youtube.service";
 import { handleError, successResponse } from "@/utils/http-response";
 
@@ -10,29 +12,37 @@ type RouteContext = {
   params: Promise<{ slug: string; platform: string }>;
 };
 
-/** Analytics do canal (resumo + série diária) para a janela em `?range=`. */
+/** Analytics da conta (resumo + série) para a janela em `?range=`. */
 export async function GET(request: NextRequest, { params }: RouteContext) {
   const session = await getAuthSession();
   if (!session.ok) return handleError(session.error);
 
   const { slug, platform: platformSlug } = await params;
-  if (parsePlatformSlug(platformSlug) !== "YOUTUBE") {
-    return handleError(badRequest("Plataforma não suportada nesta rota"));
+  const userId = session.value.user.id;
+  const platform = parsePlatformSlug(platformSlug);
+  const rawRange = request.nextUrl.searchParams.get("range") ?? undefined;
+
+  if (platform === "YOUTUBE") {
+    const range = YoutubeInsightsRangeSchema.safeParse(rawRange);
+    if (!range.success) {
+      return handleError(validationError("Janela de tempo inválida"));
+    }
+    const result = await YoutubeService.getInsights(userId, slug, range.data);
+    return result.ok
+      ? successResponse(result.value)
+      : handleError(result.error);
   }
 
-  const parsedRange = YoutubeInsightsRangeSchema.safeParse(
-    request.nextUrl.searchParams.get("range") ?? undefined,
-  );
-  if (!parsedRange.success) {
-    return handleError(validationError("Janela de tempo inválida"));
+  if (platform === "FACEBOOK") {
+    const range = FacebookInsightsRangeSchema.safeParse(rawRange);
+    if (!range.success) {
+      return handleError(validationError("Janela de tempo inválida"));
+    }
+    const result = await FacebookService.getInsights(userId, slug, range.data);
+    return result.ok
+      ? successResponse(result.value)
+      : handleError(result.error);
   }
 
-  const result = await YoutubeService.getInsights(
-    session.value.user.id,
-    slug,
-    parsedRange.data,
-  );
-  if (!result.ok) return handleError(result.error);
-
-  return successResponse(result.value);
+  return handleError(badRequest("Plataforma não suportada"));
 }

@@ -50,6 +50,7 @@ export const ERROR_CODES = {
   SOCIAL_OAUTH_FAILED: { code: "SOCIAL_OAUTH_FAILED", status: 502 },
   SOCIAL_TOKEN_EXPIRED: { code: "SOCIAL_TOKEN_EXPIRED", status: 401 },
   SOCIAL_SCOPE_MISSING: { code: "SOCIAL_SCOPE_MISSING", status: 403 },
+  SOCIAL_NO_PAGE: { code: "SOCIAL_NO_PAGE", status: 400 },
 
   // Server Errors (500)
   INTERNAL_SERVER_ERROR: { code: "INTERNAL_SERVER_ERROR", status: 500 },

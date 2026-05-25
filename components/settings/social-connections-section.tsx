@@ -18,6 +18,8 @@ const REASON_MESSAGES: Record<string, string> = {
     "Integração não configurada no servidor (credenciais ausentes).",
   SOCIAL_STATE_INVALID: "A solicitação expirou. Tente conectar novamente.",
   SOCIAL_OAUTH_FAILED: "O provedor recusou a conexão. Tente novamente.",
+  SOCIAL_NO_PAGE:
+    "Nenhuma Página foi concedida. Reconecte e selecione uma Página do Facebook na tela de autorização.",
 };
 
 export function SocialConnectionsSection({

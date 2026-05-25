@@ -14,6 +14,7 @@ export {
   personNotFound,
   rateLimited,
   socialConnectionNotFound,
+  socialNoPage,
   socialOauthFailed,
   socialProviderNotConfigured,
   socialScopeMissing,

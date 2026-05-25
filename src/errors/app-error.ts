@@ -112,3 +112,7 @@ export const socialTokenExpired = (
 export const socialScopeMissing = (
   message = "Permissão ausente. Reconecte a conta para conceder o novo acesso.",
 ): AppError => appError("SOCIAL_SCOPE_MISSING", message);
+
+export const socialNoPage = (
+  message = "Nenhuma Página foi concedida. Reconecte e selecione uma Página do Facebook.",
+): AppError => appError("SOCIAL_NO_PAGE", message);

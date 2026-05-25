@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
 import { PagePlaceholder } from "@/components/page-placeholder";
 import { PageShell } from "@/components/page-shell";
-import { SOCIAL_PLATFORM_META } from "@/components/social-platforms";
+import { FacebookStudio } from "@/components/social/facebook-studio";
 import { YoutubeStudio } from "@/components/social/youtube-studio";
+import { SOCIAL_PLATFORM_META } from "@/components/social-platforms";
 
 export default async function SocialPlatformPage({
   params,
@@ -17,6 +18,8 @@ export default async function SocialPlatformPage({
     <PageShell>
       {meta.platform === "YOUTUBE" ? (
         <YoutubeStudio slug={slug} />
+      ) : meta.platform === "FACEBOOK" ? (
+        <FacebookStudio slug={slug} />
       ) : (
         <PagePlaceholder
           title={meta.label}

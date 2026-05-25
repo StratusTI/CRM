@@ -16,6 +16,9 @@ const serverEnv = {
   INSTAGRAM_CLIENT_SECRET: process.env.INSTAGRAM_CLIENT_SECRET || undefined,
   FACEBOOK_APP_ID: process.env.FACEBOOK_APP_ID || undefined,
   FACEBOOK_APP_SECRET: process.env.FACEBOOK_APP_SECRET || undefined,
+  // ID da configuração do "Login do Facebook para Empresas" (Business Login).
+  // Quando presente, a autorização usa `config_id` em vez de `scope`.
+  FACEBOOK_CONFIG_ID: process.env.FACEBOOK_CONFIG_ID || undefined,
   TIKTOK_CLIENT_KEY: process.env.TIKTOK_CLIENT_KEY || undefined,
   TIKTOK_CLIENT_SECRET: process.env.TIKTOK_CLIENT_SECRET || undefined,
   // Chave AES-256 (base64 de 32 bytes) para cifrar tokens em repouso.
@@ -41,6 +44,7 @@ const serverEnvSchema = z.object({
   INSTAGRAM_CLIENT_SECRET: z.string().min(1).optional(),
   FACEBOOK_APP_ID: z.string().min(1).optional(),
   FACEBOOK_APP_SECRET: z.string().min(1).optional(),
+  FACEBOOK_CONFIG_ID: z.string().min(1).optional(),
   TIKTOK_CLIENT_KEY: z.string().min(1).optional(),
   TIKTOK_CLIENT_SECRET: z.string().min(1).optional(),
   SOCIAL_TOKEN_ENCRYPTION_KEY: z.string().min(1).optional(),
@@ -65,6 +69,7 @@ export const {
   INSTAGRAM_CLIENT_SECRET,
   FACEBOOK_APP_ID,
   FACEBOOK_APP_SECRET,
+  FACEBOOK_CONFIG_ID,
   TIKTOK_CLIENT_KEY,
   TIKTOK_CLIENT_SECRET,
   SOCIAL_TOKEN_ENCRYPTION_KEY,
