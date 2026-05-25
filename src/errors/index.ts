@@ -7,6 +7,8 @@ export {
   conflict,
   databaseError,
   forbidden,
+  integrationKeyInvalid,
+  integrationKeyNotFound,
   invalidCredentials,
   noteNotFound,
   notFound,

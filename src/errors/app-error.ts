@@ -120,3 +120,11 @@ export const socialNoPage = (
 export const socialIgNotLinked = (
   message = "Nenhuma Página possui conta do Instagram Business/Creator vinculada. Vincule no Facebook e reconecte.",
 ): AppError => appError("SOCIAL_IG_NOT_LINKED", message);
+
+export const integrationKeyInvalid = (
+  message = "Chave de API ausente ou inválida",
+): AppError => appError("INTEGRATION_KEY_INVALID", message);
+
+export const integrationKeyNotFound = (
+  message = "Chave de API não encontrada",
+): AppError => appError("INTEGRATION_KEY_NOT_FOUND", message);

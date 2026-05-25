@@ -46,6 +46,8 @@ model User {
   socialConnectionsCreated SocialConnection[] @relation("SocialConnectionCreatedBy")
   socialConnectionsUpdated SocialConnection[] @relation("SocialConnectionUpdatedBy")
 
+  integrationApiKeysCreated IntegrationApiKey[] @relation("IntegrationApiKeyCreatedBy")
+
   @@index([deletionScheduledAt])
   @@map("users")
 }
@@ -108,6 +110,7 @@ model Workspace {
   notes         Note[]
   dashboards    Dashboard[]
   socialConnections SocialConnection[]
+  integrationApiKeys IntegrationApiKey[]
 
   @@map("workspaces")
 }
@@ -380,6 +383,29 @@ model SocialConnection {
   @@unique([workspaceId, platform])
   @@index([workspaceId])
   @@map("social_connections")
+}
+
+/// Chave de API por workspace para ingestão server-to-server (ex.: outros
+/// sistemas da empresa enviando contatos). Guardamos só o hash SHA-256 do
+/// segredo — o texto puro é mostrado uma única vez na geração. `createdBy` é o
+/// usuário que gerou a chave e vira o autor dos registros ingeridos por ela.
+model IntegrationApiKey {
+  id          String    @id @default(cuid())
+  name        String
+  keyHash     String    @unique @map("key_hash")
+  prefix      String
+  workspaceId String    @map("workspace_id")
+  createdById String    @map("created_by_id")
+  lastUsedAt  DateTime? @map("last_used_at")
+  revokedAt   DateTime? @map("revoked_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy User      @relation("IntegrationApiKeyCreatedBy", fields: [createdById], references: [id])
+
+  @@index([workspaceId])
+  @@map("integration_api_keys")
 }
 
 enum OpportunityStage {
