@@ -50,9 +50,11 @@ const RESERVED_TOP_LEVEL = new Set([
 ]);
 
 /** `/<slug>` (segmento único, não reservado, não arquivo) → home da workspace. */
-function workspaceHomeRedirect(request: NextRequest): NextResponse | null {
+function workspaceHomeRedirect(
+  request: NextRequest,
+  pathname: string,
+): NextResponse | null {
   if (request.method !== "GET") return null;
-  const { pathname } = request.nextUrl;
   const segments = pathname.split("/").filter(Boolean);
   if (segments.length !== 1) return null;
   const slug = segments[0];
@@ -64,7 +66,14 @@ function workspaceHomeRedirect(request: NextRequest): NextResponse | null {
 }
 
 export function proxy(request: NextRequest, _event: NextFetchEvent) {
-  const { pathname } = request.nextUrl;
+  // Em proxy, dependendo da versão/setup do Next, `nextUrl.pathname` pode ou
+  // não vir com basePath strippado. Normalizamos manualmente.
+  const rawPathname = request.nextUrl.pathname;
+  const pathname =
+    BASE_PATH && rawPathname.startsWith(BASE_PATH)
+      ? rawPathname.slice(BASE_PATH.length) || "/"
+      : rawPathname;
+
   if (
     NODE_ENV === "development" &&
     (pathname === "/reference" ||
@@ -101,7 +110,7 @@ export function proxy(request: NextRequest, _event: NextFetchEvent) {
 
   // Autenticado: a home da workspace é a tabela de companies, então o slug
   // "pelado" (`/<slug>`) nunca é renderizado — redireciona antes.
-  const homeRedirect = workspaceHomeRedirect(request);
+  const homeRedirect = workspaceHomeRedirect(request, pathname);
   if (homeRedirect) return homeRedirect;
 
   return NextResponse.next();
