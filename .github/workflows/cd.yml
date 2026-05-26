@@ -96,7 +96,7 @@ jobs:
         working-directory: ${{ env.DEPLOY_DIR }}
         run: |
           for i in $(seq 1 30); do
-            if docker compose exec -T db pg_isready > /dev/null 2>&1; then
+            if docker compose exec -T db pg_isready -p 5433 > /dev/null 2>&1; then
               echo "Postgres ready"
               exit 0
             fi
