@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { normalizedUrl } from "@/src/schemas/shared";
+import { SocialPlatformSchema } from "@/src/schemas/social-connection.schema";
 
 /** Contrato dos widgets de um dashboard (grid customizável). */
 
@@ -25,6 +26,14 @@ export const VIEW_SOURCES = [
   "notes",
 ] as const;
 export type ViewSource = (typeof VIEW_SOURCES)[number];
+
+/** Fontes do chart: as do view + "socials" (séries diárias das redes conectadas). */
+export const CHART_SOURCES = [...VIEW_SOURCES, "socials"] as const;
+export type ChartSource = (typeof CHART_SOURCES)[number];
+
+/** Métricas comparáveis entre redes (yField quando source = "socials"). */
+export const SOCIAL_METRICS = ["views", "followers"] as const;
+export type SocialMetric = (typeof SOCIAL_METRICS)[number];
 
 export const FILTER_OPERATORS = [
   "contains",
@@ -60,8 +69,10 @@ export const ChartConfigSchema = z.object({
   chartType: z.enum(CHART_TYPES),
 
   // Data
-  source: z.enum(VIEW_SOURCES).default("companies"),
+  source: z.enum(CHART_SOURCES).default("companies"),
   filters: z.array(ViewFilterSchema).max(20).default([]),
+  /** Redes a incluir quando source = "socials" (multi-select). */
+  platforms: z.array(SocialPlatformSchema).max(5).default([]),
 
   // Eixos / dados
   /** Dimensão (categorias): X em vertical/line, Y em horizontal, fatias na pizza. */

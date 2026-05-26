@@ -11,7 +11,9 @@ import {
 } from "@hugeicons/core-free-icons";
 import type { IconSvgElement } from "@hugeicons/react";
 import type {
+  ChartSource,
   ChartType,
+  SocialMetric,
   ViewSource,
   WidgetType,
 } from "@/src/schemas/dashboard-widget.schema";
@@ -26,25 +28,25 @@ export type WidgetTypeMeta = {
 export const WIDGET_TYPE_META: WidgetTypeMeta[] = [
   {
     type: "CHART",
-    label: "Chart",
+    label: "Gráfico",
     description: "Gráficos de barras, linha, pizza ou agregação.",
     icon: PresentationBarChart01Icon,
   },
   {
     type: "VIEW",
-    label: "View",
+    label: "Tabela",
     description: "Tabela de registros de uma fonte de dados.",
     icon: Table01Icon,
   },
   {
     type: "IFRAME",
-    label: "Iframe",
+    label: "Incorporar",
     description: "Incorpora uma página externa por URL.",
     icon: GlobeIcon,
   },
   {
     type: "RICH_TEXT",
-    label: "Rich text",
+    label: "Texto rico",
     description: "Texto formatado com o editor de blocos.",
     icon: TextFontIcon,
   },
@@ -116,4 +118,16 @@ export const VIEW_SOURCE_LABELS: Record<ViewSource, string> = {
   opportunities: "Oportunidades",
   tasks: "Tarefas",
   notes: "Notas",
+};
+
+/** Labels do chart: view sources + "socials". */
+export const CHART_SOURCE_LABELS: Record<ChartSource, string> = {
+  ...VIEW_SOURCE_LABELS,
+  socials: "Redes sociais",
+};
+
+/** Rótulo PT-BR da métrica de socials usada no painel/legenda. */
+export const SOCIAL_METRIC_LABELS: Record<SocialMetric, string> = {
+  views: "Visualizações",
+  followers: "Seguidores ganhos",
 };

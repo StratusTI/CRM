@@ -6,7 +6,9 @@ import dynamic from "next/dynamic";
 import * as React from "react";
 import { toast } from "sonner";
 import {
+  CHART_SOURCE_LABELS,
   CHART_TYPE_META,
+  SOCIAL_METRIC_LABELS,
   VIEW_SOURCE_FIELDS,
   VIEW_SOURCE_LABELS,
   WIDGET_TYPE_META,
@@ -32,19 +34,28 @@ import {
 import { cn } from "@/lib/utils";
 import { createWidget, updateWidget } from "@/src/hooks/use-dashboard-widgets";
 import {
+  CHART_SOURCES,
   type ChartConfig,
   ChartConfigSchema,
+  type ChartSource,
+  type ChartType,
   type DashboardWidgetDTO,
   FILTER_OPERATORS,
   type IframeConfig,
   type RichTextConfig,
+  SOCIAL_METRICS,
   SORT_MODES,
+  type SocialMetric,
   type SortMode,
   VIEW_SOURCES,
   type ViewConfig,
   ViewConfigSchema,
   type WidgetType,
 } from "@/src/schemas/dashboard-widget.schema";
+import {
+  SOCIAL_PLATFORM_LABELS,
+  type SocialPlatform,
+} from "@/src/schemas/social-connection.schema";
 
 const RichTextPanel = dynamic(
   () =>
@@ -58,6 +69,27 @@ const NONE = "__none__";
 
 type ViewSource = ViewConfig["source"];
 type ViewFilter = ViewConfig["filters"][number];
+
+/** Plataformas que têm a métrica — filtra quem aparece no multi-select. */
+const PLATFORMS_BY_METRIC: Record<SocialMetric, SocialPlatform[]> = {
+  views: ["YOUTUBE", "INSTAGRAM", "FACEBOOK", "GOOGLE_ANALYTICS"],
+  followers: ["YOUTUBE", "FACEBOOK"],
+};
+
+/** Eixos/agrupamento automáticos do chart quando source = "socials". */
+function socialsDefaults(
+  chartType: ChartType,
+  metric: SocialMetric,
+): Partial<ChartConfig> {
+  const base = { xSort: "none" as const, ySort: "none" as const };
+  if (chartType === "pie") {
+    return { ...base, xField: "platform", yField: metric, groupBy: undefined };
+  }
+  if (chartType === "aggregate") {
+    return { ...base, xField: undefined, yField: metric, groupBy: undefined };
+  }
+  return { ...base, xField: "date", yField: metric, groupBy: "platform" };
+}
 
 /** Tamanho default do widget novo no grid (cols de 12, rowHeight ~40px). */
 const DEFAULT_SIZE: Record<WidgetType, { w: number; h: number }> = {
@@ -336,6 +368,29 @@ function SourceSelect({
   );
 }
 
+function ChartSourceSelect({
+  value,
+  onChange,
+}: {
+  value: ChartSource;
+  onChange: (value: ChartSource) => void;
+}) {
+  return (
+    <Select value={value} onValueChange={(v) => onChange(v as ChartSource)}>
+      <SelectTrigger className="w-full">
+        <span>{CHART_SOURCE_LABELS[value]}</span>
+      </SelectTrigger>
+      <SelectContent>
+        {CHART_SOURCES.map((source) => (
+          <SelectItem key={source} value={source}>
+            {CHART_SOURCE_LABELS[source]}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
 function FieldSelect({
   source,
   value,
@@ -492,7 +547,7 @@ function FilterEditor({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <span className="font-medium text-sm">Filtros (filter)</span>
+        <span className="font-medium text-sm">Filtros</span>
         <Button variant="outline" size="sm" onClick={add}>
           + Filtro
         </Button>
@@ -575,6 +630,40 @@ function ChartEditor({
   const isHorizontal = type === "horizontal";
   const isBarLine =
     type === "vertical" || type === "horizontal" || type === "line";
+  const isSocials = c.source === "socials";
+  const viewSource = c.source as ViewSource;
+
+  function setChartType(next: ChartType) {
+    if (isSocials) {
+      const metric = ((c.yField as SocialMetric | undefined) ??
+        "views") as SocialMetric;
+      onChange({ ...c, chartType: next, ...socialsDefaults(next, metric) });
+    } else {
+      set({ chartType: next });
+    }
+  }
+
+  function setSource(source: ChartSource) {
+    if (source === "socials") {
+      onChange({
+        ...c,
+        source,
+        filters: [],
+        platforms: [],
+        ...socialsDefaults(c.chartType, "views"),
+      });
+    } else {
+      onChange({
+        ...c,
+        source,
+        xField: undefined,
+        yField: undefined,
+        groupBy: undefined,
+        filters: [],
+        platforms: [],
+      });
+    }
+  }
 
   return (
     <div className="space-y-5">
@@ -589,7 +678,7 @@ function ChartEditor({
                     variant={type === meta.type ? "default" : "outline"}
                     size="icon"
                     className="w-full"
-                    onClick={() => set({ chartType: meta.type })}
+                    onClick={() => setChartType(meta.type)}
                     aria-label={meta.label}
                   />
                 }
@@ -605,38 +694,31 @@ function ChartEditor({
       {/* Data: source + filtros (comum a todos) */}
       <section className="space-y-3">
         <SectionTitle>Dados</SectionTitle>
-        <Labeled label="Source">
-          <SourceSelect
-            value={c.source}
-            onChange={(source) =>
-              onChange({
-                ...c,
-                source,
-                xField: undefined,
-                yField: undefined,
-                groupBy: undefined,
-                filters: [],
-              })
-            }
-          />
+        <Labeled label="Fonte">
+          <ChartSourceSelect value={c.source} onChange={setSource} />
         </Labeled>
-        <FilterEditor
-          source={c.source}
-          filters={c.filters}
-          onChange={(filters) => set({ filters })}
-        />
+        {isSocials ? (
+          <SocialsFields config={c} set={set} />
+        ) : (
+          <FilterEditor
+            source={viewSource}
+            filters={c.filters}
+            onChange={(filters) => set({ filters })}
+          />
+        )}
       </section>
 
-      {type === "aggregate" ? (
-        <AggregateFields config={c} set={set} />
+      {isSocials ? null : type === "aggregate" ? (
+        <AggregateFields config={c} set={set} viewSource={viewSource} />
       ) : type === "pie" ? (
-        <PieFields config={c} set={set} />
+        <PieFields config={c} set={set} viewSource={viewSource} />
       ) : (
         <BarLineFields
           config={c}
           set={set}
           isHorizontal={isHorizontal}
           isLine={type === "line"}
+          viewSource={viewSource}
         />
       )}
 
@@ -710,11 +792,13 @@ function BarLineFields({
   set,
   isHorizontal,
   isLine,
+  viewSource,
 }: {
   config: ChartConfig;
   set: (patch: Partial<ChartConfig>) => void;
   isHorizontal: boolean;
   isLine: boolean;
+  viewSource: ViewSource;
 }) {
   const categoryAxis = isHorizontal
     ? "Eixo Y (categorias)"
@@ -724,16 +808,16 @@ function BarLineFields({
     <>
       <section className="space-y-3">
         <SectionTitle>{categoryAxis}</SectionTitle>
-        <Labeled label="Data on display">
+        <Labeled label="Campo a exibir">
           <FieldSelect
-            source={c.source}
+            source={viewSource}
             value={c.xField}
             onChange={(xField) => set({ xField })}
             allowNone
             noneLabel="Selecionar campo"
           />
         </Labeled>
-        <Labeled label="Sort by">
+        <Labeled label="Ordenar por">
           <SortModeSelect
             value={c.xSort}
             onChange={(xSort) => set({ xSort })}
@@ -748,25 +832,25 @@ function BarLineFields({
 
       <section className="space-y-3">
         <SectionTitle>{valueAxis}</SectionTitle>
-        <Labeled label="Data on display">
+        <Labeled label="Campo a exibir">
           <FieldSelect
-            source={c.source}
+            source={viewSource}
             value={c.yField}
             onChange={(yField) => set({ yField })}
             allowNone
             noneLabel="Contagem de registros"
           />
         </Labeled>
-        <Labeled label="Group by (série)">
+        <Labeled label="Agrupar por (série)">
           <FieldSelect
-            source={c.source}
+            source={viewSource}
             value={c.groupBy}
             onChange={(groupBy) => set({ groupBy })}
             allowNone
             noneLabel="— sem série —"
           />
         </Labeled>
-        <Labeled label="Sort by">
+        <Labeled label="Ordenar por">
           <SortModeSelect
             value={c.ySort}
             onChange={(ySort) => set({ ySort })}
@@ -778,18 +862,18 @@ function BarLineFields({
           </p>
         )}
         <Toggle
-          label="Cumulative"
+          label="Cumulativo"
           checked={c.cumulative}
           onChange={(cumulative) => set({ cumulative })}
         />
         <div className="flex gap-2">
           <NumberField
-            label="Min range"
+            label="Mínimo"
             value={c.yMin}
             onChange={(yMin) => set({ yMin })}
           />
           <NumberField
-            label="Max range"
+            label="Máximo"
             value={c.yMax}
             onChange={(yMax) => set({ yMax })}
           />
@@ -802,16 +886,18 @@ function BarLineFields({
 function PieFields({
   config: c,
   set,
+  viewSource,
 }: {
   config: ChartConfig;
   set: (patch: Partial<ChartConfig>) => void;
+  viewSource: ViewSource;
 }) {
   return (
     <section className="space-y-3">
       <SectionTitle>Dados</SectionTitle>
-      <Labeled label="Data on display (fatias)">
+      <Labeled label="Campo a exibir (fatias)">
         <FieldSelect
-          source={c.source}
+          source={viewSource}
           value={c.xField}
           onChange={(xField) => set({ xField })}
           allowNone
@@ -820,14 +906,14 @@ function PieFields({
       </Labeled>
       <Labeled label="Cada fatia representa">
         <FieldSelect
-          source={c.source}
+          source={viewSource}
           value={c.yField}
           onChange={(yField) => set({ yField })}
           allowNone
           noneLabel="Contagem de registros"
         />
       </Labeled>
-      <Labeled label="Sort by">
+      <Labeled label="Ordenar por">
         <SortModeSelect value={c.xSort} onChange={(xSort) => set({ xSort })} />
       </Labeled>
       <Toggle
@@ -842,16 +928,18 @@ function PieFields({
 function AggregateFields({
   config: c,
   set,
+  viewSource,
 }: {
   config: ChartConfig;
   set: (patch: Partial<ChartConfig>) => void;
+  viewSource: ViewSource;
 }) {
   return (
     <section className="space-y-3">
       <SectionTitle>Dados</SectionTitle>
-      <Labeled label="Data on display (valor)">
+      <Labeled label="Campo a exibir (valor)">
         <FieldSelect
-          source={c.source}
+          source={viewSource}
           value={c.yField}
           onChange={(yField) => set({ yField })}
           allowNone
@@ -859,6 +947,78 @@ function AggregateFields({
         />
       </Labeled>
     </section>
+  );
+}
+
+/* ------------------------------- socials editor ----------------------------- */
+
+function SocialsFields({
+  config: c,
+  set,
+}: {
+  config: ChartConfig;
+  set: (patch: Partial<ChartConfig>) => void;
+}) {
+  const metric = ((c.yField as SocialMetric | undefined) ??
+    "views") as SocialMetric;
+  const available = PLATFORMS_BY_METRIC[metric];
+
+  function setMetric(next: SocialMetric) {
+    const allowed = PLATFORMS_BY_METRIC[next];
+    const platforms = c.platforms.filter((p) => allowed.includes(p));
+    set({ yField: next, platforms });
+  }
+
+  function togglePlatform(platform: SocialPlatform) {
+    const platforms = c.platforms.includes(platform)
+      ? c.platforms.filter((p) => p !== platform)
+      : [...c.platforms, platform];
+    set({ platforms });
+  }
+
+  return (
+    <div className="space-y-3">
+      <Labeled label="Métrica">
+        <Select
+          value={metric}
+          onValueChange={(v) => setMetric(v as SocialMetric)}
+        >
+          <SelectTrigger className="w-full">
+            <span>{SOCIAL_METRIC_LABELS[metric]}</span>
+          </SelectTrigger>
+          <SelectContent>
+            {SOCIAL_METRICS.map((m) => (
+              <SelectItem key={m} value={m}>
+                {SOCIAL_METRIC_LABELS[m]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </Labeled>
+      <div className="space-y-1.5">
+        <span className="block text-sm">Redes</span>
+        <div className="grid grid-cols-2 gap-1.5">
+          {available.map((platform) => (
+            // biome-ignore lint/a11y/noLabelWithoutControl: Checkbox é o controle envolvido
+            <label
+              key={platform}
+              className="flex cursor-pointer items-center gap-2 rounded-md px-1 py-1 text-sm hover:bg-accent"
+            >
+              <Checkbox
+                checked={c.platforms.includes(platform)}
+                onCheckedChange={() => togglePlatform(platform)}
+              />
+              <span className="truncate">
+                {SOCIAL_PLATFORM_LABELS[platform]}
+              </span>
+            </label>
+          ))}
+        </div>
+        <p className="text-muted-foreground text-xs">
+          * Seguidores ganhos disponível apenas para YouTube e Facebook.
+        </p>
+      </div>
+    </div>
   );
 }
 
@@ -904,12 +1064,12 @@ function ViewEditor({
 
   return (
     <div className="space-y-5">
-      <Labeled label="Fonte (source)">
+      <Labeled label="Fonte">
         <SourceSelect value={config.source} onChange={setSource} />
       </Labeled>
 
       <div className="space-y-2">
-        <span className="block font-medium text-sm">Campos (fields)</span>
+        <span className="block font-medium text-sm">Campos</span>
         <p className="text-muted-foreground text-xs">
           Nenhum selecionado = mostra todos.
         </p>
@@ -938,7 +1098,7 @@ function ViewEditor({
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <span className="font-medium text-sm">Ordenação (sort)</span>
+          <span className="font-medium text-sm">Ordenação</span>
           <Button variant="outline" size="sm" onClick={addSort}>
             + Ordenação
           </Button>

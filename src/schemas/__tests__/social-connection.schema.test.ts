@@ -7,7 +7,13 @@ import {
 
 describe("SocialPlatformSchema", () => {
   it("aceita as plataformas suportadas", () => {
-    for (const platform of ["INSTAGRAM", "FACEBOOK", "TIKTOK", "YOUTUBE"]) {
+    for (const platform of [
+      "INSTAGRAM",
+      "FACEBOOK",
+      "TIKTOK",
+      "YOUTUBE",
+      "GOOGLE_ANALYTICS",
+    ]) {
       expect(SocialPlatformSchema.safeParse(platform).success).toBe(true);
     }
   });
@@ -22,6 +28,7 @@ describe("SocialPlatformSchema", () => {
       "FACEBOOK",
       "TIKTOK",
       "YOUTUBE",
+      "GOOGLE_ANALYTICS",
     ]);
   });
 });

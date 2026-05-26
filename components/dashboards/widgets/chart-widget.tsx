@@ -55,7 +55,16 @@ export function ChartWidget({
   slug: string;
   config: ChartConfig;
 }) {
-  const { items, isLoading } = useResourceList<Row>(slug, config.source);
+  const query = React.useMemo(() => {
+    if (config.source !== "socials") return undefined;
+    const params = new URLSearchParams({
+      metric: config.yField || "views",
+      platforms: config.platforms.join(","),
+    });
+    return params.toString();
+  }, [config.source, config.platforms, config.yField]);
+
+  const { items, isLoading } = useResourceList<Row>(slug, config.source, query);
 
   const data = React.useMemo(
     () => aggregateChart(items, config),
@@ -67,6 +76,10 @@ export function ChartWidget({
   );
 
   if (isLoading) return <Empty message="Carregando…" />;
+
+  if (config.source === "socials" && config.platforms.length === 0) {
+    return <Empty message="Selecione ao menos uma rede no painel." />;
+  }
 
   /* -------------------------------- aggregate ------------------------------ */
   if (config.chartType === "aggregate") {

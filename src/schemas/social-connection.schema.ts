@@ -21,6 +21,15 @@ export type SocialPlatform = z.infer<typeof SocialPlatformSchema>;
 /** Lista canônica das plataformas, para iterar no frontend/registry. */
 export const SOCIAL_PLATFORMS = SocialPlatformSchema.options;
 
+/** Nome legível da plataforma (legenda de gráfico, opções de UI). */
+export const SOCIAL_PLATFORM_LABELS: Record<SocialPlatform, string> = {
+  INSTAGRAM: "Instagram",
+  FACEBOOK: "Facebook",
+  TIKTOK: "TikTok",
+  YOUTUBE: "YouTube",
+  GOOGLE_ANALYTICS: "Google Analytics",
+};
+
 /** Enum → slug minúsculo usado nas rotas/URLs (ex.: "INSTAGRAM" → "instagram"). */
 export function platformToSlug(platform: SocialPlatform): string {
   return platform.toLowerCase();

@@ -11,8 +11,13 @@ type ApiResponse<T> = {
 /**
  * Busca a lista de um recurso aninhado em workspace
  * (`/api/workspaces/<slug>/<resource>`), com refetch manual.
+ * Aceita `query` para passar parâmetros de busca (ex.: chart de socials).
  */
-export function useResourceList<T>(slug: string, resource: string) {
+export function useResourceList<T>(
+  slug: string,
+  resource: string,
+  query?: string,
+) {
   const [items, setItems] = useState<T[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -21,7 +26,10 @@ export function useResourceList<T>(slug: string, resource: string) {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/workspaces/${slug}/${resource}`);
+      const suffix = query ? `?${query}` : "";
+      const response = await fetch(
+        `/api/workspaces/${slug}/${resource}${suffix}`,
+      );
       const json = (await response.json()) as ApiResponse<T>;
       if (!response.ok || !json.success || !json.data) {
         setError(json?.message ?? "Não foi possível carregar os dados.");
@@ -33,7 +41,7 @@ export function useResourceList<T>(slug: string, resource: string) {
     } finally {
       setIsLoading(false);
     }
-  }, [slug, resource]);
+  }, [slug, resource, query]);
 
   useEffect(() => {
     refetch();
