@@ -1,4 +1,4 @@
-# Stell CRM
+# Stell CRM - PRIVATE
 
 CRM multi-workspace com dashboards customizáveis, gestão de entidades (Empresas, Pessoas, Oportunidades, Tarefas, Notas) e integrações sociais (Instagram, Facebook, TikTok, YouTube, Google Analytics).
 
