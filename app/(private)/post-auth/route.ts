@@ -2,11 +2,10 @@ import { redirect } from "next/navigation";
 import { getAuthSession } from "@/src/lib/auth-session";
 import { resolveWorkspacePath } from "@/src/lib/post-auth-redirect";
 
-/**
- * Destino comum após sign-in / sign-up (email e Google OAuth).
- * Resolve a workspace do usuário no servidor e redireciona.
- */
-export default async function PostAuthPage() {
+// Route Handler (não Page) porque `resolveWorkspacePath` consome a cookie
+// `pending_invite` — e Server Components não podem mutar cookies. O destino
+// é o mesmo: sign-in/sign-up (email + Google OAuth) e o pós-consent.
+export async function GET(): Promise<never> {
   const session = await getAuthSession();
 
   if (!session.ok) {
