@@ -12,13 +12,10 @@ export const onRequestError: Instrumentation.onRequestError = (
   console.error("[onRequestError]", {
     path: request.path,
     method: request.method,
-    routePath: context.routePath,
-    routeType: context.routeType,
-    renderSource: context.renderSource,
-    renderType: context.renderType,
     digest: error.digest,
     message: error.message,
     stack: error.stack,
+    context,
   });
 };
 
