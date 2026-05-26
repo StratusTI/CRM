@@ -1,36 +1,108 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CRM
 
-## Getting Started
+CRM multi-workspace com dashboards customizáveis, gestão de entidades (Empresas, Pessoas, Oportunidades, Tarefas, Notas) e integrações sociais (Instagram, Facebook, TikTok, YouTube, Google Analytics).
 
-First, run the development server:
+## Stack
+
+- **Next.js 16** (App Router, React 19, `cacheComponents`) — esta é uma versão com breaking changes; consulte `node_modules/next/dist/docs/` antes de codar.
+- **Prisma 7** + **PostgreSQL 17** (adapter `@prisma/adapter-pg`)
+- **better-auth** (auth + plugins `@better-auth/infra` para dashboard/sentinel)
+- **Base-UI** + **shadcn/ui** + **Tailwind v4**
+- **TipTap 3** (editor rich-text), **Nivo** (charts), **react-grid-layout** (canvas de dashboards)
+- **Biome** (lint + format), **Vitest 4** (unit / integration / e2e)
+
+## Pré-requisitos
+
+- Node.js 20+
+- pnpm
+- Docker + Docker Compose (para Postgres local)
+- Arquivo `.env` na raiz (ver seção abaixo)
+
+## Setup
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+O script `dev` faz tudo de uma vez:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. `docker:start` — sobe Postgres em `127.0.0.1:5433`
+2. `prisma:migrate:dev` — aplica as migrations
+3. `next dev` — sobe o app em `http://localhost:3000`
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Na primeira execução, use `pnpm docker:create` no lugar de `pnpm docker:start` para criar os containers.
 
-## Learn More
+## Variáveis de ambiente
 
-To learn more about Next.js, take a look at the following resources:
+Mínimo necessário no `.env`:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```env
+# Postgres
+POSTGRES_USER=...
+POSTGRES_PASSWORD=...
+POSTGRES_DB=...
+DATABASE_URL=postgresql://USER:PASS@localhost:5433/DB
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# better-auth
+BETTER_AUTH_SECRET=...
+BETTER_AUTH_URL=http://localhost:3000
 
-## Deploy on Vercel
+# Integrações sociais (opcional, por integração ativada)
+META_APP_ID=...
+META_APP_SECRET=...
+TIKTOK_CLIENT_KEY=...
+TIKTOK_CLIENT_SECRET=...
+GOOGLE_CLIENT_ID=...
+GOOGLE_CLIENT_SECRET=...
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+# Criptografia de tokens das conexões sociais
+SOCIAL_TOKEN_ENCRYPTION_KEY=...
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Scripts
+
+| Comando | Descrição |
+|---|---|
+| `pnpm dev` | Sobe infra + migrations + Next dev server |
+| `pnpm build` | `prisma generate` + `next build` |
+| `pnpm start` | Sobe o build em `0.0.0.0:3000` |
+| `pnpm check` | Biome (lint + format com `--fix`) |
+| `pnpm test` | Vitest em modo watch |
+| `pnpm test:unit` / `test:integration` / `test:e2e` | Roda um projeto específico |
+| `pnpm test:ci` | Roda tudo com coverage |
+| `pnpm prisma:studio` | Abre Prisma Studio |
+| `pnpm prisma:migrate:dev` | Cria/aplica migration de desenvolvimento |
+| `pnpm docker:create` | Cria os containers pela primeira vez |
+| `pnpm docker:start` / `docker:stop` | Inicia / para containers |
+
+## Estrutura
+
+```
+app/
+  (private)/         # Rotas autenticadas; [workspace-slug] é o tenant
+  (public)/          # sign-in, sign-up, consent, invite
+  api/               # auth, invites, social, users, workspaces, integrations
+components/          # UI compartilhada (tables, dashboards, social, etc.)
+src/
+  repositories/      # Acesso ao Prisma — sempre retornam Result
+  services/          # Regras de negócio (workspace-scoped)
+  mappers/           # DB ↔ DTO
+  schemas/           # Validação Zod
+  hooks/             # Hooks de client (use-resource-list, etc.)
+  lib/               # Utilitários (auth, criptografia, etc.)
+prisma/              # schema.prisma + migrations
+docs/                # Roadmap de criação de features
+```
+
+## Convenções
+
+- **Camadas**: `route → service → repository → prisma`. Repositórios retornam `Result<T, AppError>`; services compõem.
+- **Auth**: provida pelo better-auth — não rolar a mão.
+- **Multi-tenant**: tudo é escopado por `workspaceSlug`; URLs privadas vivem sob `/[workspace-slug]/...`.
+- **Soft delete** nas entidades CRM.
+- **Testes**: banco real (`nexo_test`) para integration tests; sem Redis. Veja [docs/feature-creation-roadmap.md](./docs/feature-creation-roadmap.md) para o fluxo de criar uma feature nova.
+
+## Deploy
+
+A imagem oficial é publicada em `ghcr.io/stratusti/crm:latest` (ver `docker-compose.yml`). Em produção, rode `pnpm prisma:deploy` antes de subir a aplicação.
