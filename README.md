@@ -1,4 +1,4 @@
-# CRM
+# Stell CRM
 
 CRM multi-workspace com dashboards customizáveis, gestão de entidades (Empresas, Pessoas, Oportunidades, Tarefas, Notas) e integrações sociais (Instagram, Facebook, TikTok, YouTube, Google Analytics).
 
