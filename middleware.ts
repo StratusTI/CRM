@@ -65,9 +65,9 @@ function workspaceHomeRedirect(
   );
 }
 
-export function proxy(request: NextRequest, _event: NextFetchEvent) {
-  // Em proxy, dependendo da versão/setup do Next, `nextUrl.pathname` pode ou
-  // não vir com basePath strippado. Normalizamos manualmente.
+export function middleware(request: NextRequest, _event: NextFetchEvent) {
+  // Dependendo da versão/setup do Next, `nextUrl.pathname` pode ou não vir
+  // com basePath strippado. Normalizamos manualmente.
   const rawPathname = request.nextUrl.pathname;
   const pathname =
     BASE_PATH && rawPathname.startsWith(BASE_PATH)
