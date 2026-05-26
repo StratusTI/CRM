@@ -59,6 +59,7 @@ jobs:
           cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache,mode=max
           build-args: |
             NEXT_PUBLIC_URL=https://painel.stratustelecom.com.br/crm
+            NEXT_PUBLIC_BASE_PATH=/crm
           secrets: |
             hugeicons_token=${{ secrets.HUGEICONS_TOKEN }}
 

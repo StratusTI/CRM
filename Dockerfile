@@ -25,6 +25,11 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ARG NEXT_PUBLIC_URL=https://nexo.coodee.dev
 ENV NEXT_PUBLIC_URL=$NEXT_PUBLIC_URL
 
+# `basePath` é embutido no bundle pelo `next build`, então a env precisa
+# existir aqui (não em runtime).
+ARG NEXT_PUBLIC_BASE_PATH=""
+ENV NEXT_PUBLIC_BASE_PATH=$NEXT_PUBLIC_BASE_PATH
+
 ARG NEXT_PUBLIC_AXIOM_TOKEN
 ENV NEXT_PUBLIC_AXIOM_TOKEN=$NEXT_PUBLIC_AXIOM_TOKEN
 
