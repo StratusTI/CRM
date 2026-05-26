@@ -46,8 +46,6 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <TooltipProvider>
-            {/* Dynamic routes (session/headers) prerender sob cacheComponents
-                só dentro de um boundary — ver (private)/layout.tsx. */}
             <Suspense fallback={null}>{children}</Suspense>
           </TooltipProvider>
           <Toaster />

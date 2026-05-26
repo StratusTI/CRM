@@ -8,7 +8,6 @@ const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 const nextConfig: NextConfig = {
   basePath,
   serverExternalPackages: ["@prisma/client"],
-  cacheComponents: true,
   experimental: {
     webpackMemoryOptimizations: true,
   },
