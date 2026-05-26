@@ -90,7 +90,12 @@ export function proxy(request: NextRequest, _event: NextFetchEvent) {
         { status: 401 },
       );
     }
-    return NextResponse.redirect(new URL("/sign-in", request.url));
+    // basePath não é re-aplicado por `new URL("/sign-in", request.url)` —
+    // o pathname absoluto sobrescreve `/crm`. Clonar `nextUrl` preserva.
+    const signInUrl = request.nextUrl.clone();
+    signInUrl.pathname = "/sign-in";
+    signInUrl.search = "";
+    return NextResponse.redirect(signInUrl);
   }
 
   // Autenticado: a home da workspace é a tabela de companies, então o slug
