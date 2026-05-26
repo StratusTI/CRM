@@ -1,0 +1,44 @@
+# Local dependencies and build artifacts — devem vir do deps/builder stage,
+# nunca da máquina local (que pode estar com o store do pnpm corrompido,
+# faltando o Prisma Client gerado, etc.).
+node_modules
+.pnpm-store
+.next
+out
+build
+dist
+generated
+coverage
+.turbo
+
+# Envs locais — produção lê o .env escrito pelo workflow no host.
+.env
+.env.*
+!.env.example
+
+# Git e VCS metadata
+.git
+.gitignore
+.gitattributes
+
+# Editor / OS
+.vscode
+.idea
+.DS_Store
+*.swp
+
+# Logs e debug
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Testes e configs de dev
+.claude
+.husky
+.github
+docker-compose.yml
+Dockerfile
+README.md
+docs

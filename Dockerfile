@@ -34,7 +34,13 @@ ENV NEXT_PUBLIC_AXIOM_DATASET=$NEXT_PUBLIC_AXIOM_DATASET
 ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
 ENV SKIP_ENV_VALIDATION="true"
 
-RUN corepack enable pnpm && pnpm build
+# `prisma generate` precisa rodar antes do `next build` E o artefato precisa
+# existir na árvore que será copiada pro runner. Se faltar, o erro em runtime
+# vira um `DYNAMIC_SERVER_USAGE` mascarado em qualquer página que tocar o DB.
+RUN corepack enable pnpm && \
+    pnpm prisma generate && \
+    find node_modules/.pnpm -path '*/.prisma/client/default.js' -print -quit | grep -q . && \
+    pnpm next build
 
 FROM base AS runner
 WORKDIR /app
