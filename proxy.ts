@@ -5,6 +5,11 @@ import {
 } from "next/server";
 import { NODE_ENV } from "./lib/env/env";
 
+// `basePath` é build-time (inlineado pelo Next). Em proxy/middleware, o
+// `nextUrl.clone()` deveria preservar — mas na prática a Location header sai
+// sem o prefixo. Concatenamos manualmente pra garantir.
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+
 const PUBLIC_ROUTES = [
   "/sign-in",
   "/sign-up",
@@ -53,9 +58,9 @@ function workspaceHomeRedirect(request: NextRequest): NextResponse | null {
   const slug = segments[0];
   if (RESERVED_TOP_LEVEL.has(slug) || slug.includes(".")) return null;
 
-  const url = request.nextUrl.clone();
-  url.pathname = `/${slug}/companies`;
-  return NextResponse.redirect(url);
+  return NextResponse.redirect(
+    new URL(`${BASE_PATH}/${slug}/companies`, request.url),
+  );
 }
 
 export function proxy(request: NextRequest, _event: NextFetchEvent) {
@@ -90,11 +95,7 @@ export function proxy(request: NextRequest, _event: NextFetchEvent) {
         { status: 401 },
       );
     }
-    // basePath não é re-aplicado por `new URL("/sign-in", request.url)` —
-    // o pathname absoluto sobrescreve `/crm`. Clonar `nextUrl` preserva.
-    const signInUrl = request.nextUrl.clone();
-    signInUrl.pathname = "/sign-in";
-    signInUrl.search = "";
+    const signInUrl = new URL(`${BASE_PATH}/sign-in`, request.url);
     return NextResponse.redirect(signInUrl);
   }
 
