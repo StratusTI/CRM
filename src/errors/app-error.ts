@@ -61,6 +61,18 @@ export const workspaceForbidden = (
   message = "Você não tem acesso a esta workspace",
 ): AppError => appError("WORKSPACE_FORBIDDEN", message);
 
+export const workspaceInviteNotFound = (
+  message = "Convite não encontrado",
+): AppError => appError("WORKSPACE_INVITE_NOT_FOUND", message);
+
+export const workspaceInviteDisabled = (
+  message = "Este convite está desativado",
+): AppError => appError("WORKSPACE_INVITE_DISABLED", message);
+
+export const workspaceAlreadyMember = (
+  message = "Você já é membro deste workspace",
+): AppError => appError("WORKSPACE_ALREADY_MEMBER", message);
+
 export const companyNotFound = (message = "Empresa não encontrada"): AppError =>
   appError("COMPANY_NOT_FOUND", message);
 

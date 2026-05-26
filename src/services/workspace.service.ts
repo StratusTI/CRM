@@ -82,11 +82,20 @@ export const WorkspaceService = {
     return ok(toWorkspaceDTO(membership.value.workspace));
   },
 
-  /** Membros da workspace (id/nome/email), exige que o requisitante seja membro. */
+  /** Membros da workspace (id/nome/email/role), exige que o requisitante seja membro. */
   async listMembers(
     userId: string,
     slug: string,
-  ): Promise<Result<{ id: string; name: string; email: string }[]>> {
+  ): Promise<
+    Result<
+      {
+        id: string;
+        name: string;
+        email: string;
+        role: "OWNER" | "ADMIN" | "MEMBER";
+      }[]
+    >
+  > {
     const membership = await MembershipRepository.findByUserAndSlug(
       userId,
       slug,
@@ -103,6 +112,7 @@ export const WorkspaceService = {
         id: m.user.id,
         name: m.user.name,
         email: m.user.email,
+        role: m.role,
       })),
     );
   },

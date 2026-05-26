@@ -48,6 +48,8 @@ model User {
 
   integrationApiKeysCreated IntegrationApiKey[] @relation("IntegrationApiKeyCreatedBy")
 
+  workspaceInvitesCreated WorkspaceInvite[] @relation("WorkspaceInviteCreator")
+
   @@index([deletionScheduledAt])
   @@map("users")
 }
@@ -111,6 +113,7 @@ model Workspace {
   dashboards    Dashboard[]
   socialConnections SocialConnection[]
   integrationApiKeys IntegrationApiKey[]
+  invite        WorkspaceInvite?
 
   @@map("workspaces")
 }
@@ -444,4 +447,24 @@ enum Role {
   OWNER
   ADMIN
   MEMBER
+}
+
+/// Convite por link compartilhável (1 por workspace).
+/// O token vira parte da URL pública `/invite/<token>`. Role é o que o
+/// aceitante recebe na membership criada — OWNER nunca é distribuído por link.
+model WorkspaceInvite {
+  id          String   @id @default(cuid())
+  workspaceId String   @unique @map("workspace_id")
+  token       String   @unique
+  role        Role     @default(MEMBER)
+  isActive    Boolean  @default(true) @map("is_active")
+  createdById String   @map("created_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy User      @relation("WorkspaceInviteCreator", fields: [createdById], references: [id])
+
+  @@index([workspaceId])
+  @@map("workspace_invites")
 }
