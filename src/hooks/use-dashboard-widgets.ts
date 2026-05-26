@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { apiUrl } from "@/lib/api-url";
 import type { MutationResult } from "@/src/hooks/use-resource-list";
 import type {
   CreateWidgetInput,
@@ -11,7 +12,7 @@ import type {
 type ApiResponse<T> = { success: boolean; data?: T; message?: string };
 
 function base(slug: string, dashboardId: string): string {
-  return `/api/workspaces/${slug}/dashboards/${dashboardId}/widgets`;
+  return apiUrl(`/api/workspaces/${slug}/dashboards/${dashboardId}/widgets`);
 }
 
 /** Lista os widgets de um dashboard, com refetch manual. */

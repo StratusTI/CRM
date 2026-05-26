@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { apiUrl } from "@/lib/api-url";
 
 type ApiResponse<T> = {
   success: boolean;
@@ -28,7 +29,7 @@ export function useResourceList<T>(
     try {
       const suffix = query ? `?${query}` : "";
       const response = await fetch(
-        `/api/workspaces/${slug}/${resource}${suffix}`,
+        apiUrl(`/api/workspaces/${slug}/${resource}${suffix}`),
       );
       const json = (await response.json()) as ApiResponse<T>;
       if (!response.ok || !json.success || !json.data) {
@@ -79,7 +80,7 @@ export async function createResource<T>(
   payload: Record<string, unknown>,
 ): Promise<MutationResult<T>> {
   try {
-    const response = await fetch(`/api/workspaces/${slug}/${resource}`, {
+    const response = await fetch(apiUrl(`/api/workspaces/${slug}/${resource}`), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -102,11 +103,14 @@ export async function updateResource<T>(
   patch: Record<string, unknown>,
 ): Promise<MutationResult<T>> {
   try {
-    const response = await fetch(`/api/workspaces/${slug}/${resource}/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(patch),
-    });
+    const response = await fetch(
+      apiUrl(`/api/workspaces/${slug}/${resource}/${id}`),
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(patch),
+      },
+    );
     const json = await response.json();
     if (!response.ok || !json.success) {
       return { ok: false, message: readError(json) };
@@ -124,9 +128,10 @@ export async function deleteResource(
   id: string,
 ): Promise<MutationResult<unknown>> {
   try {
-    const response = await fetch(`/api/workspaces/${slug}/${resource}/${id}`, {
-      method: "DELETE",
-    });
+    const response = await fetch(
+      apiUrl(`/api/workspaces/${slug}/${resource}/${id}`),
+      { method: "DELETE" },
+    );
     const json = await response.json();
     if (!response.ok || !json.success) {
       return { ok: false, message: readError(json) };
@@ -144,7 +149,7 @@ export async function reorderResource(
   ids: string[],
 ): Promise<void> {
   try {
-    await fetch(`/api/workspaces/${slug}/${resource}/reorder`, {
+    await fetch(apiUrl(`/api/workspaces/${slug}/${resource}/reorder`), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ids }),

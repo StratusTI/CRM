@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { apiUrl } from "@/lib/api-url";
 import type { SocialConnectionDTO } from "@/src/schemas/social-connection.schema";
 
 type ApiResponse<T> = {
@@ -23,7 +24,7 @@ export function useSocialConnections(slug: string) {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/workspaces/${slug}/social`);
+      const response = await fetch(apiUrl(`/api/workspaces/${slug}/social`));
       const json = (await response.json()) as ApiResponse<
         SocialConnectionDTO[]
       >;
@@ -49,7 +50,7 @@ export function useSocialConnections(slug: string) {
     ): Promise<{ ok: boolean; message?: string }> => {
       try {
         const response = await fetch(
-          `/api/workspaces/${slug}/social/${platformSlug}`,
+          apiUrl(`/api/workspaces/${slug}/social/${platformSlug}`),
           { method: "DELETE" },
         );
         const json = (await response.json()) as ApiResponse<unknown>;

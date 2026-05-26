@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { apiUrl } from "@/lib/api-url";
 import type {
   CreateWorkspaceInput,
   WorkspaceDTO,
@@ -18,7 +19,7 @@ export function useCreateWorkspace() {
     setError(null);
     setIsLoading(true);
     try {
-      const response = await fetch("/api/workspaces", {
+      const response = await fetch(apiUrl("/api/workspaces"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(input),

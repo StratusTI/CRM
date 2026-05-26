@@ -10,6 +10,7 @@ import { SOCIAL_PLATFORM_META } from "@/components/social-platforms";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { apiUrl } from "@/lib/api-url";
 import { useSocialConnections } from "@/src/hooks/use-social-connections";
 
 /** Mensagens amigáveis por motivo de falha vindo do callback/connect. */
@@ -64,7 +65,9 @@ export function SocialConnectionsSection({
   const byPlatform = new Map(connections.map((c) => [c.platform, c]));
 
   function handleConnect(platformSlug: string) {
-    window.location.href = `/api/workspaces/${slug}/social/${platformSlug}/connect`;
+    window.location.href = apiUrl(
+      `/api/workspaces/${slug}/social/${platformSlug}/connect`,
+    );
   }
 
   async function handleDisconnect(platformSlug: string, label: string) {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { apiUrl } from "@/lib/api-url";
 import type {
   PublishVideoResult,
   YoutubeChannelOverview,
@@ -18,7 +19,8 @@ type ApiResponse<T> = {
 /** Erro normalizado das chamadas YouTube (código de domínio + mensagem). */
 export type YoutubeError = { code?: string; message: string };
 
-const BASE = (slug: string) => `/api/workspaces/${slug}/social/youtube`;
+const BASE = (slug: string) =>
+  apiUrl(`/api/workspaces/${slug}/social/youtube`);
 
 async function getJson<T>(
   url: string,

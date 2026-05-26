@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { apiUrl } from "@/lib/api-url";
 import type {
   PublishTiktokVideoResult,
   TiktokCreatorOverview,
@@ -17,7 +18,8 @@ type ApiResponse<T> = {
 /** Erro normalizado das chamadas do TikTok (código de domínio + mensagem). */
 export type TiktokError = { code?: string; message: string };
 
-const BASE = (slug: string) => `/api/workspaces/${slug}/social/tiktok`;
+const BASE = (slug: string) =>
+  apiUrl(`/api/workspaces/${slug}/social/tiktok`);
 
 async function getJson<T>(
   url: string,

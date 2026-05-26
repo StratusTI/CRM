@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { apiUrl } from "@/lib/api-url";
 import type {
   FacebookInsights,
   FacebookInsightsRange,
@@ -18,7 +19,8 @@ type ApiResponse<T> = {
 /** Erro normalizado das chamadas do Facebook (código de domínio + mensagem). */
 export type FacebookError = { code?: string; message: string };
 
-const BASE = (slug: string) => `/api/workspaces/${slug}/social/facebook`;
+const BASE = (slug: string) =>
+  apiUrl(`/api/workspaces/${slug}/social/facebook`);
 
 async function getJson<T>(
   url: string,

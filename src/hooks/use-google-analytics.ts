@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { apiUrl } from "@/lib/api-url";
 import type {
   GoogleAnalyticsInsights,
   GoogleAnalyticsInsightsRange,
@@ -18,7 +19,7 @@ type ApiResponse<T> = {
 export type GoogleAnalyticsError = { code?: string; message: string };
 
 const BASE = (slug: string) =>
-  `/api/workspaces/${slug}/social/google_analytics`;
+  apiUrl(`/api/workspaces/${slug}/social/google_analytics`);
 
 async function getJson<T>(
   url: string,

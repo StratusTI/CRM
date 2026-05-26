@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
+import { apiUrl } from "@/lib/api-url";
 import { useWorkspaceInvite } from "@/src/hooks/use-workspace-invite";
 
 type Member = {
@@ -59,7 +60,7 @@ export function WorkspaceMembersSection({
   const refetchMembers = useCallback(async () => {
     setMembersLoading(true);
     try {
-      const response = await fetch(`/api/workspaces/${slug}/members`);
+      const response = await fetch(apiUrl(`/api/workspaces/${slug}/members`));
       const json = await response.json();
       if (response.ok && json.success && Array.isArray(json.data)) {
         setMembers(json.data as Member[]);

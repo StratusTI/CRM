@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { apiUrl } from "@/lib/api-url";
 
 export function useAcceptConsent() {
   const router = useRouter();
@@ -12,7 +13,7 @@ export function useAcceptConsent() {
     setError(null);
     setIsLoading(true);
     try {
-      const response = await fetch("/api/users/me/consent", {
+      const response = await fetch(apiUrl("/api/users/me/consent"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ acceptTerms: true, acceptPrivacy: true }),

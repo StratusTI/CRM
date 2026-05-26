@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { apiUrl } from "@/lib/api-url";
 import type {
   InstagramInsights,
   InstagramInsightsRange,
@@ -18,7 +19,8 @@ type ApiResponse<T> = {
 /** Erro normalizado das chamadas do Instagram (código de domínio + mensagem). */
 export type InstagramError = { code?: string; message: string };
 
-const BASE = (slug: string) => `/api/workspaces/${slug}/social/instagram`;
+const BASE = (slug: string) =>
+  apiUrl(`/api/workspaces/${slug}/social/instagram`);
 
 async function getJson<T>(
   url: string,

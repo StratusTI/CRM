@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { apiUrl } from "@/lib/api-url";
 
 export type LookupKind = "users" | "companies" | "people" | "opportunities";
 
@@ -55,7 +56,7 @@ export function useWorkspaceLookups(slug: string, kinds: LookupKind[]) {
         kinds.map(async (kind) => {
           try {
             const res = await fetch(
-              `/api/workspaces/${slug}/${RESOURCE_PATH[kind]}`,
+              apiUrl(`/api/workspaces/${slug}/${RESOURCE_PATH[kind]}`),
             );
             const json = await res.json();
             const items: RawItem[] =

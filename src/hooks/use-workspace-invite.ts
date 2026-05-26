@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { apiUrl } from "@/lib/api-url";
 import type {
   UpdateWorkspaceInviteInput,
   WorkspaceInviteDTO,
@@ -25,7 +26,7 @@ export function useWorkspaceInvite(slug: string) {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/workspaces/${slug}/invite`);
+      const response = await fetch(apiUrl(`/api/workspaces/${slug}/invite`));
       const json = (await response.json()) as ApiResponse<WorkspaceInviteDTO>;
       if (!response.ok || !json.success || !json.data) {
         setError(json?.message ?? "Não foi possível carregar o convite.");
@@ -48,7 +49,7 @@ export function useWorkspaceInvite(slug: string) {
       input: UpdateWorkspaceInviteInput,
     ): Promise<{ ok: boolean; message?: string }> => {
       try {
-        const response = await fetch(`/api/workspaces/${slug}/invite`, {
+        const response = await fetch(apiUrl(`/api/workspaces/${slug}/invite`), {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(input),
