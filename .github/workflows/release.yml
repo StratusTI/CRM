@@ -1,0 +1,47 @@
+name: Release (manual)
+
+# Fallback for the automated release job in cd.yml. Use this from the Actions
+# tab when you need to tag a CalVer release without running a deploy — for
+# example, when re-tagging an already-deployed commit.
+
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: 'Commit SHA to release (defaults to main HEAD)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Tag & Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Resolve target SHA
+        id: target
+        run: |
+          if [ -n "${{ inputs.sha }}" ]; then
+            echo "sha=${{ inputs.sha }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "sha=$(git rev-parse origin/main)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create CalVer tag and GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SHA: ${{ steps.target.outputs.sha }}
+        run: |
+          TODAY=$(date -u +%Y.%m.%d)
+          EXISTING=$(git tag --list "$TODAY" "$TODAY.*" | wc -l)
+          if [ "$EXISTING" -eq 0 ]; then TAG="$TODAY"; else TAG="$TODAY.$EXISTING"; fi
+          echo "Releasing $TAG at $SHA (existing today: $EXISTING)"
+          gh release create "$TAG" --target "$SHA" --title "$TAG" --generate-notes
