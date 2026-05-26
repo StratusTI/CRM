@@ -104,7 +104,7 @@ export function NavWorkspace({ slug }: { slug: string }) {
 
       <SidebarGroup>
         <SidebarGroupLabel className="text-[0.6875rem] uppercase tracking-[0.12em] text-sidebar-foreground/50">
-          Other
+          Outros
         </SidebarGroupLabel>
         <SidebarMenu>
           {OTHER_NAV.map((item) => (

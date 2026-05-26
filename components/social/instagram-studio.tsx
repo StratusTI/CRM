@@ -196,7 +196,7 @@ export function InstagramStudio({ slug }: { slug: string }) {
         />
         <StatCard
           icon={Analytics01Icon}
-          label="Posts"
+          label="Publicações"
           value={overview.mediaCount}
         />
       </div>

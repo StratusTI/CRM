@@ -13,7 +13,7 @@ export function IframeWidget({ config }: { config: IframeConfig }) {
   return (
     <iframe
       src={config.url}
-      title="Iframe widget"
+      title="Widget incorporado"
       className="h-full w-full rounded-md border-0"
       sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
       referrerPolicy="no-referrer"

@@ -15,7 +15,7 @@ const LOOKUP_KINDS: LookupKind[] = ["users"];
 const COLUMNS: GridColumn[] = [
   {
     key: "title",
-    header: "Title",
+    header: "Título",
     kind: "text",
     primary: true,
     linkView: true,
@@ -23,23 +23,23 @@ const COLUMNS: GridColumn[] = [
   },
   {
     key: "createdById",
-    header: "Created by",
+    header: "Criado por",
     kind: "relation",
     relationKind: "users",
     readonly: true,
   },
-  { key: "createdAt", header: "Creation date", kind: "readonly-date" },
-  { key: "updatedAt", header: "Last update", kind: "readonly-date" },
-  { key: "deletedAt", header: "Deleted at", kind: "readonly-date" },
+  { key: "createdAt", header: "Data de criação", kind: "readonly-date" },
+  { key: "updatedAt", header: "Última atualização", kind: "readonly-date" },
+  { key: "deletedAt", header: "Excluído em", kind: "readonly-date" },
   {
     key: "pageLayoutId",
-    header: "Page layout id",
+    header: "ID do layout de página",
     kind: "text",
     placeholder: "layout_…",
   },
   {
     key: "updatedById",
-    header: "Updated by",
+    header: "Atualizado por",
     kind: "relation",
     relationKind: "users",
     readonly: true,
@@ -63,7 +63,7 @@ export function DashboardsTable({ slug }: { slug: string }) {
         createTitle="dashboard"
         lookups={lookups}
         isLoading={isLoading}
-        searchPlaceholder="Search dashboards…"
+        searchPlaceholder="Buscar dashboards…"
         refetch={refetch}
       />
     </PageShell>

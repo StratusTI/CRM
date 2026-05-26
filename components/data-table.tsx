@@ -123,19 +123,19 @@ type CalcType =
   | "latest";
 
 const CALC_LABEL: Record<CalcType, string> = {
-  none: "Calculate",
-  "count-all": "Count",
-  "count-empty": "Empty",
-  "count-not-empty": "Not empty",
-  "count-unique": "Unique",
-  "percent-empty": "Empty",
-  "percent-not-empty": "Not empty",
-  sum: "Sum",
-  average: "Average",
-  min: "Min",
-  max: "Max",
-  earliest: "Earliest",
-  latest: "Latest",
+  none: "Calcular",
+  "count-all": "Contagem",
+  "count-empty": "Vazio",
+  "count-not-empty": "Não vazio",
+  "count-unique": "Único",
+  "percent-empty": "Vazio",
+  "percent-not-empty": "Não vazio",
+  sum: "Soma",
+  average: "Média",
+  min: "Mín",
+  max: "Máx",
+  earliest: "Mais antigo",
+  latest: "Mais recente",
 };
 
 /** Tipos de coluna numéricos: habilitam soma/média/mín/máx no rodapé. */
@@ -399,7 +399,7 @@ function CalcFooterCell<TData>({
       >
         {result === null ? (
           <span className="text-muted-foreground opacity-0 transition-opacity group-hover/calc:opacity-100">
-            Calculate
+            Calcular
           </span>
         ) : (
           <>
@@ -411,31 +411,31 @@ function CalcFooterCell<TData>({
       <DropdownMenuContent align="end" className="w-44">
         <DropdownMenuGroup>
           <DropdownMenuLabel className="text-muted-foreground text-xs">
-            Count
+            Contagem
           </DropdownMenuLabel>
           <DropdownMenuItem onClick={() => onChange("count-all")}>
-            Count all
+            Contar tudo
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => onChange("count-empty")}>
-            Count empty
+            Contar vazios
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => onChange("count-not-empty")}>
-            Count not empty
+            Contar não vazios
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => onChange("count-unique")}>
-            Count unique values
+            Contar valores únicos
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuLabel className="text-muted-foreground text-xs">
-            Percent
+            Porcentagem
           </DropdownMenuLabel>
           <DropdownMenuItem onClick={() => onChange("percent-empty")}>
-            Percent empty
+            Porcentagem vazia
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => onChange("percent-not-empty")}>
-            Percent not empty
+            Porcentagem não vazia
           </DropdownMenuItem>
         </DropdownMenuGroup>
         {isNumericKind(kind) ? (
@@ -443,19 +443,19 @@ function CalcFooterCell<TData>({
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuLabel className="text-muted-foreground text-xs">
-                More options
+                Mais opções
               </DropdownMenuLabel>
               <DropdownMenuItem onClick={() => onChange("min")}>
-                Min
+                Mínimo
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onChange("max")}>
-                Max
+                Máximo
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onChange("average")}>
-                Average
+                Média
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onChange("sum")}>
-                Sum
+                Soma
               </DropdownMenuItem>
             </DropdownMenuGroup>
           </>
@@ -465,20 +465,20 @@ function CalcFooterCell<TData>({
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuLabel className="text-muted-foreground text-xs">
-                Date
+                Data
               </DropdownMenuLabel>
               <DropdownMenuItem onClick={() => onChange("earliest")}>
-                Earliest date
+                Data mais antiga
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onChange("latest")}>
-                Latest date
+                Data mais recente
               </DropdownMenuItem>
             </DropdownMenuGroup>
           </>
         ) : null}
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => onChange("none")}>
-          None
+          Nenhum
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -882,7 +882,7 @@ export function DataTable<TData extends WithId>({
             render={
               <Button variant="outline" size="sm">
                 <HugeiconsIcon icon={FilterIcon} strokeWidth={2} />
-                Filter
+                Filtrar
                 {columnFilters.length > 0 ? (
                   <span className="ml-1 rounded bg-primary px-1 text-primary-foreground text-xs">
                     {columnFilters.length}
@@ -928,7 +928,7 @@ export function DataTable<TData extends WithId>({
             render={
               <Button variant="outline" size="sm">
                 <HugeiconsIcon icon={ArrowUpDownIcon} strokeWidth={2} />
-                Sort
+                Ordenar
                 {sorting.length > 0 ? (
                   <span className="ml-1 rounded bg-primary px-1 text-primary-foreground text-xs">
                     {sorting.length}
@@ -989,7 +989,7 @@ export function DataTable<TData extends WithId>({
           <DropdownMenuTrigger
             render={
               <Button variant="outline" size="sm">
-                Columns
+                Colunas
                 <HugeiconsIcon icon={ArrowDown01Icon} strokeWidth={2} />
               </Button>
             }
@@ -1013,7 +1013,7 @@ export function DataTable<TData extends WithId>({
 
         <Button size="sm" onClick={addRow}>
           <HugeiconsIcon icon={PlusSignIcon} strokeWidth={2} />
-          New {createTitle}
+          Novo {createTitle}
         </Button>
       </div>
 
@@ -1166,7 +1166,7 @@ export function DataTable<TData extends WithId>({
                           onClick={addRow}
                         >
                           <HugeiconsIcon icon={PlusSignIcon} strokeWidth={2} />
-                          Add new
+                          Adicionar novo
                         </Button>
                       </div>
                     </TableCell>
@@ -1196,7 +1196,7 @@ export function DataTable<TData extends WithId>({
                       </div>
                       <Button size="sm" className="mt-1" onClick={addRow}>
                         <HugeiconsIcon icon={PlusSignIcon} strokeWidth={2} />
-                        New {createTitle}
+                        Novo {createTitle}
                       </Button>
                     </div>
                   </TableCell>

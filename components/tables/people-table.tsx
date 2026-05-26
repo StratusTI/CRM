@@ -15,7 +15,7 @@ const LOOKUP_KINDS: LookupKind[] = ["companies", "users"];
 const COLUMNS: GridColumn[] = [
   {
     key: "name",
-    header: "Name",
+    header: "Nome",
     kind: "text",
     required: true,
     primary: true,
@@ -23,20 +23,20 @@ const COLUMNS: GridColumn[] = [
   },
   {
     key: "emails",
-    header: "Emails",
+    header: "E-mails",
     kind: "tags",
     placeholder: "ada@acme.com, ada@gmail.com",
   },
   {
     key: "phones",
-    header: "Phones",
+    header: "Telefones",
     kind: "tags",
     placeholder: "+55 11 99999-0000",
   },
-  { key: "city", header: "City", kind: "text", placeholder: "Recife, PE" },
+  { key: "city", header: "Cidade", kind: "text", placeholder: "Recife, PE" },
   {
     key: "jobTitle",
-    header: "Job title",
+    header: "Cargo",
     kind: "text",
     placeholder: "Head of Sales",
   },
@@ -48,27 +48,27 @@ const COLUMNS: GridColumn[] = [
   },
   {
     key: "companyId",
-    header: "Company",
+    header: "Empresa",
     kind: "relation",
     relationKind: "companies",
     clearable: true,
   },
   {
     key: "createdById",
-    header: "Created by",
+    header: "Criado por",
     kind: "relation",
     relationKind: "users",
     readonly: true,
   },
   {
     key: "updatedById",
-    header: "Updated by",
+    header: "Atualizado por",
     kind: "relation",
     relationKind: "users",
     readonly: true,
   },
-  { key: "createdAt", header: "Created", kind: "readonly-date" },
-  { key: "updatedAt", header: "Last update", kind: "readonly-date" },
+  { key: "createdAt", header: "Criado em", kind: "readonly-date" },
+  { key: "updatedAt", header: "Última atualização", kind: "readonly-date" },
 ];
 
 export function PeopleTable({ slug }: { slug: string }) {
@@ -85,10 +85,10 @@ export function PeopleTable({ slug }: { slug: string }) {
         data={items}
         slug={slug}
         resource="people"
-        createTitle="person"
+        createTitle="pessoa"
         lookups={lookups}
         isLoading={isLoading}
-        searchPlaceholder="Search people…"
+        searchPlaceholder="Buscar pessoas…"
         refetch={refetch}
       />
     </PageShell>

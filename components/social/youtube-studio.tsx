@@ -211,7 +211,7 @@ export function YoutubeStudio({ slug }: { slug: string }) {
       <section className="space-y-4">
         <div className="flex items-center justify-between gap-3">
           <h3 className="font-heading font-semibold text-lg tracking-tight">
-            Analytics
+            Análises
           </h3>
           <Tabs
             value={range}
@@ -236,7 +236,7 @@ export function YoutubeStudio({ slug }: { slug: string }) {
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <StatCard
                 icon={EyeIcon}
-                label="Views no período"
+                label="Visualizações no período"
                 value={insights.totals.views}
               />
               <StatCard
@@ -255,7 +255,7 @@ export function YoutubeStudio({ slug }: { slug: string }) {
                 <ResponsiveLine
                   data={[
                     {
-                      id: "Views",
+                      id: "Visualizações",
                       data: insights.series.map((p) => ({
                         x: p.date,
                         y: p.views,

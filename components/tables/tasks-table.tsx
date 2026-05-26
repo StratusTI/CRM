@@ -24,15 +24,15 @@ const STATUS_STYLES: Record<(typeof TASK_STATUSES)[number], string> = {
 };
 
 const STATUS_LABEL: Record<(typeof TASK_STATUSES)[number], string> = {
-  TODO: "To do",
-  IN_PROGRESS: "In progress",
-  DONE: "Done",
+  TODO: "A fazer",
+  IN_PROGRESS: "Em andamento",
+  DONE: "Concluído",
 };
 
 const COLUMNS: GridColumn[] = [
   {
     key: "title",
-    header: "Title",
+    header: "Título",
     kind: "text",
     required: true,
     primary: true,
@@ -46,52 +46,57 @@ const COLUMNS: GridColumn[] = [
     options: TASK_STATUSES.map((s) => ({ value: s, label: STATUS_LABEL[s] })),
     optionStyles: STATUS_STYLES,
   },
-  { key: "dueDate", header: "Due date", kind: "date" },
+  { key: "dueDate", header: "Prazo", kind: "date" },
   {
     key: "assigneeId",
-    header: "Assignee",
+    header: "Responsável",
     kind: "relation",
     relationKind: "users",
     clearable: true,
   },
   {
     key: "companyId",
-    header: "Company",
+    header: "Empresa",
     kind: "relation",
     relationKind: "companies",
     clearable: true,
   },
   {
     key: "personId",
-    header: "Person",
+    header: "Pessoa",
     kind: "relation",
     relationKind: "people",
     clearable: true,
   },
   {
     key: "opportunityId",
-    header: "Opportunity",
+    header: "Oportunidade",
     kind: "relation",
     relationKind: "opportunities",
     clearable: true,
   },
-  { key: "body", header: "Body", kind: "richtext", placeholder: "Detalhes…" },
+  {
+    key: "body",
+    header: "Conteúdo",
+    kind: "richtext",
+    placeholder: "Detalhes…",
+  },
   {
     key: "createdById",
-    header: "Created by",
+    header: "Criado por",
     kind: "relation",
     relationKind: "users",
     readonly: true,
   },
   {
     key: "updatedById",
-    header: "Updated by",
+    header: "Atualizado por",
     kind: "relation",
     relationKind: "users",
     readonly: true,
   },
-  { key: "createdAt", header: "Created", kind: "readonly-date" },
-  { key: "updatedAt", header: "Last update", kind: "readonly-date" },
+  { key: "createdAt", header: "Criado em", kind: "readonly-date" },
+  { key: "updatedAt", header: "Última atualização", kind: "readonly-date" },
 ];
 
 export function TasksTable({ slug }: { slug: string }) {
@@ -105,10 +110,10 @@ export function TasksTable({ slug }: { slug: string }) {
         data={items}
         slug={slug}
         resource="tasks"
-        createTitle="task"
+        createTitle="tarefa"
         lookups={lookups}
         isLoading={isLoading}
-        searchPlaceholder="Search tasks…"
+        searchPlaceholder="Buscar tarefas…"
         refetch={refetch}
       />
     </PageShell>

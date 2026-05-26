@@ -28,37 +28,37 @@ export type NavNode = NavLeaf & { children?: NavLeaf[] };
 
 export const WORKSPACE_NAV: NavNode[] = [
   {
-    title: "Companies",
+    title: "Empresas",
     segment: "companies",
     icon: Building03Icon,
     color: "bg-blue-500",
   },
   {
-    title: "People",
+    title: "Pessoas",
     segment: "people",
     icon: UserMultipleIcon,
     color: "bg-emerald-500",
   },
   {
-    title: "Opportunities",
+    title: "Oportunidades",
     segment: "opportunities",
     icon: TargetDollarIcon,
     color: "bg-amber-500",
   },
   {
-    title: "Tasks",
+    title: "Tarefas",
     segment: "tasks",
     icon: TaskDone01Icon,
     color: "bg-violet-500",
   },
   {
-    title: "Notes",
+    title: "Notas",
     segment: "notes",
     icon: StickyNote01Icon,
     color: "bg-rose-500",
   },
   {
-    title: "Dashboards",
+    title: "Painéis",
     segment: "dashboards",
     icon: DashboardSquare01Icon,
     color: "bg-cyan-500",
@@ -105,7 +105,7 @@ export const WORKSPACE_NAV: NavNode[] = [
 
 export const OTHER_NAV: NavNode[] = [
   {
-    title: "Settings",
+    title: "Configurações",
     segment: "settings",
     icon: Settings02Icon,
     color: "bg-neutral-500",

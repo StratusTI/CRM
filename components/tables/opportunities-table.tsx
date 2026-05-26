@@ -28,59 +28,59 @@ const STAGE_STYLES: Record<(typeof OPPORTUNITY_STAGES)[number], string> = {
 const COLUMNS: GridColumn[] = [
   {
     key: "name",
-    header: "Name",
+    header: "Nome",
     kind: "text",
     required: true,
     primary: true,
     placeholder: "Renovação anual — Acme",
   },
-  { key: "amount", header: "Amount", kind: "money", placeholder: "50000" },
+  { key: "amount", header: "Valor", kind: "money", placeholder: "50000" },
   {
     key: "stage",
-    header: "Stage",
+    header: "Etapa",
     kind: "select",
     defaultValue: "NEW",
     options: OPPORTUNITY_STAGES.map((s) => ({ value: s, label: s })),
     optionStyles: STAGE_STYLES,
   },
-  { key: "closeDate", header: "Close date", kind: "date" },
+  { key: "closeDate", header: "Data de fechamento", kind: "date" },
   {
     key: "companyId",
-    header: "Company",
+    header: "Empresa",
     kind: "relation",
     relationKind: "companies",
     clearable: true,
   },
   {
     key: "pointOfContactId",
-    header: "Point of contact",
+    header: "Ponto de contato",
     kind: "relation",
     relationKind: "people",
     clearable: true,
   },
   {
     key: "ownerId",
-    header: "Owner",
+    header: "Responsável",
     kind: "relation",
     relationKind: "users",
     clearable: true,
   },
   {
     key: "createdById",
-    header: "Created by",
+    header: "Criado por",
     kind: "relation",
     relationKind: "users",
     readonly: true,
   },
   {
     key: "updatedById",
-    header: "Updated by",
+    header: "Atualizado por",
     kind: "relation",
     relationKind: "users",
     readonly: true,
   },
-  { key: "createdAt", header: "Created", kind: "readonly-date" },
-  { key: "updatedAt", header: "Last update", kind: "readonly-date" },
+  { key: "createdAt", header: "Criado em", kind: "readonly-date" },
+  { key: "updatedAt", header: "Última atualização", kind: "readonly-date" },
 ];
 
 export function OpportunitiesTable({ slug }: { slug: string }) {
@@ -97,10 +97,10 @@ export function OpportunitiesTable({ slug }: { slug: string }) {
         data={items}
         slug={slug}
         resource="opportunities"
-        createTitle="opportunity"
+        createTitle="oportunidade"
         lookups={lookups}
         isLoading={isLoading}
-        searchPlaceholder="Search opportunities…"
+        searchPlaceholder="Buscar oportunidades…"
         refetch={refetch}
       />
     </PageShell>

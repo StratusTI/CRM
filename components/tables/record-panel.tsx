@@ -148,7 +148,7 @@ export function RecordPanel<T extends WithId>({
             disabled={deleting}
           >
             <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} />
-            {confirmDelete ? "Confirmar exclusão" : "Delete"}
+            {confirmDelete ? "Confirmar exclusão" : "Excluir"}
           </Button>
           <Button className="flex-1" onClick={handleSave} disabled={saving}>
             {saving ? "Salvando…" : "Salvar"}

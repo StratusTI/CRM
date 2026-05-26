@@ -53,21 +53,21 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
   return (
     <Card {...props}>
       <CardHeader>
-        <CardTitle>Create an account</CardTitle>
+        <CardTitle>Criar uma conta</CardTitle>
         <CardDescription>
-          Enter your information below to create your account
+          Preencha seus dados abaixo para criar sua conta
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit}>
           <FieldGroup>
             <Field>
-              <FieldLabel htmlFor="name">Full Name</FieldLabel>
+              <FieldLabel htmlFor="name">Nome completo</FieldLabel>
               <Input
                 id="name"
                 name="name"
                 type="text"
-                placeholder="John Doe"
+                placeholder="João Silva"
                 autoComplete="name"
                 required
               />
@@ -93,13 +93,13 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
                 </FieldDescription>
               ) : (
                 <FieldDescription>
-                  We&apos;ll use this to contact you. We will not share your
-                  email with anyone else.
+                  Usaremos este email para entrar em contato. Não
+                  compartilharemos seu email com ninguém.
                 </FieldDescription>
               )}
             </Field>
             <Field>
-              <FieldLabel htmlFor="password">Password</FieldLabel>
+              <FieldLabel htmlFor="password">Senha</FieldLabel>
               <Input
                 id="password"
                 name="password"
@@ -113,13 +113,13 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
                 </FieldDescription>
               ) : (
                 <FieldDescription>
-                  Must be at least 8 characters long.
+                  Deve ter pelo menos 8 caracteres.
                 </FieldDescription>
               )}
             </Field>
             <Field>
               <FieldLabel htmlFor="confirm-password">
-                Confirm Password
+                Confirmar senha
               </FieldLabel>
               <Input
                 id="confirm-password"
@@ -134,7 +134,7 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
                 </FieldDescription>
               ) : (
                 <FieldDescription>
-                  Please confirm your password.
+                  Por favor, confirme sua senha.
                 </FieldDescription>
               )}
             </Field>
@@ -146,7 +146,7 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
             <FieldGroup>
               <Field>
                 <Button type="submit" disabled={isLoading}>
-                  {isLoading ? "Creating account..." : "Create Account"}
+                  {isLoading ? "Criando conta..." : "Criar conta"}
                 </Button>
                 <Button
                   variant="outline"
@@ -154,10 +154,10 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
                   disabled={isLoading}
                   onClick={() => signInWithGoogle()}
                 >
-                  Sign up with Google
+                  Cadastrar com Google
                 </Button>
                 <FieldDescription className="px-6 text-center">
-                  Already have an account? <Link href="/sign-in">Sign in</Link>
+                  Já tem uma conta? <Link href="/sign-in">Entrar</Link>
                 </FieldDescription>
               </Field>
             </FieldGroup>

@@ -20,49 +20,49 @@ const LOOKUP_KINDS: LookupKind[] = [
 const COLUMNS: GridColumn[] = [
   {
     key: "title",
-    header: "Title",
+    header: "Título",
     kind: "text",
     primary: true,
     placeholder: "Reunião de kickoff",
   },
-  { key: "body", header: "Body", kind: "richtext", placeholder: "Resumo…" },
+  { key: "body", header: "Conteúdo", kind: "richtext", placeholder: "Resumo…" },
   {
     key: "companyId",
-    header: "Company",
+    header: "Empresa",
     kind: "relation",
     relationKind: "companies",
     clearable: true,
   },
   {
     key: "personId",
-    header: "Person",
+    header: "Pessoa",
     kind: "relation",
     relationKind: "people",
     clearable: true,
   },
   {
     key: "opportunityId",
-    header: "Opportunity",
+    header: "Oportunidade",
     kind: "relation",
     relationKind: "opportunities",
     clearable: true,
   },
   {
     key: "createdById",
-    header: "Created by",
+    header: "Criado por",
     kind: "relation",
     relationKind: "users",
     readonly: true,
   },
   {
     key: "updatedById",
-    header: "Updated by",
+    header: "Atualizado por",
     kind: "relation",
     relationKind: "users",
     readonly: true,
   },
-  { key: "createdAt", header: "Created", kind: "readonly-date" },
-  { key: "updatedAt", header: "Last update", kind: "readonly-date" },
+  { key: "createdAt", header: "Criado em", kind: "readonly-date" },
+  { key: "updatedAt", header: "Última atualização", kind: "readonly-date" },
 ];
 
 export function NotesTable({ slug }: { slug: string }) {
@@ -76,10 +76,10 @@ export function NotesTable({ slug }: { slug: string }) {
         data={items}
         slug={slug}
         resource="notes"
-        createTitle="note"
+        createTitle="nota"
         lookups={lookups}
         isLoading={isLoading}
-        searchPlaceholder="Search notes…"
+        searchPlaceholder="Buscar notas…"
         refetch={refetch}
       />
     </PageShell>

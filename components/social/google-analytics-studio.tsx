@@ -190,7 +190,7 @@ export function GoogleAnalyticsStudio({ slug }: { slug: string }) {
       <section className="space-y-4">
         <div className="flex items-center justify-between gap-3">
           <h3 className="font-heading font-semibold text-lg tracking-tight">
-            Analytics
+            Análises
           </h3>
           <Tabs
             value={range}

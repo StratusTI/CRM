@@ -27,7 +27,7 @@ export const forbidden = (message = "Permissão insuficiente"): AppError =>
   appError("FORBIDDEN", message);
 
 export const notFound = (resource: string): AppError =>
-  appError("RESOURCE_NOT_FOUND", `${resource} not found`);
+  appError("RESOURCE_NOT_FOUND", `${resource} não encontrado`);
 
 export const conflict = (message: string): AppError =>
   appError("CONFLICT", message);
@@ -38,7 +38,7 @@ export const validationError = (message: string, details?: unknown): AppError =>
 export const badRequest = (message: string): AppError =>
   appError("BAD_REQUEST", message);
 
-export const databaseError = (message = "Database error"): AppError =>
+export const databaseError = (message = "Erro de banco de dados"): AppError =>
   appError("DATABASE_ERROR", message);
 
 export const rateLimited = (

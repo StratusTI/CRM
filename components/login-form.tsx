@@ -56,9 +56,9 @@ export function LoginForm({
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
         <CardHeader>
-          <CardTitle>Login to your account</CardTitle>
+          <CardTitle>Entrar na sua conta</CardTitle>
           <CardDescription>
-            Enter your email below to login to your account
+            Digite seu email abaixo para entrar na sua conta
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -82,14 +82,14 @@ export function LoginForm({
               </Field>
               <Field>
                 <div className="flex items-center">
-                  <FieldLabel htmlFor="password">Password</FieldLabel>
+                  <FieldLabel htmlFor="password">Senha</FieldLabel>
                   <Button
                     type="button"
                     variant="link"
                     size="sm"
                     className="ml-auto h-auto p-0"
                   >
-                    Forgot your password?
+                    Esqueceu sua senha?
                   </Button>
                 </div>
                 <Input
@@ -112,7 +112,7 @@ export function LoginForm({
               ) : null}
               <Field>
                 <Button type="submit" disabled={isLoading}>
-                  {isLoading ? "Logging in..." : "Login"}
+                  {isLoading ? "Entrando..." : "Entrar"}
                 </Button>
                 <Button
                   variant="outline"
@@ -120,11 +120,10 @@ export function LoginForm({
                   disabled={isLoading}
                   onClick={() => signInWithGoogle()}
                 >
-                  Login with Google
+                  Entrar com Google
                 </Button>
                 <FieldDescription className="text-center">
-                  Don&apos;t have an account?{" "}
-                  <Link href="/sign-up">Sign up</Link>
+                  Não tem uma conta? <Link href="/sign-up">Cadastre-se</Link>
                 </FieldDescription>
               </Field>
             </FieldGroup>

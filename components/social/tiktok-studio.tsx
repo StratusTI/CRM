@@ -224,7 +224,7 @@ export function TiktokStudio({ slug }: { slug: string }) {
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               <StatCard
                 icon={EyeIcon}
-                label="Views (recentes)"
+                label="Visualizações (recentes)"
                 value={videos.totals.views}
               />
               <StatCard

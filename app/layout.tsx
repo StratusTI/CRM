@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     template: "%s · Nexo",
   },
   description:
-    "Nexo brings companies, people, deals and notes into one fast, focused CRM workspace.",
+    "Nexo reúne empresas, pessoas, negócios e notas em um workspace de CRM rápido e focado.",
 };
 
 export default function RootLayout({
@@ -34,7 +34,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="pt-BR"
       suppressHydrationWarning
       className={`${sans.variable} ${mono.variable} h-full antialiased bg-background`}
     >

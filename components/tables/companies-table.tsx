@@ -15,46 +15,51 @@ const LOOKUP_KINDS: LookupKind[] = ["users"];
 const COLUMNS: GridColumn[] = [
   {
     key: "name",
-    header: "Name",
+    header: "Nome",
     kind: "text",
     required: true,
     primary: true,
     placeholder: "Acme Inc",
   },
-  { key: "domain", header: "Domain", kind: "link", placeholder: "acme.com" },
-  { key: "employees", header: "Employees", kind: "number", placeholder: "120" },
+  { key: "domain", header: "Domínio", kind: "link", placeholder: "acme.com" },
+  {
+    key: "employees",
+    header: "Funcionários",
+    kind: "number",
+    placeholder: "120",
+  },
   {
     key: "linkedin",
     header: "LinkedIn",
     kind: "link",
     placeholder: "linkedin.com/company/acme",
   },
-  { key: "address", header: "Address", kind: "text" },
+  { key: "address", header: "Endereço", kind: "text" },
   { key: "arr", header: "ARR", kind: "money", placeholder: "250000" },
   { key: "icp", header: "ICP", kind: "boolean" },
   {
     key: "accountOwnerId",
-    header: "Account owner",
+    header: "Responsável pela conta",
     kind: "relation",
     relationKind: "users",
     clearable: true,
   },
   {
     key: "createdById",
-    header: "Created by",
+    header: "Criado por",
     kind: "relation",
     relationKind: "users",
     readonly: true,
   },
   {
     key: "updatedById",
-    header: "Updated by",
+    header: "Atualizado por",
     kind: "relation",
     relationKind: "users",
     readonly: true,
   },
-  { key: "createdAt", header: "Created", kind: "readonly-date" },
-  { key: "updatedAt", header: "Last update", kind: "readonly-date" },
+  { key: "createdAt", header: "Criado em", kind: "readonly-date" },
+  { key: "updatedAt", header: "Última atualização", kind: "readonly-date" },
 ];
 
 export function CompaniesTable({ slug }: { slug: string }) {
@@ -71,10 +76,10 @@ export function CompaniesTable({ slug }: { slug: string }) {
         data={items}
         slug={slug}
         resource="companies"
-        createTitle="company"
+        createTitle="empresa"
         lookups={lookups}
         isLoading={isLoading}
-        searchPlaceholder="Search companies…"
+        searchPlaceholder="Buscar empresas…"
         refetch={refetch}
       />
     </PageShell>

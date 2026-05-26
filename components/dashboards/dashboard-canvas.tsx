@@ -143,7 +143,7 @@ export function DashboardCanvas({
     <>
       <Button variant="outline" size="sm" onClick={openNew}>
         <HugeiconsIcon icon={Add01Icon} strokeWidth={2} />
-        Add widget
+        Adicionar widget
       </Button>
       <Button
         variant={editMode ? "default" : "outline"}
