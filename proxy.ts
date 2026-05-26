@@ -58,40 +58,7 @@ function workspaceHomeRedirect(request: NextRequest): NextResponse | null {
   return NextResponse.redirect(url);
 }
 
-function buildCspHeader(nonce: string): string {
-  return `
-    default-src 'self';
-    script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${NODE_ENV === "development" ? " 'unsafe-eval'" : ""};
-    style-src 'self' 'unsafe-inline';
-    img-src 'self' blob: data: https:;
-    font-src 'self';
-    frame-ancestors 'none';
-    form-action 'self';
-    base-uri 'self';
-    object-src 'none';
-    upgrade-insecure-requests;
-  `
-    .replace(/\s{2,}/g, " ")
-    .trim();
-}
-
-function withSecurityHeaders(
-  response: NextResponse,
-  nonce: string,
-): NextResponse {
-  response.headers.set("Content-Security-Policy", buildCspHeader(nonce));
-  response.headers.set(
-    "Strict-Transport-Security",
-    "max-age=63072000; includeSubDomains; preload",
-  );
-  return response;
-}
-
 export function proxy(request: NextRequest, _event: NextFetchEvent) {
-  const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
-  const requestHeaders = new Headers(request.headers);
-  requestHeaders.set("x-nonce", nonce);
-
   const { pathname } = request.nextUrl;
   if (
     NODE_ENV === "development" &&
@@ -100,7 +67,7 @@ export function proxy(request: NextRequest, _event: NextFetchEvent) {
       pathname === "/contact" ||
       pathname === "/testes")
   ) {
-    return NextResponse.next({ request: { headers: requestHeaders } });
+    return NextResponse.next();
   }
 
   const isPublic = PUBLIC_ROUTES.some(
@@ -108,10 +75,7 @@ export function proxy(request: NextRequest, _event: NextFetchEvent) {
   );
 
   if (isPublic) {
-    return withSecurityHeaders(
-      NextResponse.next({ request: { headers: requestHeaders } }),
-      nonce,
-    );
+    return NextResponse.next();
   }
 
   const sessionToken =
@@ -134,10 +98,7 @@ export function proxy(request: NextRequest, _event: NextFetchEvent) {
   const homeRedirect = workspaceHomeRedirect(request);
   if (homeRedirect) return homeRedirect;
 
-  return withSecurityHeaders(
-    NextResponse.next({ request: { headers: requestHeaders } }),
-    nonce,
-  );
+  return NextResponse.next();
 }
 
 export const config = {
