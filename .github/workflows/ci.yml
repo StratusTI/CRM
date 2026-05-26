@@ -151,13 +151,8 @@ jobs:
       BETTER_AUTH_SECRET: ci-test-secret-not-real
       BETTER_AUTH_URL: http://localhost:3000
       SKIP_ENV_VALIDATION: 'true'
-      # Shared by the server and the test process so the secret-checked routes
-      # (status collector, payment webhook) accept the requests the e2e tests send.
       STATUS_COLLECTOR_SECRET: ci-status-collector-secret
       ABACATE_PAY_WEBHOOK_SECRET: ci-abacate-webhook-secret
-      # `next start` runs in production mode, where better-auth's built-in rate
-      # limiter is on and would 429 the suite's repeated sign-ups. The app keeps
-      # its own auth rate limiting; disable only better-auth's here.
       DISABLE_AUTH_RATE_LIMIT: 'true'
     steps:
       - name: Checkout repository
@@ -236,11 +231,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install pnpm
-        run: npm install -g pnpm
-
       - name: Setup pnpm
         uses: pnpm/action-setup@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
@@ -269,8 +264,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -337,4 +332,3 @@ jobs:
 
       - name: All required checks passed
         run: echo "CI gate green."
-

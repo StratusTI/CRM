@@ -67,9 +67,6 @@ jobs:
         with:
           image-ref: ${{ env.IMAGE_NAME }}:scan
           format: table
-          # Block the deploy on CRITICAL only; HIGH stays visible in the log and
-          # is chased via Dependabot. Blocking deploys on transitive HIGH (often
-          # build-time DoS without a quick fix) is disproportionate.
           severity: CRITICAL
           ignore-unfixed: true
           exit-code: '1'
@@ -133,11 +130,6 @@ jobs:
       contents: write
     steps:
       - name: Checkout repository
-        # Checkout do branch padrão (main), não do head_sha do workflow_run:
-        # o job roda com contents:write e o checkout do ref não-confiável do
-        # evento é o padrão "pwn request" (Semgrep workflow-run-target-code-checkout).
-        # O release é fixado no commit certo via `gh release create --target "$SHA"`,
-        # e `git tag --list` só precisa das tags (presentes em qualquer checkout).
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -148,12 +140,8 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
-          # CalVer YYYY.MM.DD[.N] (UTC). First release of the day has no suffix;
-          # subsequent deploys the same day get .1, .2, ... (see versioning doc).
           TODAY=$(date -u +%Y.%m.%d)
           EXISTING=$(git tag --list "$TODAY" "$TODAY.*" | wc -l)
           if [ "$EXISTING" -eq 0 ]; then TAG="$TODAY"; else TAG="$TODAY.$EXISTING"; fi
           echo "Releasing $TAG at $SHA (existing today: $EXISTING)"
-          # gh creates the tag at $SHA and the release together; --generate-notes
-          # builds the body from merged PRs/commits since the previous release.
           gh release create "$TAG" --target "$SHA" --title "$TAG" --generate-notes
