@@ -50,6 +50,12 @@ RUN corepack enable pnpm && \
 FROM base AS runner
 WORKDIR /app
 
+# `NEXT_PUBLIC_BASE_PATH` precisa estar no environment do processo do
+# `next start` em runtime (sem ela o Next 16 ignora o basePath compilado e
+# serve /sign-in em vez de /crm/sign-in). Re-declaramos no runner.
+ARG NEXT_PUBLIC_BASE_PATH=""
+ENV NEXT_PUBLIC_BASE_PATH=$NEXT_PUBLIC_BASE_PATH
+
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 

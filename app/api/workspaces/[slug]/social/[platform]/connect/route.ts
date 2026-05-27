@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import { withBasePath } from "@/lib/api-url";
 import { getAuthSession } from "@/src/lib/auth-session";
 import { parsePlatformSlug } from "@/src/schemas/social-connection.schema";
 import { SocialConnectionService } from "@/src/services/social-connection.service";
@@ -12,16 +13,19 @@ type RouteContext = {
  * Início do fluxo OAuth (navegação do browser). Redireciona (302) para a tela de
  * autorização do provedor. Falhas voltam para Settings com `?status=error` em vez
  * de JSON, pois quem chama é uma navegação, não fetch.
+ *
+ * `NextResponse.redirect()` em route handler não aplica basePath — usamos
+ * `withBasePath()` em URLs internas. Em URLs externas (`authorizeUrl`) não.
  */
 export async function GET(request: NextRequest, { params }: RouteContext) {
   const { slug, platform: platformSlug } = await params;
 
   const session = await getAuthSession();
   if (!session.ok) {
-    return NextResponse.redirect(new URL("/sign-in", request.url));
+    return NextResponse.redirect(new URL(withBasePath("/sign-in"), request.url));
   }
 
-  const settingsUrl = new URL(`/${slug}/settings`, request.url);
+  const settingsUrl = new URL(withBasePath(`/${slug}/settings`), request.url);
   const platform = parsePlatformSlug(platformSlug);
   if (!platform) {
     settingsUrl.searchParams.set("status", "error");

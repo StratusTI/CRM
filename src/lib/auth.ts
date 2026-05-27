@@ -9,6 +9,10 @@ import {
 } from "@/lib/env/_server";
 import { prisma } from "@/src/lib/prisma";
 
+// Em prod a app é servida sob `/crm` (Next basePath). O better-auth precisa
+// saber pra construir callback URLs corretas e validar origem das chamadas.
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "postgresql",
@@ -16,6 +20,7 @@ export const auth = betterAuth({
   plugins: [dash()],
   secret: BETTER_AUTH_SECRET,
   baseURL: BETTER_AUTH_URL,
+  basePath: `${BASE_PATH}/api/auth`,
   emailAndPassword: { enabled: true },
   socialProviders:
     GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET
