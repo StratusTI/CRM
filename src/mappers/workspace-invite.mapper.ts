@@ -18,11 +18,13 @@ export function toWorkspaceInviteDTO(
   invite: WorkspaceInvite,
   origin: string,
 ): WorkspaceInviteDTO {
+  // Garante que o origin não tenha barra no final antes de concatenar.
+  const base = origin.endsWith("/") ? origin.slice(0, -1) : origin;
   return {
     token: invite.token,
     role: toInviteRole(invite.role),
     isActive: invite.isActive,
-    url: `${origin}/invite/${invite.token}`,
+    url: `${base}/invite/${invite.token}`,
     createdAt: invite.createdAt.toISOString(),
     updatedAt: invite.updatedAt.toISOString(),
   };

@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { withBasePath } from "@/lib/api-url";
+import { withPublicUrl } from "@/lib/api-url";
 import { getAuthSession } from "@/src/lib/auth-session";
 import { verifyOauthState } from "@/src/lib/social/oauth-state";
 import { parsePlatformSlug } from "@/src/schemas/social-connection.schema";
@@ -27,10 +27,10 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
   const slug = decoded?.ok ? decoded.value.slug : null;
 
   // `NextResponse.redirect()` em route handler não aplica basePath — usamos
-  // `withBasePath()` para URLs internas.
+  // `withPublicUrl()` para URLs internas que devem ser absolutas.
   const backToSettings = (status: string, reason?: string) => {
-    if (!slug) return NextResponse.redirect(new URL(withBasePath("/"), request.url));
-    const target = new URL(withBasePath(`/${slug}/settings`), request.url);
+    if (!slug) return NextResponse.redirect(withPublicUrl("/"));
+    const target = withPublicUrl(`/${slug}/settings`);
     target.searchParams.set("social", platformSlug);
     target.searchParams.set("status", status);
     if (reason) target.searchParams.set("reason", reason);
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
   const session = await getAuthSession();
   if (!session.ok) {
     console.error("[social/callback] sem sessão no callback");
-    return NextResponse.redirect(new URL(withBasePath("/sign-in"), request.url));
+    return NextResponse.redirect(withPublicUrl("/sign-in"));
   }
 
   const platform = parsePlatformSlug(platformSlug);

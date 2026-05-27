@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { z } from "zod";
 import { validationError } from "@/src/errors/app-error";
+import { NEXT_PUBLIC_URL } from "@/lib/env/env";
 import { getAuthSession } from "@/src/lib/auth-session";
 import { UpdateWorkspaceInviteSchema } from "@/src/schemas/workspace-invite.schema";
 import { WorkspaceInviteService } from "@/src/services/workspace-invite.service";
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
   const result = await WorkspaceInviteService.getOrCreate(
     session.value.user.id,
     slug,
-    request.nextUrl.origin,
+    NEXT_PUBLIC_URL,
   );
   if (!result.ok) return handleError(result.error);
 
@@ -42,7 +43,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     session.value.user.id,
     slug,
     parsed.data,
-    request.nextUrl.origin,
+    NEXT_PUBLIC_URL,
   );
   if (!result.ok) return handleError(result.error);
 
