@@ -2,6 +2,7 @@
 
 import { ArrowRight01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { IconSquare } from "@/components/icon-square";
 import {
@@ -69,13 +70,13 @@ export function NavWorkspace({ slug }: { slug: string }) {
                           isActive={isActive(child.segment)}
                           className="data-active:text-foreground"
                           render={
-                            <a href={hrefFor(child.segment)}>
+                            <Link href={hrefFor(child.segment)}>
                               <IconSquare
                                 icon={child.icon}
                                 color={child.color}
                               />
                               <span>{child.title}</span>
-                            </a>
+                            </Link>
                           }
                         />
                       </SidebarMenuSubItem>
@@ -90,10 +91,10 @@ export function NavWorkspace({ slug }: { slug: string }) {
                   isActive={isActive(item.segment)}
                   className={ACTIVE_ITEM}
                   render={
-                    <a href={hrefFor(item.segment)}>
+                    <Link href={hrefFor(item.segment)}>
                       <IconSquare icon={item.icon} color={item.color} />
                       <span>{item.title}</span>
-                    </a>
+                    </Link>
                   }
                 />
               </SidebarMenuItem>
@@ -114,10 +115,10 @@ export function NavWorkspace({ slug }: { slug: string }) {
                 isActive={isActive(item.segment)}
                 className={ACTIVE_ITEM}
                 render={
-                  <a href={hrefFor(item.segment)}>
+                  <Link href={hrefFor(item.segment)}>
                     <IconSquare icon={item.icon} color={item.color} />
                     <span>{item.title}</span>
-                  </a>
+                  </Link>
                 }
               />
             </SidebarMenuItem>
@@ -127,3 +128,4 @@ export function NavWorkspace({ slug }: { slug: string }) {
     </>
   );
 }
+
