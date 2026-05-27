@@ -1,10 +1,13 @@
-name: Release (manual)
+name: Release
 
-# Fallback for the automated release job in cd.yml. Use this from the Actions
-# tab when you need to tag a CalVer release without running a deploy — for
-# example, when re-tagging an already-deployed commit.
+# Cria uma tag CalVer + GitHub Release quando o CI passa na `main` (auto), ou
+# sob demanda via "Run workflow" (manual — útil pra re-tag de um commit antigo).
 
 on:
+  workflow_run:
+    workflows: ['CI']
+    types: [completed]
+    branches: [main]
   workflow_dispatch:
     inputs:
       sha:
@@ -19,6 +22,8 @@ jobs:
   release:
     name: Tag & Release
     runs-on: ubuntu-latest
+    # `workflow_run` dispara em sucesso E falha do CI — só seguimos em sucesso.
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -29,7 +34,9 @@ jobs:
       - name: Resolve target SHA
         id: target
         run: |
-          if [ -n "${{ inputs.sha }}" ]; then
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            echo "sha=${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_OUTPUT"
+          elif [ -n "${{ inputs.sha }}" ]; then
             echo "sha=${{ inputs.sha }}" >> "$GITHUB_OUTPUT"
           else
             echo "sha=$(git rev-parse origin/main)" >> "$GITHUB_OUTPUT"
