@@ -1,5 +1,7 @@
 import type { SocialConnection } from "@prisma/client";
 import { BETTER_AUTH_URL } from "@/lib/env/_server";
+
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 import { socialScopeMissing } from "@/src/errors/app-error";
 import { err, type Result } from "@/src/lib/result";
 import { putBlob, removeBlob } from "@/src/lib/social/blob-store";
@@ -78,7 +80,7 @@ export const InstagramService = {
   /**
    * Publica imagem + legenda no feed. O Graph IG não aceita upload direto —
    * exige `image_url` público. Aqui hospedamos os bytes no [[blob-store]],
-   * geramos uma URL pública sob `${BETTER_AUTH_URL}/api/social/blob/<token>`
+   * geramos uma URL pública sob `${BETTER_AUTH_URL}${BASE_PATH}/api/social/blob/<token>`
    * e a passamos ao client; após o publish, o blob é removido.
    */
   async publishPost(
@@ -94,7 +96,7 @@ export const InstagramService = {
     }
 
     const token = putBlob(image.bytes, image.contentType);
-    const imageUrl = `${BETTER_AUTH_URL}/api/social/blob/${token}`;
+    const imageUrl = `${BETTER_AUTH_URL}${BASE_PATH}/api/social/blob/${token}`;
     try {
       return await publishPost(
         fresh.value.accessToken,

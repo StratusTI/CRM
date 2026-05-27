@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { type ReactNode, Suspense } from "react";
+import { withBasePath } from "@/lib/api-url";
 import { getAuthSession } from "@/src/lib/auth-session";
 import { UserRepository } from "@/src/repositories/user.repository";
 
@@ -19,7 +20,7 @@ export default function PrivateLayout({ children }: { children: ReactNode }) {
 
 async function ConsentGate({ children }: { children: ReactNode }) {
   const session = await getAuthSession();
-  if (!session.ok) redirect("/sign-in");
+  if (!session.ok) redirect(withBasePath("/sign-in"));
 
   // Consent gate: any authenticated path under (private) requires
   // accepted terms + privacy. Covers OAuth signup (which skips the
@@ -32,7 +33,7 @@ async function ConsentGate({ children }: { children: ReactNode }) {
     !user.value.acceptedTermsAt ||
     !user.value.acceptedPrivacyAt
   ) {
-    redirect("/consent");
+    redirect(withBasePath("/consent"));
   }
 
   return <>{children}</>;

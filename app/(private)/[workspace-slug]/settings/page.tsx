@@ -4,6 +4,7 @@ import { PageShell } from "@/components/page-shell";
 import { SocialConnectionsSection } from "@/components/settings/social-connections-section";
 import { WorkspaceMembersSection } from "@/components/settings/workspace-members-section";
 import { SOCIAL_PLATFORM_META } from "@/components/social-platforms";
+import { withBasePath } from "@/lib/api-url";
 import { getAuthSession } from "@/src/lib/auth-session";
 import { isTokenCryptoConfigured } from "@/src/lib/social/crypto";
 import { getProvider } from "@/src/lib/social/providers";
@@ -17,7 +18,7 @@ export default async function SettingsPage({
   const { "workspace-slug": slug } = await params;
 
   const session = await getAuthSession();
-  if (!session.ok) redirect("/sign-in");
+  if (!session.ok) redirect(withBasePath("/sign-in"));
 
   const membership = await MembershipRepository.findByUserAndSlug(
     session.value.user.id,
