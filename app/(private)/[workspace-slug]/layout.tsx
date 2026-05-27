@@ -3,7 +3,6 @@ import { notFound, redirect } from "next/navigation";
 import { type ReactNode, Suspense } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { withBasePath } from "@/lib/api-url";
 import { getAuthSession } from "@/src/lib/auth-session";
 import { MembershipRepository } from "@/src/repositories/membership.repository";
 import { WorkspaceService } from "@/src/services/workspace.service";
@@ -44,7 +43,7 @@ async function WorkspaceGate({ children, params }: WorkspaceLayoutProps) {
     getAuthSession(),
   ]);
 
-  if (!session.ok) redirect(withBasePath("/sign-in"));
+  if (!session.ok) redirect("/sign-in");
 
   const membership = await MembershipRepository.findByUserAndSlug(
     session.value.user.id,
@@ -56,7 +55,7 @@ async function WorkspaceGate({ children, params }: WorkspaceLayoutProps) {
       session.value.user.id,
     );
     if (memberships.ok && memberships.value.length === 0) {
-      redirect(withBasePath("/create-workspace"));
+      redirect("/create-workspace");
     }
     notFound();
   }
