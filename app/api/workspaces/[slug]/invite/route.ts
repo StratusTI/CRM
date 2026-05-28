@@ -11,7 +11,7 @@ type RouteContext = {
   params: Promise<{ slug: string }>;
 };
 
-export async function GET(request: NextRequest, { params }: RouteContext) {
+export async function GET(_request: NextRequest, { params }: RouteContext) {
   const session = await getAuthSession();
   if (!session.ok) return handleError(session.error);
 

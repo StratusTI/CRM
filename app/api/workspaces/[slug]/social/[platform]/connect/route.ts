@@ -18,7 +18,7 @@ type RouteContext = {
  * `withPublicUrl()` para URLs internas que devem ser absolutas. Em URLs
  * externas (`authorizeUrl`) não.
  */
-export async function GET(request: NextRequest, { params }: RouteContext) {
+export async function GET(_request: NextRequest, { params }: RouteContext) {
   const { slug, platform: platformSlug } = await params;
 
   const session = await getAuthSession();

@@ -35,10 +35,7 @@ function defWithCron(cron: string): WorkflowDefinition {
   };
 }
 
-function workflow(opts: {
-  cron: string;
-  lastRunAt?: Date | null;
-}) {
+function workflow(opts: { cron: string; lastRunAt?: Date | null }) {
   return {
     id: "wf1",
     workspaceId: "ws1",
@@ -63,9 +60,7 @@ describe("workflowSchedulerTick", () => {
 
   it("dispara workflow cujo cron casa com o minuto atual", async () => {
     // "*/5 * * * *" → última execução em 12:05:00
-    findAllActive.mockResolvedValue(
-      ok([workflow({ cron: "*/5 * * * *" })]),
-    );
+    findAllActive.mockResolvedValue(ok([workflow({ cron: "*/5 * * * *" })]));
     const now = new Date("2026-05-28T12:05:30Z");
     const result = await workflowSchedulerTick(now);
     expect(result.dispatched).toBe(1);

@@ -47,7 +47,9 @@ describe("GET /api/workspaces/[slug]/invite", () => {
     const json = await response.json();
     expect(json.success).toBe(true);
     expect(typeof json.data.token).toBe("string");
-    expect(json.data.url).toBe(`http://localhost/invite/${json.data.token}`);
+    expect(json.data.url).toBe(
+      `http://localhost:3000/invite/${json.data.token}`,
+    );
     expect(json.data.role).toBe("MEMBER");
     expect(json.data.isActive).toBe(true);
   });

@@ -418,7 +418,12 @@ export async function runWorkflow(params: RunWorkflowParams): Promise<void> {
   };
 
   await WorkflowRunRepository.setStatus(params.runId, "RUNNING");
-  const initialQueue = nextNodes("trigger", undefined, buildAdjacency(params.definition), nodeMap(params.definition));
+  const initialQueue = nextNodes(
+    "trigger",
+    undefined,
+    buildAdjacency(params.definition),
+    nodeMap(params.definition),
+  );
   await processQueue({
     params,
     ctx,

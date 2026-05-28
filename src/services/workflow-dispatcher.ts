@@ -69,7 +69,9 @@ export async function dispatchRecordEvent(params: {
     const run = await WorkflowRunRepository.create({
       workflowId: wf.id,
       versionId: wf.activeVersion.id,
-      triggerType: triggerTypeToPrisma(triggerKeyFor(params.event, trigger.type)),
+      triggerType: triggerTypeToPrisma(
+        triggerKeyFor(params.event, trigger.type),
+      ),
       triggerPayload: payload as object,
       startedById: params.actingUserId,
     });

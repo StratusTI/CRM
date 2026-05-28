@@ -356,7 +356,9 @@ export const WorkflowService = {
       return err(workflowExecutionFailed("Step pausado não encontrado"));
     }
 
-    const versionFound = await WorkflowVersionRepository.findById(run.versionId);
+    const versionFound = await WorkflowVersionRepository.findById(
+      run.versionId,
+    );
     if (!versionFound.ok) return versionFound;
     if (!versionFound.value) return err(workflowVersionNotFound());
 
