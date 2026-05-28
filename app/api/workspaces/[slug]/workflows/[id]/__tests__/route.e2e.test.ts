@@ -8,18 +8,18 @@ import { err, ok } from "@/src/lib/result";
 const { getAuthSession } = vi.hoisted(() => ({ getAuthSession: vi.fn() }));
 vi.mock("@/src/lib/auth-session", () => ({ getAuthSession }));
 
-import { POST as CREATE } from "@/app/api/workspaces/[slug]/workflows/route";
+import { POST as ACTIVATE } from "@/app/api/workspaces/[slug]/workflows/[id]/activate/route";
+import {
+  GET as GET_DRAFT,
+  PUT as PUT_DRAFT,
+} from "@/app/api/workspaces/[slug]/workflows/[id]/draft/route";
 import {
   DELETE,
   GET,
   PATCH,
 } from "@/app/api/workspaces/[slug]/workflows/[id]/route";
-import {
-  GET as GET_DRAFT,
-  PUT as PUT_DRAFT,
-} from "@/app/api/workspaces/[slug]/workflows/[id]/draft/route";
-import { POST as ACTIVATE } from "@/app/api/workspaces/[slug]/workflows/[id]/activate/route";
 import { POST as TRIGGER } from "@/app/api/workspaces/[slug]/workflows/[id]/trigger/route";
+import { POST as CREATE } from "@/app/api/workspaces/[slug]/workflows/route";
 
 function reqJson(url: string, body: unknown, method = "POST"): NextRequest {
   return new NextRequest(url, {
