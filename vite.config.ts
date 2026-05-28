@@ -3,6 +3,11 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
+    // Env determinística pros testes — route handlers leem NEXT_PUBLIC_URL
+    // para montar URLs absolutas (ex.: link de convite). Espelha o .env.
+    env: {
+      NEXT_PUBLIC_URL: "http://localhost:3000",
+    },
     projects: [
       {
         extends: true,
