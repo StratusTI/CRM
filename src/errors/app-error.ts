@@ -140,3 +140,24 @@ export const integrationKeyInvalid = (
 export const integrationKeyNotFound = (
   message = "Chave de API não encontrada",
 ): AppError => appError("INTEGRATION_KEY_NOT_FOUND", message);
+
+export const emailTemplateNotFound = (
+  message = "Template de email não encontrado",
+): AppError => appError("EMAIL_TEMPLATE_NOT_FOUND", message);
+
+export const emailCampaignNotFound = (
+  message = "Campanha de email não encontrada",
+): AppError => appError("EMAIL_CAMPAIGN_NOT_FOUND", message);
+
+export const emailProviderNotConfigured = (
+  message = "Provedor de email não configurado. Verifique RESEND_API_KEY e EMAIL_FROM.",
+): AppError => appError("EMAIL_PROVIDER_NOT_CONFIGURED", message);
+
+export const emailNoRecipients = (
+  message = "Nenhum destinatário com email cadastrado",
+): AppError => appError("EMAIL_NO_RECIPIENTS", message);
+
+export const emailSendFailed = (
+  message = "Falha ao disparar o envio no provedor",
+  details?: unknown,
+): AppError => appError("EMAIL_SEND_FAILED", message, details);

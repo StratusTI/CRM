@@ -7,20 +7,20 @@ datasource db {
 }
 
 model User {
-  id                   String    @id @default(cuid())
-  name                 String
-  email                String    @unique
-  emailVerified        Boolean   @default(false) @map("email_verified")
-  image                String?
-  deletionScheduledAt  DateTime? @map("deletion_scheduled_at")
-  acceptedTermsAt      DateTime? @map("accepted_terms_at")
-  acceptedPrivacyAt    DateTime? @map("accepted_privacy_at")
-  createdAt            DateTime  @default(now()) @map("created_at")
-  updatedAt            DateTime  @updatedAt @map("updated_at")
+  id                  String    @id @default(cuid())
+  name                String
+  email               String    @unique
+  emailVerified       Boolean   @default(false) @map("email_verified")
+  image               String?
+  deletionScheduledAt DateTime? @map("deletion_scheduled_at")
+  acceptedTermsAt     DateTime? @map("accepted_terms_at")
+  acceptedPrivacyAt   DateTime? @map("accepted_privacy_at")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
 
-  memberships   Membership[]
-  sessions      Session[]
-  accounts      Account[]
+  memberships Membership[]
+  sessions    Session[]
+  accounts    Account[]
 
   companiesCreated Company[] @relation("CompanyCreatedBy")
   companiesOwned   Company[] @relation("CompanyAccountOwner")
@@ -47,6 +47,10 @@ model User {
   socialConnectionsUpdated SocialConnection[] @relation("SocialConnectionUpdatedBy")
 
   integrationApiKeysCreated IntegrationApiKey[] @relation("IntegrationApiKeyCreatedBy")
+
+  emailTemplatesCreated EmailTemplate[] @relation("EmailTemplateCreatedBy")
+  emailTemplatesUpdated EmailTemplate[] @relation("EmailTemplateUpdatedBy")
+  emailCampaignsCreated EmailCampaign[] @relation("EmailCampaignCreatedBy")
 
   workspaceInvitesCreated WorkspaceInvite[] @relation("WorkspaceInviteCreator")
 
@@ -99,21 +103,23 @@ model Verification {
 }
 
 model Workspace {
-  id            String         @id @default(cuid())
-  name          String
-  slug          String         @unique
-  createdAt     DateTime       @default(now()) @map("created_at")
-  updatedAt     DateTime       @updatedAt @map("updated_at")
-  memberships   Membership[]
-  companies     Company[]
-  people        Person[]
-  opportunities Opportunity[]
-  tasks         Task[]
-  notes         Note[]
-  dashboards    Dashboard[]
-  socialConnections SocialConnection[]
+  id                 String              @id @default(cuid())
+  name               String
+  slug               String              @unique
+  createdAt          DateTime            @default(now()) @map("created_at")
+  updatedAt          DateTime            @updatedAt @map("updated_at")
+  memberships        Membership[]
+  companies          Company[]
+  people             Person[]
+  opportunities      Opportunity[]
+  tasks              Task[]
+  notes              Note[]
+  dashboards         Dashboard[]
+  socialConnections  SocialConnection[]
   integrationApiKeys IntegrationApiKey[]
-  invite        WorkspaceInvite?
+  emailTemplates     EmailTemplate[]
+  emailCampaigns     EmailCampaign[]
+  invite             WorkspaceInvite?
 
   @@map("workspaces")
 }
@@ -467,4 +473,101 @@ model WorkspaceInvite {
 
   @@index([workspaceId])
   @@map("workspace_invites")
+}
+
+/// Template reutilizável de email marketing — assunto + corpo HTML gerados
+/// pelo editor (@react-email/editor). `contentJson` guarda o estado bruto do
+/// editor para reabrir/editar sem regredir formatação.
+model EmailTemplate {
+  id          String    @id @default(cuid())
+  name        String
+  subject     String
+  contentHtml String    @map("content_html")
+  contentJson String?   @map("content_json")
+  workspaceId String    @map("workspace_id")
+  createdById String    @map("created_by_id")
+  updatedById String?   @map("updated_by_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy User      @relation("EmailTemplateCreatedBy", fields: [createdById], references: [id])
+  updatedBy User?     @relation("EmailTemplateUpdatedBy", fields: [updatedById], references: [id])
+
+  @@index([workspaceId])
+  @@index([deletedAt])
+  @@map("email_templates")
+}
+
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  SENDING
+  SENT
+  FAILED
+}
+
+enum CampaignRecipientScope {
+  ALL
+  SELECTED
+}
+
+enum CampaignRecipientStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+/// Campanha de email marketing. Cada campanha persiste um snapshot do
+/// conteúdo no momento do envio + a lista de destinatários (vide
+/// `EmailCampaignRecipient`). `scheduledAt` usa o `scheduled_at` nativo do
+/// Resend — nenhum job runner próprio é necessário.
+model EmailCampaign {
+  id             String                 @id @default(cuid())
+  subject        String
+  contentHtml    String                 @map("content_html")
+  contentJson    String?                @map("content_json")
+  fromAddress    String                 @map("from_address")
+  status         CampaignStatus         @default(DRAFT)
+  recipientScope CampaignRecipientScope @map("recipient_scope")
+  scheduledAt    DateTime?              @map("scheduled_at")
+  sentAt         DateTime?              @map("sent_at")
+  workspaceId    String                 @map("workspace_id")
+  createdById    String                 @map("created_by_id")
+  createdAt      DateTime               @default(now()) @map("created_at")
+  updatedAt      DateTime               @updatedAt @map("updated_at")
+
+  workspace  Workspace                @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy  User                     @relation("EmailCampaignCreatedBy", fields: [createdById], references: [id])
+  recipients EmailCampaignRecipient[]
+
+  @@index([workspaceId])
+  @@index([status])
+  @@map("email_campaigns")
+}
+
+/// Linha por destinatário da campanha. Mantém um snapshot do email/nome no
+/// momento do envio (mesmo que a Pessoa seja editada/removida depois). O
+/// `providerMessageId` é o id retornado pelo Resend, útil pra correlacionar
+/// webhooks/bounces futuros.
+model EmailCampaignRecipient {
+  id                String                  @id @default(cuid())
+  campaignId        String                  @map("campaign_id")
+  personId          String?                 @map("person_id")
+  email             String
+  name              String?
+  status            CampaignRecipientStatus @default(PENDING)
+  providerMessageId String?                 @map("provider_message_id")
+  errorMessage      String?                 @map("error_message")
+  sentAt            DateTime?               @map("sent_at")
+  createdAt         DateTime                @default(now()) @map("created_at")
+  updatedAt         DateTime                @updatedAt @map("updated_at")
+
+  campaign EmailCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId])
+  @@index([personId])
+  @@index([status])
+  @@map("email_campaign_recipients")
 }

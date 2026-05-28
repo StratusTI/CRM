@@ -63,6 +63,16 @@ export const ERROR_CODES = {
   INTEGRATION_KEY_INVALID: { code: "INTEGRATION_KEY_INVALID", status: 401 },
   INTEGRATION_KEY_NOT_FOUND: { code: "INTEGRATION_KEY_NOT_FOUND", status: 404 },
 
+  // Email marketing domain
+  EMAIL_TEMPLATE_NOT_FOUND: { code: "EMAIL_TEMPLATE_NOT_FOUND", status: 404 },
+  EMAIL_CAMPAIGN_NOT_FOUND: { code: "EMAIL_CAMPAIGN_NOT_FOUND", status: 404 },
+  EMAIL_PROVIDER_NOT_CONFIGURED: {
+    code: "EMAIL_PROVIDER_NOT_CONFIGURED",
+    status: 400,
+  },
+  EMAIL_NO_RECIPIENTS: { code: "EMAIL_NO_RECIPIENTS", status: 422 },
+  EMAIL_SEND_FAILED: { code: "EMAIL_SEND_FAILED", status: 502 },
+
   // Server Errors (500)
   INTERNAL_SERVER_ERROR: { code: "INTERNAL_SERVER_ERROR", status: 500 },
   DATABASE_ERROR: { code: "DATABASE_ERROR", status: 500 },

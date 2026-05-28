@@ -4,6 +4,9 @@ import {
   Facebook01Icon,
   GoogleIcon,
   InstagramIcon,
+  Mail01Icon,
+  MailSend01Icon,
+  MegaphoneIcon,
   Settings02Icon,
   Share08Icon,
   StickyNote01Icon,
@@ -62,6 +65,26 @@ export const WORKSPACE_NAV: NavNode[] = [
     segment: "dashboards",
     icon: DashboardSquare01Icon,
     color: "bg-cyan-500",
+  },
+  {
+    title: "Marketing",
+    segment: "marketing",
+    icon: MegaphoneIcon,
+    color: "bg-orange-500",
+    children: [
+      {
+        title: "Campanhas",
+        segment: "marketing/campaigns",
+        icon: MailSend01Icon,
+        color: "bg-orange-500",
+      },
+      {
+        title: "Templates",
+        segment: "marketing/templates",
+        icon: Mail01Icon,
+        color: "bg-amber-500",
+      },
+    ],
   },
   {
     title: "Social",
