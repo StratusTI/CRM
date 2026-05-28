@@ -53,6 +53,7 @@ export function NavUser({
       <SidebarMenuItem>
         <DropdownMenu>
           <DropdownMenuTrigger
+            nativeButton={true}
             render={
               <SidebarMenuButton size="lg" className="aria-expanded:bg-muted" />
             }

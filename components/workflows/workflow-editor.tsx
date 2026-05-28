@@ -55,6 +55,7 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -717,6 +718,7 @@ function AddMenu({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
+        nativeButton={true}
         render={
           <Button size="sm" variant="outline">
             <HugeiconsIcon icon={Add01Icon} strokeWidth={2} />
@@ -726,7 +728,7 @@ function AddMenu({
       />
       <DropdownMenuContent align="end" className="w-[280px]">
         {!triggerConfigured && (
-          <>
+          <DropdownMenuGroup>
             <DropdownMenuLabel>Gatilhos</DropdownMenuLabel>
             {(Object.keys(TRIGGER_META) as WorkflowTriggerType[]).map(
               (type) => {
@@ -743,7 +745,7 @@ function AddMenu({
               },
             )}
             <DropdownMenuSeparator />
-          </>
+          </DropdownMenuGroup>
         )}
         {[...grouped.entries()].map(([group, types]) => (
           <SectionGroup key={group} title={group}>
@@ -771,13 +773,13 @@ function SectionGroup({
   children: ReactNode;
 }) {
   return (
-    <>
+    <DropdownMenuGroup>
       <DropdownMenuLabel className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">
         {title}
       </DropdownMenuLabel>
       {children}
       <DropdownMenuSeparator />
-    </>
+    </DropdownMenuGroup>
   );
 }
 

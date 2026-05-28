@@ -62,6 +62,7 @@ export function WorkflowRunsDrawer({
           <span className="text-sm font-semibold">Histórico de execuções</span>
           <SheetClose
             className="ml-auto"
+            nativeButton={true}
             render={
               <Button variant="ghost" size="icon-sm">
                 <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} />

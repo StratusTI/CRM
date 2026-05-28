@@ -92,6 +92,7 @@ function PanelShell({
         <span className="truncate text-sm font-semibold">{title}</span>
         <SheetClose
           className="ml-auto"
+          nativeButton={true}
           render={
             <Button variant="ghost" size="icon-sm">
               <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} />

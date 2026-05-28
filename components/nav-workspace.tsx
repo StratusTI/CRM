@@ -4,6 +4,7 @@ import { ArrowRight01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import * as React from "react";
 import { IconSquare } from "@/components/icon-square";
 import {
   Collapsible,
@@ -30,11 +31,41 @@ const ACTIVE_ITEM =
 export function NavWorkspace({ slug }: { slug: string }) {
   const pathname = usePathname();
 
-  const hrefFor = (segment: string) => `/${slug}/${segment}`;
-  const isActive = (segment: string) => pathname === hrefFor(segment);
-  const isWithin = (segment: string) =>
-    pathname === hrefFor(segment) ||
-    pathname.startsWith(`${hrefFor(segment)}/`);
+  const hrefFor = React.useCallback(
+    (segment: string) => `/${slug}/${segment}`,
+    [slug],
+  );
+  const isActive = React.useCallback(
+    (segment: string) => pathname === hrefFor(segment),
+    [pathname, hrefFor],
+  );
+  const isWithin = React.useCallback(
+    (segment: string) =>
+      pathname === hrefFor(segment) ||
+      pathname.startsWith(`${hrefFor(segment)}/`),
+    [pathname, hrefFor],
+  );
+
+  // Estado para controlar quais seções estão abertas.
+  // Inicializa a partir do pathname atual.
+  const [openItems, setOpenItems] = React.useState<Record<string, boolean>>({});
+
+  // Sincroniza abertura ao navegar para um novo segmento.
+  React.useEffect(() => {
+    setOpenItems((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      for (const item of WORKSPACE_NAV) {
+        if (item.children && isWithin(item.segment)) {
+          if (!next[item.title]) {
+            next[item.title] = true;
+            changed = true;
+          }
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [isWithin]);
 
   return (
     <>
@@ -47,7 +78,10 @@ export function NavWorkspace({ slug }: { slug: string }) {
             item.children ? (
               <Collapsible
                 key={item.title}
-                defaultOpen={isWithin(item.segment)}
+                open={openItems[item.title] || false}
+                onOpenChange={(open) =>
+                  setOpenItems((prev) => ({ ...prev, [item.title]: open }))
+                }
                 render={<SidebarMenuItem />}
               >
                 <SidebarMenuButton tooltip={item.title}>
@@ -128,4 +162,3 @@ export function NavWorkspace({ slug }: { slug: string }) {
     </>
   );
 }
-
