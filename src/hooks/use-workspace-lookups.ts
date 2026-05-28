@@ -47,13 +47,18 @@ export function useWorkspaceLookups(slug: string, kinds: LookupKind[]) {
   const [lookups, setLookups] = useState<Lookups>(emptyLookups);
   const [isLoading, setIsLoading] = useState(true);
 
+  const kindsKey = JSON.stringify(kinds);
+
   useEffect(() => {
     let active = true;
     setIsLoading(true);
 
+    // Using kinds from the closure, but the effect only re-runs when kindsKey changes.
+    const currentKinds = JSON.parse(kindsKey) as LookupKind[];
+
     (async () => {
       const results = await Promise.all(
-        kinds.map(async (kind) => {
+        currentKinds.map(async (kind) => {
           try {
             const res = await fetch(
               apiUrl(`/api/workspaces/${slug}/${RESOURCE_PATH[kind]}`),
@@ -80,14 +85,19 @@ export function useWorkspaceLookups(slug: string, kinds: LookupKind[]) {
           next.options[kind].push({ value: item.id, label });
         }
       }
-      setLookups(next);
+
+      setLookups((prev) => {
+        // Simple optimization: only update if something changed
+        if (JSON.stringify(prev) === JSON.stringify(next)) return prev;
+        return next;
+      });
       setIsLoading(false);
     })();
 
     return () => {
       active = false;
     };
-  }, [slug, kinds]);
+  }, [slug, kindsKey]);
 
   return { lookups, isLoading };
 }

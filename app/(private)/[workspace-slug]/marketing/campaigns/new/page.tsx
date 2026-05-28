@@ -1,5 +1,4 @@
-import { EmailCampaignComposer } from "@/components/email/email-campaign-composer";
-import { PageShell } from "@/components/page-shell";
+import { redirect } from "next/navigation";
 
 export default async function NewEmailCampaignPage({
   params,
@@ -7,9 +6,5 @@ export default async function NewEmailCampaignPage({
   params: Promise<{ "workspace-slug": string }>;
 }) {
   const { "workspace-slug": slug } = await params;
-  return (
-    <PageShell>
-      <EmailCampaignComposer slug={slug} />
-    </PageShell>
-  );
+  redirect(`/${slug}/marketing/campaigns`);
 }

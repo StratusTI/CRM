@@ -492,6 +492,7 @@ function HeaderMenu<TData>({ column }: { column: Column<TData, unknown> }) {
   return (
     <Popover>
       <PopoverTrigger
+        nativeButton={true}
         render={
           <button
             type="button"
@@ -601,6 +602,9 @@ export function DataTable<TData extends WithId>({
   searchPlaceholder = "Pesquisar…",
   isLoading = false,
   refetch,
+  disableInlineCreate = false,
+  headerAction,
+  onOpenRecord,
 }: {
   columns: GridColumn[];
   data: TData[];
@@ -613,6 +617,20 @@ export function DataTable<TData extends WithId>({
   isLoading?: boolean;
   /** Recarrega a lista do servidor (usado para resync em caso de erro). */
   refetch: () => void;
+  /**
+   * Desativa criação inline (esconde botão "Novo X" e linha "+ Adicionar novo").
+   * Use junto com `headerAction` para entidades que precisam de fluxo
+   * personalizado (ex.: campanhas com composer dedicado).
+   */
+  disableInlineCreate?: boolean;
+  /** Botão customizado no canto direito da toolbar (substitui "Novo X"). */
+  headerAction?: React.ReactNode;
+  /**
+   * Sobrescreve o painel default ao abrir um registro. Recebe o registro
+   * completo. Útil para entidades que precisam de UI dedicada (ex.: detalhe
+   * de campanha enviada).
+   */
+  onOpenRecord?: (record: TData) => void;
 }) {
   const [rows, setRows] = React.useState(() => data);
   React.useEffect(() => setRows(data), [data]);
@@ -811,7 +829,14 @@ export function DataTable<TData extends WithId>({
         resource,
         lookups,
         patch,
-        openRecord: setOpenRecordId,
+        openRecord: (id: string) => {
+          if (onOpenRecord) {
+            const found = rows.find((r) => r.id === id);
+            if (found) onOpenRecord(found);
+            return;
+          }
+          setOpenRecordId(id);
+        },
         newRowId,
       },
     },
@@ -879,6 +904,7 @@ export function DataTable<TData extends WithId>({
         {/* Filter */}
         <Popover>
           <PopoverTrigger
+            nativeButton={true}
             render={
               <Button variant="outline" size="sm">
                 <HugeiconsIcon icon={FilterIcon} strokeWidth={2} />
@@ -925,6 +951,7 @@ export function DataTable<TData extends WithId>({
         {/* Sort */}
         <Popover>
           <PopoverTrigger
+            nativeButton={true}
             render={
               <Button variant="outline" size="sm">
                 <HugeiconsIcon icon={ArrowUpDownIcon} strokeWidth={2} />
@@ -987,6 +1014,7 @@ export function DataTable<TData extends WithId>({
         {/* Columns visibility */}
         <DropdownMenu>
           <DropdownMenuTrigger
+            nativeButton={true}
             render={
               <Button variant="outline" size="sm">
                 Colunas
@@ -1011,10 +1039,13 @@ export function DataTable<TData extends WithId>({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <Button size="sm" onClick={addRow}>
-          <HugeiconsIcon icon={PlusSignIcon} strokeWidth={2} />
-          Novo {createTitle}
-        </Button>
+        {headerAction ??
+          (disableInlineCreate ? null : (
+            <Button size="sm" onClick={addRow}>
+              <HugeiconsIcon icon={PlusSignIcon} strokeWidth={2} />
+              Novo {createTitle}
+            </Button>
+          ))}
       </div>
 
       {/* Filtros e ordenação ativos */}
@@ -1153,24 +1184,29 @@ export function DataTable<TData extends WithId>({
                       />
                     ))}
                   </SortableContext>
-                  <TableRow className="hover:bg-transparent">
-                    <TableCell
-                      colSpan={visibleLeafColumns.length}
-                      className="p-0"
-                    >
-                      <div className="sticky left-0 w-fit">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="m-1 text-muted-foreground"
-                          onClick={addRow}
-                        >
-                          <HugeiconsIcon icon={PlusSignIcon} strokeWidth={2} />
-                          Adicionar novo
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
+                  {disableInlineCreate ? null : (
+                    <TableRow className="hover:bg-transparent">
+                      <TableCell
+                        colSpan={visibleLeafColumns.length}
+                        className="p-0"
+                      >
+                        <div className="sticky left-0 w-fit">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="m-1 text-muted-foreground"
+                            onClick={addRow}
+                          >
+                            <HugeiconsIcon
+                              icon={PlusSignIcon}
+                              strokeWidth={2}
+                            />
+                            Adicionar novo
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </>
               ) : (
                 <TableRow className="hover:bg-transparent">
@@ -1194,10 +1230,12 @@ export function DataTable<TData extends WithId>({
                           Crie o primeiro registro ou ajuste os filtros.
                         </p>
                       </div>
-                      <Button size="sm" className="mt-1" onClick={addRow}>
-                        <HugeiconsIcon icon={PlusSignIcon} strokeWidth={2} />
-                        Novo {createTitle}
-                      </Button>
+                      {disableInlineCreate ? null : (
+                        <Button size="sm" className="mt-1" onClick={addRow}>
+                          <HugeiconsIcon icon={PlusSignIcon} strokeWidth={2} />
+                          Novo {createTitle}
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>

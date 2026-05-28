@@ -50,6 +50,7 @@ export type GridColumn = {
     | "select"
     | "relation"
     | "richtext"
+    | "emailhtml"
     | "link"
     | "readonly-date";
   /** Campo obrigatório (não pode ser limpo; usado para criar a linha vazia). */
@@ -585,22 +586,38 @@ const RichTextPanel = dynamic(
   { ssr: false },
 );
 
-function RichTextCell({
-  col,
-  value,
-  commit,
-}: {
-  col: GridColumn;
-  value: unknown;
-  commit: (next: unknown) => void;
-}) {
-  const [open, setOpen] = React.useState(false);
-  const html = typeof value === "string" ? value : "";
-  const preview = html
+/** Editor de email (@react-email/editor) — carregado sob demanda. */
+const EmailEditorPanel = dynamic(
+  () =>
+    import("@/components/email/email-editor-panel").then(
+      (m) => m.EmailEditorPanel,
+    ),
+  { ssr: false },
+);
+
+function htmlPreview(value: unknown): string {
+  if (typeof value !== "string") return "";
+  return value
     .replace(/<[^>]*>/g, " ")
     .replace(/&nbsp;/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+function HtmlPanelCell({
+  col,
+  value,
+  commit,
+  variant,
+}: {
+  col: GridColumn;
+  value: unknown;
+  commit: (next: unknown) => void;
+  variant: "richtext" | "emailhtml";
+}) {
+  const [open, setOpen] = React.useState(false);
+  const html = typeof value === "string" ? value : "";
+  const preview = htmlPreview(html);
 
   return (
     <>
@@ -618,15 +635,27 @@ function RichTextCell({
         )}
       </button>
       {open ? (
-        <RichTextPanel
-          open={open}
-          onOpenChange={setOpen}
-          value={html}
-          title={col.header}
-          onSave={(next) => {
-            if (next !== html) commit(next);
-          }}
-        />
+        variant === "richtext" ? (
+          <RichTextPanel
+            open={open}
+            onOpenChange={setOpen}
+            value={html}
+            title={col.header}
+            onSave={(next) => {
+              if (next !== html) commit(next);
+            }}
+          />
+        ) : (
+          <EmailEditorPanel
+            open={open}
+            onOpenChange={setOpen}
+            value={html}
+            title={col.header}
+            onSave={(next) => {
+              if (next !== html) commit(next);
+            }}
+          />
+        )
       ) : null}
     </>
   );
@@ -659,7 +688,23 @@ export function CellEditor({
     case "select":
       return <SelectEditor col={col} value={value} commit={commit} />;
     case "richtext":
-      return <RichTextCell col={col} value={value} commit={commit} />;
+      return (
+        <HtmlPanelCell
+          col={col}
+          value={value}
+          commit={commit}
+          variant="richtext"
+        />
+      );
+    case "emailhtml":
+      return (
+        <HtmlPanelCell
+          col={col}
+          value={value}
+          commit={commit}
+          variant="emailhtml"
+        />
+      );
     case "link":
       return <LinkEditor col={col} value={value} commit={commit} />;
     case "relation":
@@ -721,6 +766,7 @@ function EditableCell<T extends WithId>({
           <Button
             variant="ghost"
             size="icon-xs"
+            nativeButton={false}
             className="shrink-0 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover/primary:opacity-100"
             render={
               <Link

@@ -1,14 +1,11 @@
 "use client";
 
-import {
-  CheckmarkCircle01Icon,
-  Search01Icon,
-  UserGroupIcon,
-} from "@hugeicons/core-free-icons";
+import { Search01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useEffect, useMemo, useState } from "react";
-import { apiUrl } from "@/lib/api-url";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { apiUrl } from "@/lib/api-url";
 import type { PersonDTO } from "@/src/schemas/person.schema";
 
 export type RecipientSelection =
@@ -60,71 +57,70 @@ export function RecipientPicker({ slug, value, onChange }: Props) {
     );
   }, [peopleWithEmail, search]);
 
+  const totalWithEmail = peopleWithEmail.length;
   const selectedIds =
-    value.scope === "selected" ? new Set(value.personIds) : new Set<string>();
+    value.scope === "selected" ? new Set(value.personIds) : null;
+  const isChecked = (id: string) =>
+    value.scope === "all" ? true : (selectedIds?.has(id) ?? false);
+  const selectedCount =
+    value.scope === "all" ? totalWithEmail : value.personIds.length;
+  const allMarked =
+    value.scope === "all" || selectedCount === totalWithEmail;
 
   const toggle = (id: string) => {
-    if (value.scope !== "selected") {
-      onChange({ scope: "selected", personIds: [id] });
+    if (value.scope === "all") {
+      const next = peopleWithEmail.map((p) => p.id).filter((x) => x !== id);
+      onChange({ scope: "selected", personIds: next });
       return;
     }
-    const next = new Set(selectedIds);
+    const next = new Set(selectedIds ?? []);
     if (next.has(id)) next.delete(id);
     else next.add(id);
     onChange({ scope: "selected", personIds: Array.from(next) });
   };
 
-  const selectAll = () => onChange({ scope: "all" });
-  const clearAll = () => onChange({ scope: "selected", personIds: [] });
-
-  const totalWithEmail = peopleWithEmail.length;
+  const toggleAll = () => {
+    if (allMarked) {
+      onChange({ scope: "selected", personIds: [] });
+    } else {
+      onChange({ scope: "all" });
+    }
+  };
 
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-2">
-        <button
+        <div className="relative flex-1">
+          <HugeiconsIcon
+            icon={Search01Icon}
+            strokeWidth={2}
+            className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-2.5 size-4 text-muted-foreground"
+          />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar pessoa ou email…"
+            className="pl-9"
+          />
+        </div>
+        <Button
           type="button"
-          onClick={selectAll}
-          className={`flex items-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors ${
-            value.scope === "all"
-              ? "border-primary bg-primary/10 text-primary"
-              : "border-border hover:bg-muted"
-          }`}
+          variant="outline"
+          size="sm"
+          onClick={toggleAll}
+          disabled={totalWithEmail === 0}
         >
-          <HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} />
-          <span>Todos com email ({totalWithEmail})</span>
-          {value.scope === "all" ? (
-            <HugeiconsIcon icon={CheckmarkCircle01Icon} strokeWidth={2} />
-          ) : null}
-        </button>
-        {value.scope === "selected" ? (
-          <span className="text-muted-foreground text-sm">
-            {value.personIds.length} pessoa(s) selecionada(s)
-            {value.personIds.length > 0 ? (
-              <button
-                type="button"
-                onClick={clearAll}
-                className="ml-2 underline hover:text-foreground"
-              >
-                limpar
-              </button>
-            ) : null}
-          </span>
-        ) : null}
+          {allMarked ? "Desmarcar todos" : "Marcar todos"}
+        </Button>
       </div>
 
-      <div className="relative">
-        <HugeiconsIcon
-          icon={Search01Icon}
-          strokeWidth={2}
-          className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-2.5 size-4 text-muted-foreground"
-        />
-        <Input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar pessoa ou email…"
-          className="pl-9"
-        />
+      <div className="flex items-center justify-between text-muted-foreground text-xs">
+        <span>
+          {selectedCount} de {totalWithEmail} selecionada(s)
+        </span>
+        {value.scope === "all" ? (
+          <span>Inclui pessoas adicionadas depois</span>
+        ) : null}
       </div>
 
       <div className="max-h-72 overflow-auto rounded-md border border-border">
@@ -136,36 +132,24 @@ export function RecipientPicker({ slug, value, onChange }: Props) {
           </div>
         ) : (
           <ul className="divide-y divide-border">
-            {filtered.map((p) => {
-              const checked =
-                value.scope === "all" ? true : selectedIds.has(p.id);
-              const disabled = value.scope === "all";
-              return (
-                <li key={p.id}>
-                  <label
-                    className={`flex cursor-pointer items-center gap-3 px-3 py-2 hover:bg-muted/40 ${
-                      disabled ? "cursor-default opacity-60" : ""
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      className="size-4 accent-primary"
-                      checked={checked}
-                      disabled={disabled}
-                      onChange={() => toggle(p.id)}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate font-medium text-sm">
-                        {p.name}
-                      </div>
-                      <div className="truncate text-muted-foreground text-xs">
-                        {p.emails.join(", ")}
-                      </div>
+            {filtered.map((p) => (
+              <li key={p.id}>
+                <label className="flex cursor-pointer items-center gap-3 px-3 py-2 hover:bg-muted/40">
+                  <input
+                    type="checkbox"
+                    className="size-4 accent-primary"
+                    checked={isChecked(p.id)}
+                    onChange={() => toggle(p.id)}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate font-medium text-sm">{p.name}</div>
+                    <div className="truncate text-muted-foreground text-xs">
+                      {p.emails.join(", ")}
                     </div>
-                  </label>
-                </li>
-              );
-            })}
+                  </div>
+                </label>
+              </li>
+            ))}
           </ul>
         )}
       </div>

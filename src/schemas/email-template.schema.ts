@@ -8,24 +8,21 @@ const NameSchema = z
   .min(1, "Informe o nome do template")
   .max(200, "Nome muito longo");
 
-const SubjectSchema = z
-  .string()
-  .trim()
-  .min(1, "Informe o assunto")
-  .max(300, "Assunto muito longo");
+const SubjectSchema = z.string().trim().max(300, "Assunto muito longo");
 
-const ContentHtmlSchema = z
-  .string()
-  .min(1, "Conteúdo vazio")
-  .max(200_000, "Conteúdo muito longo");
+const ContentHtmlSchema = z.string().max(200_000, "Conteúdo muito longo");
 
 /** JSON serializado do estado do editor (opcional — para reabrir no editor). */
 const ContentJsonSchema = z.string().max(500_000).nullable();
 
+/**
+ * Aceita criar templates como rascunho (apenas `name`), igual aos demais
+ * recursos. Assunto e corpo viram editáveis inline na grid (auto-save).
+ */
 export const CreateEmailTemplateSchema = z.object({
   name: NameSchema,
-  subject: SubjectSchema,
-  contentHtml: ContentHtmlSchema,
+  subject: SubjectSchema.optional().default(""),
+  contentHtml: ContentHtmlSchema.optional().default(""),
   contentJson: ContentJsonSchema.optional(),
 });
 
