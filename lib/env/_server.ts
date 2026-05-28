@@ -20,6 +20,9 @@ const serverEnv = {
   FACEBOOK_CONFIG_ID: process.env.FACEBOOK_CONFIG_ID || undefined,
   TIKTOK_CLIENT_KEY: process.env.TIKTOK_CLIENT_KEY || undefined,
   TIKTOK_CLIENT_SECRET: process.env.TIKTOK_CLIENT_SECRET || undefined,
+  // Twitter/X — app OAuth 2.0 (confidential client) no Developer Portal.
+  TWITTER_CLIENT_ID: process.env.TWITTER_CLIENT_ID || undefined,
+  TWITTER_CLIENT_SECRET: process.env.TWITTER_CLIENT_SECRET || undefined,
   // Chave AES-256 (base64 de 32 bytes) para cifrar tokens em repouso.
   SOCIAL_TOKEN_ENCRYPTION_KEY:
     process.env.SOCIAL_TOKEN_ENCRYPTION_KEY || undefined,
@@ -44,6 +47,8 @@ const serverEnvSchema = z.object({
   FACEBOOK_CONFIG_ID: z.string().min(1).optional(),
   TIKTOK_CLIENT_KEY: z.string().min(1).optional(),
   TIKTOK_CLIENT_SECRET: z.string().min(1).optional(),
+  TWITTER_CLIENT_ID: z.string().min(1).optional(),
+  TWITTER_CLIENT_SECRET: z.string().min(1).optional(),
   SOCIAL_TOKEN_ENCRYPTION_KEY: z.string().min(1).optional(),
 });
 
@@ -67,5 +72,7 @@ export const {
   FACEBOOK_CONFIG_ID,
   TIKTOK_CLIENT_KEY,
   TIKTOK_CLIENT_SECRET,
+  TWITTER_CLIENT_ID,
+  TWITTER_CLIENT_SECRET,
   SOCIAL_TOKEN_ENCRYPTION_KEY,
 } = validatedServerEnv;

@@ -29,12 +29,18 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
   // `NextResponse.redirect()` em route handler não aplica basePath — usamos
   // `withPublicUrl()` para URLs internas que devem ser absolutas.
   const backToSettings = (status: string, reason?: string) => {
-    if (!slug) return NextResponse.redirect(withPublicUrl("/"));
-    const target = withPublicUrl(`/${slug}/settings`);
-    target.searchParams.set("social", platformSlug);
-    target.searchParams.set("status", status);
-    if (reason) target.searchParams.set("reason", reason);
-    return NextResponse.redirect(target);
+    const target = slug
+      ? withPublicUrl(`/${slug}/settings`)
+      : withPublicUrl("/");
+    if (slug) {
+      target.searchParams.set("social", platformSlug);
+      target.searchParams.set("status", status);
+      if (reason) target.searchParams.set("reason", reason);
+    }
+    const response = NextResponse.redirect(target);
+    // O verifier PKCE é de uso único — limpa após consumir (ou em qualquer falha).
+    response.cookies.delete("social_pkce");
+    return response;
   };
 
   const session = await getAuthSession();
@@ -53,9 +59,10 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     return backToSettings("error", "SOCIAL_STATE_INVALID");
   }
 
+  const codeVerifier = request.cookies.get("social_pkce")?.value;
   const result = await SocialConnectionService.completeConnect(
     session.value.user.id,
-    { platform, code, state },
+    { platform, code, state, codeVerifier },
   );
   if (!result.ok) {
     console.error(

@@ -10,6 +10,7 @@ import {
   createOauthState,
   verifyOauthState,
 } from "@/src/lib/social/oauth-state";
+import { createPkcePair } from "@/src/lib/social/pkce";
 import { getProvider } from "@/src/lib/social/providers";
 import { socialCallbackUrl } from "@/src/lib/social/redirect";
 import { toSocialConnectionDTO } from "@/src/mappers/social-connection.mapper";
@@ -60,7 +61,7 @@ export const SocialConnectionService = {
     userId: string,
     slug: string,
     platform: SocialPlatform,
-  ): Promise<Result<{ authorizeUrl: string }>> {
+  ): Promise<Result<{ authorizeUrl: string; codeVerifier?: string }>> {
     const ws = await resolveWorkspaceId(userId, slug);
     if (!ws.ok) return ws;
 
@@ -69,11 +70,15 @@ export const SocialConnectionService = {
       return err(socialProviderNotConfigured());
     }
 
+    // PKCE (ex.: Twitter): o verifier viaja de volta via cookie até o callback.
+    const pkce = provider.usesPkce ? createPkcePair() : null;
+
     const authorizeUrl = provider.buildAuthorizeUrl({
       redirectUri: socialCallbackUrl(platform),
       state: createOauthState(slug, platform),
+      codeChallenge: pkce?.challenge,
     });
-    return ok({ authorizeUrl });
+    return ok({ authorizeUrl, codeVerifier: pkce?.verifier });
   },
 
   /**
@@ -82,7 +87,12 @@ export const SocialConnectionService = {
    */
   async completeConnect(
     userId: string,
-    args: { platform: SocialPlatform; code: string; state: string },
+    args: {
+      platform: SocialPlatform;
+      code: string;
+      state: string;
+      codeVerifier?: string;
+    },
   ): Promise<Result<{ slug: string }>> {
     const verified = verifyOauthState(args.state);
     if (!verified.ok) return err(socialStateInvalid());
@@ -102,6 +112,7 @@ export const SocialConnectionService = {
     const tokens = await provider.exchangeCode({
       code: args.code,
       redirectUri: socialCallbackUrl(platform),
+      codeVerifier: args.codeVerifier,
     });
     if (!tokens.ok) return tokens;
 

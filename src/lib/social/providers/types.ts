@@ -33,10 +33,23 @@ export type SocialProvider = {
   platform: SocialPlatform;
   /** Credenciais presentes no env? Gateia o botão "Conectar" no frontend. */
   isConfigured(): boolean;
-  buildAuthorizeUrl(args: { redirectUri: string; state: string }): string;
+  /**
+   * Provedor exige PKCE (RFC 7636)? Quando `true`, o service gera um par e
+   * passa `codeChallenge` para `buildAuthorizeUrl` e `codeVerifier` para
+   * `exchangeCode` (ex.: Twitter/X). Demais provedores ignoram ambos.
+   */
+  usesPkce?: boolean;
+  buildAuthorizeUrl(args: {
+    redirectUri: string;
+    state: string;
+    /** `code_challenge` S256, presente só quando `usesPkce`. */
+    codeChallenge?: string;
+  }): string;
   exchangeCode(args: {
     code: string;
     redirectUri: string;
+    /** `code_verifier` PKCE, presente só quando `usesPkce`. */
+    codeVerifier?: string;
   }): Promise<Result<TokenSet>>;
   fetchAccount(tokens: TokenSet): Promise<Result<SocialAccount>>;
   /**

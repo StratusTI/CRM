@@ -29,6 +29,7 @@ describe("SocialPlatformSchema", () => {
       "TIKTOK",
       "YOUTUBE",
       "GOOGLE_ANALYTICS",
+      "TWITTER",
     ]);
   });
 });

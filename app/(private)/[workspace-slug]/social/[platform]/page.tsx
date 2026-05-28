@@ -5,6 +5,7 @@ import { FacebookStudio } from "@/components/social/facebook-studio";
 import { GoogleAnalyticsStudio } from "@/components/social/google-analytics-studio";
 import { InstagramStudio } from "@/components/social/instagram-studio";
 import { TiktokStudio } from "@/components/social/tiktok-studio";
+import { TwitterStudio } from "@/components/social/twitter-studio";
 import { YoutubeStudio } from "@/components/social/youtube-studio";
 import { SOCIAL_PLATFORM_META } from "@/components/social-platforms";
 
@@ -29,6 +30,8 @@ export default async function SocialPlatformPage({
         <TiktokStudio slug={slug} />
       ) : meta.platform === "GOOGLE_ANALYTICS" ? (
         <GoogleAnalyticsStudio slug={slug} />
+      ) : meta.platform === "TWITTER" ? (
+        <TwitterStudio slug={slug} />
       ) : (
         <PagePlaceholder
           title={meta.label}

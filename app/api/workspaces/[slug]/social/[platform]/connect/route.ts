@@ -45,5 +45,17 @@ export async function GET(_request: NextRequest, { params }: RouteContext) {
     return NextResponse.redirect(settingsUrl);
   }
 
-  return NextResponse.redirect(result.value.authorizeUrl);
+  const response = NextResponse.redirect(result.value.authorizeUrl);
+  // PKCE: o verifier precisa sobreviver até o callback. Cookie httpOnly de vida
+  // curta; SameSite=Lax permite o envio no callback (navegação top-level GET).
+  if (result.value.codeVerifier) {
+    response.cookies.set("social_pkce", result.value.codeVerifier, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 600,
+    });
+  }
+  return response;
 }

@@ -3,6 +3,7 @@ import { facebookProvider } from "./facebook";
 import { googleAnalyticsProvider } from "./google-analytics";
 import { instagramProvider } from "./instagram";
 import { tiktokProvider } from "./tiktok";
+import { twitterProvider } from "./twitter";
 import type { SocialProvider } from "./types";
 import { youtubeProvider } from "./youtube";
 
@@ -13,6 +14,7 @@ const PROVIDERS: Record<SocialPlatform, SocialProvider> = {
   TIKTOK: tiktokProvider,
   YOUTUBE: youtubeProvider,
   GOOGLE_ANALYTICS: googleAnalyticsProvider,
+  TWITTER: twitterProvider,
 };
 
 /** Provedor de uma plataforma (sempre existe — o enum é fechado). */
