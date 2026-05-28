@@ -2,6 +2,7 @@ import {
   Facebook01Icon,
   GoogleIcon,
   InstagramIcon,
+  NewTwitterIcon,
   TiktokIcon,
   YoutubeIcon,
 } from "@hugeicons/core-free-icons";
@@ -54,5 +55,12 @@ export const SOCIAL_PLATFORM_META: SocialPlatformMeta[] = [
     label: "Google Analytics",
     icon: GoogleIcon,
     color: "bg-orange-500",
+  },
+  {
+    platform: "TWITTER",
+    slug: "twitter",
+    label: "X (Twitter)",
+    icon: NewTwitterIcon,
+    color: "bg-neutral-900",
   },
 ];

@@ -14,6 +14,7 @@ export const SocialPlatformSchema = z.enum([
   "TIKTOK",
   "YOUTUBE",
   "GOOGLE_ANALYTICS",
+  "TWITTER",
 ]);
 
 export type SocialPlatform = z.infer<typeof SocialPlatformSchema>;
@@ -28,6 +29,7 @@ export const SOCIAL_PLATFORM_LABELS: Record<SocialPlatform, string> = {
   TIKTOK: "TikTok",
   YOUTUBE: "YouTube",
   GOOGLE_ANALYTICS: "Google Analytics",
+  TWITTER: "X (Twitter)",
 };
 
 /** Enum → slug minúsculo usado nas rotas/URLs (ex.: "INSTAGRAM" → "instagram"). */

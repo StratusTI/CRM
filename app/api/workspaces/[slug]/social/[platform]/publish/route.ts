@@ -7,10 +7,12 @@ import { PublishPostSchema } from "@/src/schemas/facebook.schema";
 import { PublishInstagramPostSchema } from "@/src/schemas/instagram.schema";
 import { parsePlatformSlug } from "@/src/schemas/social-connection.schema";
 import { PublishTiktokVideoSchema } from "@/src/schemas/tiktok.schema";
+import { PublishTweetSchema } from "@/src/schemas/twitter.schema";
 import { PublishVideoSchema } from "@/src/schemas/youtube.schema";
 import { FacebookService } from "@/src/services/facebook.service";
 import { InstagramService } from "@/src/services/instagram.service";
 import { TiktokService } from "@/src/services/tiktok.service";
+import { TwitterService } from "@/src/services/twitter.service";
 import { YoutubeService } from "@/src/services/youtube.service";
 import { handleError, successResponse } from "@/utils/http-response";
 
@@ -34,7 +36,8 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     platform !== "YOUTUBE" &&
     platform !== "FACEBOOK" &&
     platform !== "INSTAGRAM" &&
-    platform !== "TIKTOK"
+    platform !== "TIKTOK" &&
+    platform !== "TWITTER"
   ) {
     return handleError(badRequest("Plataforma não suportada"));
   }
@@ -171,6 +174,44 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         bytes: await imageField.arrayBuffer(),
         contentType: imageField.type || "image/jpeg",
       },
+    );
+    if (!result.ok) return handleError(result.error);
+    return successResponse(result.value, 201);
+  }
+
+  /* --------------------------------- Twitter -------------------------------- */
+  if (platform === "TWITTER") {
+    const parsedTweet = PublishTweetSchema.safeParse({
+      text: form.get("text") ?? undefined,
+    });
+    if (!parsedTweet.success) {
+      return handleError(
+        validationError(
+          "Dados do tweet inválidos",
+          z.flattenError(parsedTweet.error),
+        ),
+      );
+    }
+
+    const imageField = form.get("image");
+    let image: { bytes: ArrayBuffer; contentType: string } | null = null;
+    if (imageField instanceof File && imageField.size > 0) {
+      if (imageField.size > MAX_IMAGE_BYTES) {
+        return handleError(
+          badRequest("Imagem excede o tamanho máximo (10 MB)"),
+        );
+      }
+      image = {
+        bytes: await imageField.arrayBuffer(),
+        contentType: imageField.type || "image/jpeg",
+      };
+    }
+
+    const result = await TwitterService.publishTweet(
+      userId,
+      slug,
+      parsedTweet.data,
+      image,
     );
     if (!result.ok) return handleError(result.error);
     return successResponse(result.value, 201);
