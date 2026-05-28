@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server";
 import { z } from "zod";
-import { validationError } from "@/src/errors/app-error";
 import { NEXT_PUBLIC_URL } from "@/lib/env/env";
+import { validationError } from "@/src/errors/app-error";
 import { getAuthSession } from "@/src/lib/auth-session";
 import { UpdateWorkspaceInviteSchema } from "@/src/schemas/workspace-invite.schema";
 import { WorkspaceInviteService } from "@/src/services/workspace-invite.service";

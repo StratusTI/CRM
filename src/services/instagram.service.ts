@@ -2,6 +2,7 @@ import type { SocialConnection } from "@prisma/client";
 import { BETTER_AUTH_URL } from "@/lib/env/_server";
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+
 import { socialScopeMissing } from "@/src/errors/app-error";
 import { err, type Result } from "@/src/lib/result";
 import { putBlob, removeBlob } from "@/src/lib/social/blob-store";

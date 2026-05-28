@@ -59,9 +59,7 @@
   "paths": {
     "/api/workspaces": {
       "get": {
-        "tags": [
-          "Workspaces"
-        ],
+        "tags": ["Workspaces"],
         "summary": "Lista as workspaces do usuário",
         "responses": {
           "200": {
@@ -84,11 +82,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -106,9 +100,7 @@
         }
       },
       "post": {
-        "tags": [
-          "Workspaces"
-        ],
+        "tags": ["Workspaces"],
         "summary": "Cria uma workspace",
         "requestBody": {
           "required": true,
@@ -138,11 +130,7 @@
                       "$ref": "#/components/schemas/WorkspaceDTO"
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -183,9 +171,7 @@
         }
       ],
       "get": {
-        "tags": [
-          "Workspaces"
-        ],
+        "tags": ["Workspaces"],
         "summary": "Detalha uma workspace",
         "responses": {
           "200": {
@@ -205,11 +191,7 @@
                       "$ref": "#/components/schemas/WorkspaceDTO"
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -240,9 +222,7 @@
         }
       ],
       "get": {
-        "tags": [
-          "Workspaces"
-        ],
+        "tags": ["Workspaces"],
         "summary": "Lista os membros da workspace",
         "responses": {
           "200": {
@@ -265,11 +245,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -300,9 +276,7 @@
         }
       ],
       "get": {
-        "tags": [
-          "Empresas"
-        ],
+        "tags": ["Empresas"],
         "summary": "Lista empresas",
         "responses": {
           "200": {
@@ -325,11 +299,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -357,9 +327,7 @@
         }
       },
       "post": {
-        "tags": [
-          "Empresas"
-        ],
+        "tags": ["Empresas"],
         "summary": "Cria empresas",
         "requestBody": {
           "required": true,
@@ -389,11 +357,7 @@
                       "$ref": "#/components/schemas/CompanyDTO"
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -443,9 +407,7 @@
         }
       ],
       "get": {
-        "tags": [
-          "Empresas"
-        ],
+        "tags": ["Empresas"],
         "summary": "Detalha empresas",
         "responses": {
           "200": {
@@ -465,11 +427,7 @@
                       "$ref": "#/components/schemas/CompanyDTO"
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -487,9 +445,7 @@
         }
       },
       "patch": {
-        "tags": [
-          "Empresas"
-        ],
+        "tags": ["Empresas"],
         "summary": "Atualiza empresas",
         "requestBody": {
           "required": true,
@@ -519,11 +475,7 @@
                       "$ref": "#/components/schemas/CompanyDTO"
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -551,9 +503,7 @@
         }
       },
       "delete": {
-        "tags": [
-          "Empresas"
-        ],
+        "tags": ["Empresas"],
         "summary": "Remove empresas (soft delete)",
         "responses": {
           "200": {
@@ -573,11 +523,7 @@
                       "$ref": "#/components/schemas/CompanyDTO"
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -608,9 +554,7 @@
         }
       ],
       "post": {
-        "tags": [
-          "Empresas"
-        ],
+        "tags": ["Empresas"],
         "summary": "Reordena empresas (drag-drop)",
         "requestBody": {
           "required": true,
@@ -640,11 +584,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -675,9 +615,7 @@
         }
       ],
       "get": {
-        "tags": [
-          "Pessoas"
-        ],
+        "tags": ["Pessoas"],
         "summary": "Lista pessoas",
         "responses": {
           "200": {
@@ -700,11 +638,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -732,9 +666,7 @@
         }
       },
       "post": {
-        "tags": [
-          "Pessoas"
-        ],
+        "tags": ["Pessoas"],
         "summary": "Cria pessoas",
         "requestBody": {
           "required": true,
@@ -764,11 +696,7 @@
                       "$ref": "#/components/schemas/PersonDTO"
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -818,9 +746,7 @@
         }
       ],
       "get": {
-        "tags": [
-          "Pessoas"
-        ],
+        "tags": ["Pessoas"],
         "summary": "Detalha pessoas",
         "responses": {
           "200": {
@@ -840,11 +766,7 @@
                       "$ref": "#/components/schemas/PersonDTO"
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -862,9 +784,7 @@
         }
       },
       "patch": {
-        "tags": [
-          "Pessoas"
-        ],
+        "tags": ["Pessoas"],
         "summary": "Atualiza pessoas",
         "requestBody": {
           "required": true,
@@ -894,11 +814,7 @@
                       "$ref": "#/components/schemas/PersonDTO"
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -926,9 +842,7 @@
         }
       },
       "delete": {
-        "tags": [
-          "Pessoas"
-        ],
+        "tags": ["Pessoas"],
         "summary": "Remove pessoas (soft delete)",
         "responses": {
           "200": {
@@ -948,11 +862,7 @@
                       "$ref": "#/components/schemas/PersonDTO"
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -983,9 +893,7 @@
         }
       ],
       "post": {
-        "tags": [
-          "Pessoas"
-        ],
+        "tags": ["Pessoas"],
         "summary": "Reordena pessoas (drag-drop)",
         "requestBody": {
           "required": true,
@@ -1015,11 +923,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -1050,9 +954,7 @@
         }
       ],
       "get": {
-        "tags": [
-          "Oportunidades"
-        ],
+        "tags": ["Oportunidades"],
         "summary": "Lista oportunidades",
         "responses": {
           "200": {
@@ -1075,11 +977,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -1107,9 +1005,7 @@
         }
       },
       "post": {
-        "tags": [
-          "Oportunidades"
-        ],
+        "tags": ["Oportunidades"],
         "summary": "Cria oportunidades",
         "requestBody": {
           "required": true,
@@ -1139,11 +1035,7 @@
                       "$ref": "#/components/schemas/OpportunityDTO"
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -1193,9 +1085,7 @@
         }
       ],
       "get": {
-        "tags": [
-          "Oportunidades"
-        ],
+        "tags": ["Oportunidades"],
         "summary": "Detalha oportunidades",
         "responses": {
           "200": {
@@ -1215,11 +1105,7 @@
                       "$ref": "#/components/schemas/OpportunityDTO"
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -1237,9 +1123,7 @@
         }
       },
       "patch": {
-        "tags": [
-          "Oportunidades"
-        ],
+        "tags": ["Oportunidades"],
         "summary": "Atualiza oportunidades",
         "requestBody": {
           "required": true,
@@ -1269,11 +1153,7 @@
                       "$ref": "#/components/schemas/OpportunityDTO"
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -1301,9 +1181,7 @@
         }
       },
       "delete": {
-        "tags": [
-          "Oportunidades"
-        ],
+        "tags": ["Oportunidades"],
         "summary": "Remove oportunidades (soft delete)",
         "responses": {
           "200": {
@@ -1323,11 +1201,7 @@
                       "$ref": "#/components/schemas/OpportunityDTO"
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -1358,9 +1232,7 @@
         }
       ],
       "post": {
-        "tags": [
-          "Oportunidades"
-        ],
+        "tags": ["Oportunidades"],
         "summary": "Reordena oportunidades (drag-drop)",
         "requestBody": {
           "required": true,
@@ -1390,11 +1262,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -1425,9 +1293,7 @@
         }
       ],
       "get": {
-        "tags": [
-          "Tarefas"
-        ],
+        "tags": ["Tarefas"],
         "summary": "Lista tarefas",
         "responses": {
           "200": {
@@ -1450,11 +1316,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -1482,9 +1344,7 @@
         }
       },
       "post": {
-        "tags": [
-          "Tarefas"
-        ],
+        "tags": ["Tarefas"],
         "summary": "Cria tarefas",
         "requestBody": {
           "required": true,
@@ -1514,11 +1374,7 @@
                       "$ref": "#/components/schemas/TaskDTO"
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -1568,9 +1424,7 @@
         }
       ],
       "get": {
-        "tags": [
-          "Tarefas"
-        ],
+        "tags": ["Tarefas"],
         "summary": "Detalha tarefas",
         "responses": {
           "200": {
@@ -1590,11 +1444,7 @@
                       "$ref": "#/components/schemas/TaskDTO"
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -1612,9 +1462,7 @@
         }
       },
       "patch": {
-        "tags": [
-          "Tarefas"
-        ],
+        "tags": ["Tarefas"],
         "summary": "Atualiza tarefas",
         "requestBody": {
           "required": true,
@@ -1644,11 +1492,7 @@
                       "$ref": "#/components/schemas/TaskDTO"
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -1676,9 +1520,7 @@
         }
       },
       "delete": {
-        "tags": [
-          "Tarefas"
-        ],
+        "tags": ["Tarefas"],
         "summary": "Remove tarefas (soft delete)",
         "responses": {
           "200": {
@@ -1698,11 +1540,7 @@
                       "$ref": "#/components/schemas/TaskDTO"
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -1733,9 +1571,7 @@
         }
       ],
       "post": {
-        "tags": [
-          "Tarefas"
-        ],
+        "tags": ["Tarefas"],
         "summary": "Reordena tarefas (drag-drop)",
         "requestBody": {
           "required": true,
@@ -1765,11 +1601,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -1800,9 +1632,7 @@
         }
       ],
       "get": {
-        "tags": [
-          "Anotações"
-        ],
+        "tags": ["Anotações"],
         "summary": "Lista anotações",
         "responses": {
           "200": {
@@ -1825,11 +1655,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -1857,9 +1683,7 @@
         }
       },
       "post": {
-        "tags": [
-          "Anotações"
-        ],
+        "tags": ["Anotações"],
         "summary": "Cria anotações",
         "requestBody": {
           "required": true,
@@ -1889,11 +1713,7 @@
                       "$ref": "#/components/schemas/NoteDTO"
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -1943,9 +1763,7 @@
         }
       ],
       "get": {
-        "tags": [
-          "Anotações"
-        ],
+        "tags": ["Anotações"],
         "summary": "Detalha anotações",
         "responses": {
           "200": {
@@ -1965,11 +1783,7 @@
                       "$ref": "#/components/schemas/NoteDTO"
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -1987,9 +1801,7 @@
         }
       },
       "patch": {
-        "tags": [
-          "Anotações"
-        ],
+        "tags": ["Anotações"],
         "summary": "Atualiza anotações",
         "requestBody": {
           "required": true,
@@ -2019,11 +1831,7 @@
                       "$ref": "#/components/schemas/NoteDTO"
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -2051,9 +1859,7 @@
         }
       },
       "delete": {
-        "tags": [
-          "Anotações"
-        ],
+        "tags": ["Anotações"],
         "summary": "Remove anotações (soft delete)",
         "responses": {
           "200": {
@@ -2073,11 +1879,7 @@
                       "$ref": "#/components/schemas/NoteDTO"
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -2108,9 +1910,7 @@
         }
       ],
       "post": {
-        "tags": [
-          "Anotações"
-        ],
+        "tags": ["Anotações"],
         "summary": "Reordena anotações (drag-drop)",
         "requestBody": {
           "required": true,
@@ -2140,11 +1940,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -2175,9 +1971,7 @@
         }
       ],
       "get": {
-        "tags": [
-          "Dashboards"
-        ],
+        "tags": ["Dashboards"],
         "summary": "Lista dashboards",
         "responses": {
           "200": {
@@ -2200,11 +1994,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -2232,9 +2022,7 @@
         }
       },
       "post": {
-        "tags": [
-          "Dashboards"
-        ],
+        "tags": ["Dashboards"],
         "summary": "Cria dashboards",
         "requestBody": {
           "required": true,
@@ -2264,11 +2052,7 @@
                       "$ref": "#/components/schemas/DashboardDTO"
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -2318,9 +2102,7 @@
         }
       ],
       "get": {
-        "tags": [
-          "Dashboards"
-        ],
+        "tags": ["Dashboards"],
         "summary": "Detalha dashboards",
         "responses": {
           "200": {
@@ -2340,11 +2122,7 @@
                       "$ref": "#/components/schemas/DashboardDTO"
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -2362,9 +2140,7 @@
         }
       },
       "patch": {
-        "tags": [
-          "Dashboards"
-        ],
+        "tags": ["Dashboards"],
         "summary": "Atualiza dashboards",
         "requestBody": {
           "required": true,
@@ -2394,11 +2170,7 @@
                       "$ref": "#/components/schemas/DashboardDTO"
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -2426,9 +2198,7 @@
         }
       },
       "delete": {
-        "tags": [
-          "Dashboards"
-        ],
+        "tags": ["Dashboards"],
         "summary": "Remove dashboards (soft delete)",
         "responses": {
           "200": {
@@ -2448,11 +2218,7 @@
                       "$ref": "#/components/schemas/DashboardDTO"
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -2483,9 +2249,7 @@
         }
       ],
       "post": {
-        "tags": [
-          "Dashboards"
-        ],
+        "tags": ["Dashboards"],
         "summary": "Reordena dashboards (drag-drop)",
         "requestBody": {
           "required": true,
@@ -2515,11 +2279,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -2559,9 +2319,7 @@
         }
       ],
       "get": {
-        "tags": [
-          "Widgets"
-        ],
+        "tags": ["Widgets"],
         "summary": "Lista os widgets do dashboard",
         "responses": {
           "200": {
@@ -2584,11 +2342,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -2606,9 +2360,7 @@
         }
       },
       "post": {
-        "tags": [
-          "Widgets"
-        ],
+        "tags": ["Widgets"],
         "summary": "Cria um widget",
         "requestBody": {
           "required": true,
@@ -2638,11 +2390,7 @@
                       "$ref": "#/components/schemas/WidgetDTO"
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -2701,9 +2449,7 @@
         }
       ],
       "patch": {
-        "tags": [
-          "Widgets"
-        ],
+        "tags": ["Widgets"],
         "summary": "Atualiza um widget",
         "requestBody": {
           "required": true,
@@ -2733,11 +2479,7 @@
                       "$ref": "#/components/schemas/WidgetDTO"
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -2765,9 +2507,7 @@
         }
       },
       "delete": {
-        "tags": [
-          "Widgets"
-        ],
+        "tags": ["Widgets"],
         "summary": "Remove um widget",
         "responses": {
           "200": {
@@ -2787,11 +2527,7 @@
                       "$ref": "#/components/schemas/WidgetDTO"
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -2831,9 +2567,7 @@
         }
       ],
       "post": {
-        "tags": [
-          "Widgets"
-        ],
+        "tags": ["Widgets"],
         "summary": "Persiste o layout (grid) dos widgets em lote",
         "requestBody": {
           "required": true,
@@ -2863,11 +2597,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -2908,9 +2638,7 @@
         }
       ],
       "get": {
-        "tags": [
-          "Chaves de integração"
-        ],
+        "tags": ["Chaves de integração"],
         "summary": "Lista as chaves de API da workspace",
         "description": "Nunca expõe o segredo, apenas metadados e o prefixo.",
         "responses": {
@@ -2934,11 +2662,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -2956,9 +2680,7 @@
         }
       },
       "post": {
-        "tags": [
-          "Chaves de integração"
-        ],
+        "tags": ["Chaves de integração"],
         "summary": "Gera uma chave de API",
         "description": "Retorna o token em texto puro UMA ÚNICA VEZ (campo `token`).",
         "requestBody": {
@@ -2989,11 +2711,7 @@
                       "$ref": "#/components/schemas/CreatedIntegrationApiKeyDTO"
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -3033,9 +2751,7 @@
         }
       ],
       "delete": {
-        "tags": [
-          "Chaves de integração"
-        ],
+        "tags": ["Chaves de integração"],
         "summary": "Revoga uma chave de API",
         "responses": {
           "200": {
@@ -3055,11 +2771,7 @@
                       "$ref": "#/components/schemas/IntegrationApiKeyDTO"
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -3090,9 +2802,7 @@
         }
       ],
       "get": {
-        "tags": [
-          "Redes sociais"
-        ],
+        "tags": ["Redes sociais"],
         "summary": "Lista as conexões sociais da workspace",
         "responses": {
           "200": {
@@ -3115,11 +2825,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -3159,9 +2865,7 @@
         }
       ],
       "delete": {
-        "tags": [
-          "Redes sociais"
-        ],
+        "tags": ["Redes sociais"],
         "summary": "Desconecta a plataforma",
         "responses": {
           "200": {
@@ -3181,11 +2885,7 @@
                       "$ref": "#/components/schemas/SocialConnectionDTO"
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -3225,9 +2925,7 @@
         }
       ],
       "get": {
-        "tags": [
-          "Redes sociais"
-        ],
+        "tags": ["Redes sociais"],
         "summary": "Inicia o fluxo OAuth (navegação do browser)",
         "description": "Redireciona (302) para a tela de autorização do provedor.",
         "responses": {
@@ -3259,9 +2957,7 @@
         }
       ],
       "get": {
-        "tags": [
-          "Redes sociais"
-        ],
+        "tags": ["Redes sociais"],
         "summary": "Resumo da conta conectada",
         "responses": {
           "200": {
@@ -3297,11 +2993,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -3351,9 +3043,7 @@
         }
       ],
       "get": {
-        "tags": [
-          "Redes sociais"
-        ],
+        "tags": ["Redes sociais"],
         "summary": "Analytics (resumo + série) da janela informada",
         "parameters": [
           {
@@ -3397,11 +3087,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -3451,9 +3137,7 @@
         }
       ],
       "get": {
-        "tags": [
-          "Redes sociais"
-        ],
+        "tags": ["Redes sociais"],
         "summary": "Vídeos/posts recentes da conta",
         "responses": {
           "200": {
@@ -3473,11 +3157,7 @@
                       "$ref": "#/components/schemas/TiktokVideos"
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -3517,9 +3197,7 @@
         }
       ],
       "post": {
-        "tags": [
-          "Redes sociais"
-        ],
+        "tags": ["Redes sociais"],
         "summary": "Publica conteúdo na conta",
         "description": "Corpo `multipart/form-data`; os campos variam por plataforma.",
         "requestBody": {
@@ -3615,11 +3293,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -3649,9 +3323,7 @@
     },
     "/api/users/me": {
       "get": {
-        "tags": [
-          "Usuário"
-        ],
+        "tags": ["Usuário"],
         "summary": "Perfil do usuário autenticado",
         "responses": {
           "200": {
@@ -3671,11 +3343,7 @@
                       "$ref": "#/components/schemas/UserDTO"
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -3693,9 +3361,7 @@
         }
       },
       "patch": {
-        "tags": [
-          "Usuário"
-        ],
+        "tags": ["Usuário"],
         "summary": "Atualiza o perfil",
         "requestBody": {
           "required": true,
@@ -3725,11 +3391,7 @@
                       "$ref": "#/components/schemas/UserDTO"
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -3749,9 +3411,7 @@
     },
     "/api/users/me/consent": {
       "post": {
-        "tags": [
-          "Usuário"
-        ],
+        "tags": ["Usuário"],
         "summary": "Registra o aceite de termos/privacidade",
         "requestBody": {
           "required": true,
@@ -3781,11 +3441,7 @@
                       "$ref": "#/components/schemas/UserDTO"
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -3805,9 +3461,7 @@
     },
     "/api/users/me/deletion": {
       "post": {
-        "tags": [
-          "Usuário"
-        ],
+        "tags": ["Usuário"],
         "summary": "Agenda a exclusão da conta (carência LGPD)",
         "responses": {
           "200": {
@@ -3827,11 +3481,7 @@
                       "$ref": "#/components/schemas/UserDTO"
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -3849,9 +3499,7 @@
         }
       },
       "delete": {
-        "tags": [
-          "Usuário"
-        ],
+        "tags": ["Usuário"],
         "summary": "Cancela uma exclusão agendada",
         "responses": {
           "200": {
@@ -3871,11 +3519,7 @@
                       "$ref": "#/components/schemas/UserDTO"
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -3925,17 +3569,10 @@
               },
               "details": {}
             },
-            "required": [
-              "code"
-            ]
+            "required": ["code"]
           }
         },
-        "required": [
-          "success",
-          "statusCode",
-          "message",
-          "error"
-        ]
+        "required": ["success", "statusCode", "message", "error"]
       },
       "ReorderRequest": {
         "type": "object",
@@ -3949,9 +3586,7 @@
             }
           }
         },
-        "required": [
-          "ids"
-        ]
+        "required": ["ids"]
       },
       "WorkspaceDTO": {
         "type": "object",
@@ -3972,13 +3607,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "id",
-          "name",
-          "slug",
-          "createdAt",
-          "updatedAt"
-        ],
+        "required": ["id", "name", "slug", "createdAt", "updatedAt"],
         "additionalProperties": false
       },
       "UserDTO": {
@@ -4103,11 +3732,7 @@
           },
           "status": {
             "type": "string",
-            "enum": [
-              "CONNECTED",
-              "EXPIRED",
-              "REVOKED"
-            ]
+            "enum": ["CONNECTED", "EXPIRED", "REVOKED"]
           },
           "expiresAt": {
             "anyOf": [
@@ -4278,12 +3903,7 @@
           },
           "type": {
             "type": "string",
-            "enum": [
-              "CHART",
-              "VIEW",
-              "IFRAME",
-              "RICH_TEXT"
-            ]
+            "enum": ["CHART", "VIEW", "IFRAME", "RICH_TEXT"]
           },
           "x": {
             "type": "number"
@@ -4331,11 +3951,7 @@
           },
           "role": {
             "type": "string",
-            "enum": [
-              "OWNER",
-              "ADMIN",
-              "MEMBER"
-            ]
+            "enum": ["OWNER", "ADMIN", "MEMBER"]
           },
           "createdAt": {
             "type": "string",
@@ -4355,10 +3971,7 @@
                 "format": "email"
               },
               "image": {
-                "type": [
-                  "string",
-                  "null"
-                ]
+                "type": ["string", "null"]
               }
             }
           }
@@ -4688,12 +4301,7 @@
             "additionalProperties": false
           }
         },
-        "required": [
-          "propertyId",
-          "propertyName",
-          "accountName",
-          "totals"
-        ],
+        "required": ["propertyId", "propertyName", "accountName", "totals"],
         "additionalProperties": false
       },
       "FacebookInsights": {
@@ -4702,11 +4310,7 @@
           "range": {
             "default": "28d",
             "type": "string",
-            "enum": [
-              "7d",
-              "28d",
-              "90d"
-            ]
+            "enum": ["7d", "28d", "90d"]
           },
           "startDate": {
             "type": "string"
@@ -4733,11 +4337,7 @@
                 "maximum": 9007199254740991
               }
             },
-            "required": [
-              "impressions",
-              "engagements",
-              "fanAdds"
-            ],
+            "required": ["impressions", "engagements", "fanAdds"],
             "additionalProperties": false
           },
           "series": {
@@ -4764,23 +4364,12 @@
                   "maximum": 9007199254740991
                 }
               },
-              "required": [
-                "date",
-                "impressions",
-                "engagements",
-                "fanAdds"
-              ],
+              "required": ["date", "impressions", "engagements", "fanAdds"],
               "additionalProperties": false
             }
           }
         },
-        "required": [
-          "range",
-          "startDate",
-          "endDate",
-          "totals",
-          "series"
-        ],
+        "required": ["range", "startDate", "endDate", "totals", "series"],
         "additionalProperties": false
       },
       "InstagramInsights": {
@@ -4789,11 +4378,7 @@
           "range": {
             "default": "28d",
             "type": "string",
-            "enum": [
-              "7d",
-              "28d",
-              "90d"
-            ]
+            "enum": ["7d", "28d", "90d"]
           },
           "startDate": {
             "type": "string"
@@ -4820,11 +4405,7 @@
                 "maximum": 9007199254740991
               }
             },
-            "required": [
-              "impressions",
-              "reach",
-              "profileViews"
-            ],
+            "required": ["impressions", "reach", "profileViews"],
             "additionalProperties": false
           },
           "series": {
@@ -4851,23 +4432,12 @@
                   "maximum": 9007199254740991
                 }
               },
-              "required": [
-                "date",
-                "impressions",
-                "reach",
-                "profileViews"
-              ],
+              "required": ["date", "impressions", "reach", "profileViews"],
               "additionalProperties": false
             }
           }
         },
-        "required": [
-          "range",
-          "startDate",
-          "endDate",
-          "totals",
-          "series"
-        ],
+        "required": ["range", "startDate", "endDate", "totals", "series"],
         "additionalProperties": false
       },
       "YoutubeInsights": {
@@ -4876,12 +4446,7 @@
           "range": {
             "default": "28d",
             "type": "string",
-            "enum": [
-              "7d",
-              "28d",
-              "90d",
-              "365d"
-            ]
+            "enum": ["7d", "28d", "90d", "365d"]
           },
           "startDate": {
             "type": "string"
@@ -4949,13 +4514,7 @@
             }
           }
         },
-        "required": [
-          "range",
-          "startDate",
-          "endDate",
-          "totals",
-          "series"
-        ],
+        "required": ["range", "startDate", "endDate", "totals", "series"],
         "additionalProperties": false
       },
       "GoogleAnalyticsInsights": {
@@ -4964,11 +4523,7 @@
           "range": {
             "default": "28d",
             "type": "string",
-            "enum": [
-              "7d",
-              "28d",
-              "90d"
-            ]
+            "enum": ["7d", "28d", "90d"]
           },
           "startDate": {
             "type": "string"
@@ -5042,13 +4597,7 @@
             }
           }
         },
-        "required": [
-          "range",
-          "startDate",
-          "endDate",
-          "totals",
-          "series"
-        ],
+        "required": ["range", "startDate", "endDate", "totals", "series"],
         "additionalProperties": false
       },
       "FacebookPublishResult": {
@@ -5061,10 +4610,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "postId",
-          "url"
-        ],
+        "required": ["postId", "url"],
         "additionalProperties": false
       },
       "InstagramPublishResult": {
@@ -5084,10 +4630,7 @@
             ]
           }
         },
-        "required": [
-          "postId",
-          "permalink"
-        ],
+        "required": ["postId", "permalink"],
         "additionalProperties": false
       },
       "TiktokPublishResult": {
@@ -5100,10 +4643,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "publishId",
-          "status"
-        ],
+        "required": ["publishId", "status"],
         "additionalProperties": false
       },
       "YoutubePublishResult": {
@@ -5121,19 +4661,10 @@
           "privacyStatus": {
             "default": "private",
             "type": "string",
-            "enum": [
-              "private",
-              "unlisted",
-              "public"
-            ]
+            "enum": ["private", "unlisted", "public"]
           }
         },
-        "required": [
-          "videoId",
-          "url",
-          "title",
-          "privacyStatus"
-        ],
+        "required": ["videoId", "url", "title", "privacyStatus"],
         "additionalProperties": false
       },
       "WorkspaceCreateRequest": {
@@ -5151,9 +4682,7 @@
             "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
           }
         },
-        "required": [
-          "name"
-        ]
+        "required": ["name"]
       },
       "CompanyDTO": {
         "type": "object",
@@ -5316,9 +4845,7 @@
             "minLength": 1
           }
         },
-        "required": [
-          "name"
-        ]
+        "required": ["name"]
       },
       "CompanyDTOUpdateRequest": {
         "type": "object",
@@ -5570,9 +5097,7 @@
             "minLength": 1
           }
         },
-        "required": [
-          "name"
-        ]
+        "required": ["name"]
       },
       "PersonDTOUpdateRequest": {
         "type": "object",
@@ -5822,9 +5347,7 @@
             "minLength": 1
           }
         },
-        "required": [
-          "name"
-        ]
+        "required": ["name"]
       },
       "OpportunityDTOUpdateRequest": {
         "type": "object",
@@ -5916,11 +5439,7 @@
           },
           "status": {
             "type": "string",
-            "enum": [
-              "TODO",
-              "IN_PROGRESS",
-              "DONE"
-            ]
+            "enum": ["TODO", "IN_PROGRESS", "DONE"]
           },
           "body": {
             "anyOf": [
@@ -6045,11 +5564,7 @@
           "status": {
             "default": "TODO",
             "type": "string",
-            "enum": [
-              "TODO",
-              "IN_PROGRESS",
-              "DONE"
-            ]
+            "enum": ["TODO", "IN_PROGRESS", "DONE"]
           },
           "body": {
             "type": "string",
@@ -6077,9 +5592,7 @@
             "minLength": 1
           }
         },
-        "required": [
-          "title"
-        ]
+        "required": ["title"]
       },
       "TaskDTOUpdateRequest": {
         "type": "object",
@@ -6091,11 +5604,7 @@
           },
           "status": {
             "type": "string",
-            "enum": [
-              "TODO",
-              "IN_PROGRESS",
-              "DONE"
-            ]
+            "enum": ["TODO", "IN_PROGRESS", "DONE"]
           },
           "body": {
             "anyOf": [
@@ -6435,9 +5944,7 @@
             "maxLength": 300
           }
         },
-        "required": [
-          "title"
-        ]
+        "required": ["title"]
       },
       "DashboardDTOUpdateRequest": {
         "type": "object",
@@ -6522,10 +6029,7 @@
                           "maxLength": 500
                         }
                       },
-                      "required": [
-                        "field",
-                        "operator"
-                      ]
+                      "required": ["field", "operator"]
                     }
                   },
                   "xField": {
@@ -6543,20 +6047,12 @@
                   "xSort": {
                     "default": "none",
                     "type": "string",
-                    "enum": [
-                      "none",
-                      "asc",
-                      "desc"
-                    ]
+                    "enum": ["none", "asc", "desc"]
                   },
                   "ySort": {
                     "default": "none",
                     "type": "string",
-                    "enum": [
-                      "none",
-                      "asc",
-                      "desc"
-                    ]
+                    "enum": ["none", "asc", "desc"]
                   },
                   "omitZero": {
                     "default": false,
@@ -6609,9 +6105,7 @@
                     "maxLength": 20
                   }
                 },
-                "required": [
-                  "chartType"
-                ]
+                "required": ["chartType"]
               },
               "x": {
                 "default": 0,
@@ -6638,10 +6132,7 @@
                 "maximum": 60
               }
             },
-            "required": [
-              "type",
-              "config"
-            ]
+            "required": ["type", "config"]
           },
           {
             "type": "object",
@@ -6701,10 +6192,7 @@
                           "maxLength": 500
                         }
                       },
-                      "required": [
-                        "field",
-                        "operator"
-                      ]
+                      "required": ["field", "operator"]
                     }
                   },
                   "sort": {
@@ -6721,22 +6209,14 @@
                         },
                         "direction": {
                           "type": "string",
-                          "enum": [
-                            "asc",
-                            "desc"
-                          ]
+                          "enum": ["asc", "desc"]
                         }
                       },
-                      "required": [
-                        "field",
-                        "direction"
-                      ]
+                      "required": ["field", "direction"]
                     }
                   }
                 },
-                "required": [
-                  "source"
-                ]
+                "required": ["source"]
               },
               "x": {
                 "default": 0,
@@ -6763,10 +6243,7 @@
                 "maximum": 60
               }
             },
-            "required": [
-              "type",
-              "config"
-            ]
+            "required": ["type", "config"]
           },
           {
             "type": "object",
@@ -6782,9 +6259,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "url"
-                ]
+                "required": ["url"]
               },
               "x": {
                 "default": 0,
@@ -6811,10 +6286,7 @@
                 "maximum": 60
               }
             },
-            "required": [
-              "type",
-              "config"
-            ]
+            "required": ["type", "config"]
           },
           {
             "type": "object",
@@ -6858,10 +6330,7 @@
                 "maximum": 60
               }
             },
-            "required": [
-              "type",
-              "config"
-            ]
+            "required": ["type", "config"]
           }
         ]
       },
@@ -6925,19 +6394,11 @@
                   "maximum": 60
                 }
               },
-              "required": [
-                "id",
-                "x",
-                "y",
-                "w",
-                "h"
-              ]
+              "required": ["id", "x", "y", "w", "h"]
             }
           }
         },
-        "required": [
-          "items"
-        ]
+        "required": ["items"]
       },
       "IntegrationApiKeyCreateRequest": {
         "type": "object",
@@ -6948,9 +6409,7 @@
             "maxLength": 120
           }
         },
-        "required": [
-          "name"
-        ]
+        "required": ["name"]
       },
       "TiktokVideos": {
         "type": "object",
@@ -6979,12 +6438,7 @@
                 "maximum": 9007199254740991
               }
             },
-            "required": [
-              "views",
-              "likes",
-              "comments",
-              "shares"
-            ],
+            "required": ["views", "likes", "comments", "shares"],
             "additionalProperties": false
           },
           "videos": {
@@ -7063,10 +6517,7 @@
             }
           }
         },
-        "required": [
-          "totals",
-          "videos"
-        ],
+        "required": ["totals", "videos"],
         "additionalProperties": false
       },
       "UpdateProfileRequest": {
@@ -7102,10 +6553,7 @@
             "const": true
           }
         },
-        "required": [
-          "acceptTerms",
-          "acceptPrivacy"
-        ]
+        "required": ["acceptTerms", "acceptPrivacy"]
       }
     }
   }

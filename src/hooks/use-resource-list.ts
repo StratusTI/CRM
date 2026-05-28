@@ -80,11 +80,14 @@ export async function createResource<T>(
   payload: Record<string, unknown>,
 ): Promise<MutationResult<T>> {
   try {
-    const response = await fetch(apiUrl(`/api/workspaces/${slug}/${resource}`), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+    const response = await fetch(
+      apiUrl(`/api/workspaces/${slug}/${resource}`),
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      },
+    );
     const json = await response.json();
     if (!response.ok || !json.success) {
       return { ok: false, message: readError(json) };
