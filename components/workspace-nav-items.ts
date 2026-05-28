@@ -14,6 +14,7 @@ import {
   TaskDone01Icon,
   TiktokIcon,
   UserMultipleIcon,
+  WorkflowCircle01Icon,
   YoutubeIcon,
 } from "@hugeicons/core-free-icons";
 import type { IconSvgElement } from "@hugeicons/react";
@@ -65,6 +66,12 @@ export const WORKSPACE_NAV: NavNode[] = [
     segment: "dashboards",
     icon: DashboardSquare01Icon,
     color: "bg-cyan-500",
+  },
+  {
+    title: "Workflows",
+    segment: "workflows",
+    icon: WorkflowCircle01Icon,
+    color: "bg-indigo-500",
   },
   {
     title: "Marketing",

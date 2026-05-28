@@ -161,3 +161,41 @@ export const emailSendFailed = (
   message = "Falha ao disparar o envio no provedor",
   details?: unknown,
 ): AppError => appError("EMAIL_SEND_FAILED", message, details);
+
+export const workflowNotFound = (
+  message = "Workflow não encontrado",
+): AppError => appError("WORKFLOW_NOT_FOUND", message);
+
+export const workflowVersionNotFound = (
+  message = "Versão do workflow não encontrada",
+): AppError => appError("WORKFLOW_VERSION_NOT_FOUND", message);
+
+export const workflowRunNotFound = (
+  message = "Execução do workflow não encontrada",
+): AppError => appError("WORKFLOW_RUN_NOT_FOUND", message);
+
+export const workflowInvalidDefinition = (
+  message = "Definição do workflow inválida",
+  details?: unknown,
+): AppError => appError("WORKFLOW_INVALID_DEFINITION", message, details);
+
+export const workflowTriggerInvalid = (
+  message = "Trigger inválido para esta operação",
+): AppError => appError("WORKFLOW_TRIGGER_INVALID", message);
+
+export const workflowVersionNotDraft = (
+  message = "Só é possível editar a versão DRAFT",
+): AppError => appError("WORKFLOW_VERSION_NOT_DRAFT", message);
+
+export const workflowNotActive = (
+  message = "O workflow não está ativo",
+): AppError => appError("WORKFLOW_NOT_ACTIVE", message);
+
+export const workflowWebhookInvalid = (
+  message = "Webhook inválido ou desativado",
+): AppError => appError("WORKFLOW_WEBHOOK_INVALID", message);
+
+export const workflowExecutionFailed = (
+  message = "Falha ao executar o workflow",
+  details?: unknown,
+): AppError => appError("WORKFLOW_EXECUTION_FAILED", message, details);

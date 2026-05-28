@@ -9,6 +9,7 @@ import type {
   PersonDTO,
   UpdatePersonInput,
 } from "@/src/schemas/person.schema";
+import { dispatchRecordEvent } from "@/src/services/workflow-dispatcher";
 import { resolveWorkspaceId } from "@/src/services/workspace-scope";
 
 /** Garante que a Company referenciada existe na workspace. */
@@ -66,7 +67,15 @@ export const PersonService = {
       companyId: input.companyId ?? null,
     });
     if (!created.ok) return created;
-    return ok(toPersonDTO(created.value));
+    const dto = toPersonDTO(created.value);
+    await dispatchRecordEvent({
+      workspaceId: ws.value,
+      actingUserId: userId,
+      entity: "person",
+      event: "created",
+      record: dto,
+    });
+    return ok(dto);
   },
 
   async list(userId: string, slug: string): Promise<Result<PersonDTO[]>> {
@@ -113,7 +122,16 @@ export const PersonService = {
       ...input,
     });
     if (!updated.ok) return updated;
-    return ok(toPersonDTO(updated.value));
+    const dto = toPersonDTO(updated.value);
+    await dispatchRecordEvent({
+      workspaceId: ws.value,
+      actingUserId: userId,
+      entity: "person",
+      event: "updated",
+      record: dto,
+      changedFields: Object.keys(input),
+    });
+    return ok(dto);
   },
 
   async remove(
@@ -129,7 +147,15 @@ export const PersonService = {
 
     const removed = await PersonRepository.softDelete(personId, userId);
     if (!removed.ok) return removed;
-    return ok(toPersonDTO(removed.value));
+    const dto = toPersonDTO(removed.value);
+    await dispatchRecordEvent({
+      workspaceId: ws.value,
+      actingUserId: userId,
+      entity: "person",
+      event: "deleted",
+      record: dto,
+    });
+    return ok(dto);
   },
 
   /** Persiste a ordem manual das pessoas (drag-drop). */

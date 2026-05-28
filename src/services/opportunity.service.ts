@@ -17,6 +17,7 @@ import type {
   OpportunityDTO,
   UpdateOpportunityInput,
 } from "@/src/schemas/opportunity.schema";
+import { dispatchRecordEvent } from "@/src/services/workflow-dispatcher";
 import { resolveWorkspaceId } from "@/src/services/workspace-scope";
 
 /** Valida company e/ou pointOfContact referenciados pertencem à workspace. */
@@ -84,7 +85,15 @@ export const OpportunityService = {
       ownerId: input.ownerId ?? null,
     });
     if (!created.ok) return created;
-    return ok(toOpportunityDTO(created.value));
+    const dto = toOpportunityDTO(created.value);
+    await dispatchRecordEvent({
+      workspaceId: ws.value,
+      actingUserId: userId,
+      entity: "opportunity",
+      event: "created",
+      record: dto,
+    });
+    return ok(dto);
   },
 
   async list(userId: string, slug: string): Promise<Result<OpportunityDTO[]>> {
@@ -133,7 +142,16 @@ export const OpportunityService = {
 
     const updated = await OpportunityRepository.update(id, data);
     if (!updated.ok) return updated;
-    return ok(toOpportunityDTO(updated.value));
+    const dto = toOpportunityDTO(updated.value);
+    await dispatchRecordEvent({
+      workspaceId: ws.value,
+      actingUserId: userId,
+      entity: "opportunity",
+      event: "updated",
+      record: dto,
+      changedFields: Object.keys(input),
+    });
+    return ok(dto);
   },
 
   async remove(
@@ -149,7 +167,15 @@ export const OpportunityService = {
 
     const removed = await OpportunityRepository.softDelete(id, userId);
     if (!removed.ok) return removed;
-    return ok(toOpportunityDTO(removed.value));
+    const dto = toOpportunityDTO(removed.value);
+    await dispatchRecordEvent({
+      workspaceId: ws.value,
+      actingUserId: userId,
+      entity: "opportunity",
+      event: "deleted",
+      record: dto,
+    });
+    return ok(dto);
   },
 
   /** Persiste a ordem manual das oportunidades (drag-drop). */

@@ -54,6 +54,10 @@ model User {
 
   workspaceInvitesCreated WorkspaceInvite[] @relation("WorkspaceInviteCreator")
 
+  workflowsCreated    Workflow[]    @relation("WorkflowCreatedBy")
+  workflowsUpdated    Workflow[]    @relation("WorkflowUpdatedBy")
+  workflowRunsStarted WorkflowRun[] @relation("WorkflowRunStartedBy")
+
   @@index([deletionScheduledAt])
   @@map("users")
 }
@@ -119,6 +123,7 @@ model Workspace {
   integrationApiKeys IntegrationApiKey[]
   emailTemplates     EmailTemplate[]
   emailCampaigns     EmailCampaign[]
+  workflows          Workflow[]
   invite             WorkspaceInvite?
 
   @@map("workspaces")
@@ -570,4 +575,158 @@ model EmailCampaignRecipient {
   @@index([personId])
   @@index([status])
   @@map("email_campaign_recipients")
+}
+
+enum WorkflowStatus {
+  DRAFT
+  ACTIVE
+  DEACTIVATED
+}
+
+enum WorkflowVersionStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum WorkflowRunStatus {
+  PENDING
+  RUNNING
+  WAITING
+  COMPLETED
+  FAILED
+  CANCELED
+}
+
+enum WorkflowRunStepStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  SKIPPED
+}
+
+enum WorkflowTriggerType {
+  RECORD_IS_CREATED
+  RECORD_IS_UPDATED
+  RECORD_IS_DELETED
+  RECORD_IS_CREATED_OR_UPDATED
+  LAUNCH_MANUALLY
+  ON_A_SCHEDULE
+  WEBHOOK
+}
+
+/// Workflow é o "container" que agrupa versões e runs. O grafo (nodes/edges +
+/// trigger) vive em `WorkflowVersion.definition` — alterações sempre acontecem
+/// no draft; `Activate` congela o draft (vira ACTIVE) e arquiva o ACTIVE
+/// anterior. `activeVersionId` aponta a versão consultada pelos dispatchers.
+model Workflow {
+  id              String         @id @default(cuid())
+  name            String
+  description     String?
+  status          WorkflowStatus @default(DRAFT)
+  workspaceId     String         @map("workspace_id")
+  createdById     String         @map("created_by_id")
+  updatedById     String?        @map("updated_by_id")
+  activeVersionId String?        @unique @map("active_version_id")
+  lastRunAt       DateTime?      @map("last_run_at")
+  position        Int            @default(0)
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+  deletedAt       DateTime?      @map("deleted_at")
+
+  workspace     Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy     User              @relation("WorkflowCreatedBy", fields: [createdById], references: [id])
+  updatedBy     User?             @relation("WorkflowUpdatedBy", fields: [updatedById], references: [id])
+  activeVersion WorkflowVersion?  @relation("WorkflowActiveVersion", fields: [activeVersionId], references: [id], onDelete: SetNull)
+  versions      WorkflowVersion[] @relation("WorkflowVersions")
+  runs          WorkflowRun[]
+
+  @@index([workspaceId])
+  @@index([status])
+  @@index([deletedAt])
+  @@index([workspaceId, position])
+  @@map("workflows")
+}
+
+/// Versão imutável de um Workflow. `definition` é o JSON validado pelo schema
+/// Zod (trigger + nodes + edges). DRAFT é editável; ACTIVE/ARCHIVED são
+/// snapshots — runs antigas referenciam a versão usada no disparo.
+model WorkflowVersion {
+  id         String                @id @default(cuid())
+  workflowId String                @map("workflow_id")
+  version    Int                   @default(1)
+  status     WorkflowVersionStatus @default(DRAFT)
+  definition Json
+  createdAt  DateTime              @default(now()) @map("created_at")
+  updatedAt  DateTime              @updatedAt @map("updated_at")
+
+  workflow Workflow      @relation("WorkflowVersions", fields: [workflowId], references: [id], onDelete: Cascade)
+  activeOf Workflow?     @relation("WorkflowActiveVersion")
+  runs     WorkflowRun[]
+
+  @@unique([workflowId, version])
+  @@index([workflowId])
+  @@index([status])
+  @@map("workflow_versions")
+}
+
+/// Execução de um Workflow a partir de um trigger. Aponta para a versão usada
+/// (snapshot); `triggerPayload` guarda o input que iniciou a run (record
+/// criado, payload manual, body do webhook, etc.).
+model WorkflowRun {
+  id             String              @id @default(cuid())
+  workflowId     String              @map("workflow_id")
+  versionId      String              @map("version_id")
+  status         WorkflowRunStatus   @default(PENDING)
+  triggerType    WorkflowTriggerType @map("trigger_type")
+  triggerPayload Json                @default("{}") @map("trigger_payload")
+  /// Snapshot do scope quando o run pausa em um form node — usado para
+  /// retomar a execução exatamente do ponto onde parou. Null quando o run
+  /// não está em WAITING.
+  state          Json?
+  /// Id do step (form) que está aguardando input humano. Null quando não
+  /// está pausado.
+  waitingStepId  String?             @map("waiting_step_id")
+  startedById    String?             @map("started_by_id")
+  error          String?
+  startedAt      DateTime?           @map("started_at")
+  finishedAt     DateTime?           @map("finished_at")
+  createdAt      DateTime            @default(now()) @map("created_at")
+  updatedAt      DateTime            @updatedAt @map("updated_at")
+
+  workflow  Workflow          @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  version   WorkflowVersion   @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  startedBy User?             @relation("WorkflowRunStartedBy", fields: [startedById], references: [id], onDelete: SetNull)
+  steps     WorkflowRunStep[]
+
+  @@index([workflowId])
+  @@index([versionId])
+  @@index([status])
+  @@index([workflowId, createdAt])
+  @@map("workflow_runs")
+}
+
+/// Linha por node executado dentro de uma run. `input` e `output` são JSON
+/// livre — o executor de cada tipo de node decide a forma. `error` carrega
+/// stack/mensagem em caso de FAILED.
+model WorkflowRunStep {
+  id         String                @id @default(cuid())
+  runId      String                @map("run_id")
+  nodeId     String                @map("node_id")
+  nodeType   String                @map("node_type")
+  status     WorkflowRunStepStatus @default(PENDING)
+  input      Json?
+  output     Json?
+  error      String?
+  startedAt  DateTime?             @map("started_at")
+  finishedAt DateTime?             @map("finished_at")
+  createdAt  DateTime              @default(now()) @map("created_at")
+  updatedAt  DateTime              @updatedAt @map("updated_at")
+
+  run WorkflowRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@index([runId])
+  @@index([status])
+  @@map("workflow_run_steps")
 }

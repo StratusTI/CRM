@@ -13,6 +13,7 @@ import type {
   CreateCompanyInput,
   UpdateCompanyInput,
 } from "@/src/schemas/company.schema";
+import { dispatchRecordEvent } from "@/src/services/workflow-dispatcher";
 
 /**
  * Resolve o workspace pelo slug garantindo que o usuário seja membro.
@@ -74,7 +75,15 @@ export const CompanyService = {
       accountOwnerId: input.accountOwnerId ?? null,
     });
     if (!created.ok) return created;
-    return ok(toCompanyDTO(created.value));
+    const dto = toCompanyDTO(created.value);
+    await dispatchRecordEvent({
+      workspaceId: ws.value,
+      actingUserId: userId,
+      entity: "company",
+      event: "created",
+      record: dto,
+    });
+    return ok(dto);
   },
 
   /** Lista as empresas (não-deletadas) do workspace do slug. */
@@ -130,7 +139,16 @@ export const CompanyService = {
       ...input,
     });
     if (!updated.ok) return updated;
-    return ok(toCompanyDTO(updated.value));
+    const dto = toCompanyDTO(updated.value);
+    await dispatchRecordEvent({
+      workspaceId: ws.value,
+      actingUserId: userId,
+      entity: "company",
+      event: "updated",
+      record: dto,
+      changedFields: Object.keys(input),
+    });
+    return ok(dto);
   },
 
   /** Soft delete de uma empresa. */
@@ -147,7 +165,15 @@ export const CompanyService = {
 
     const removed = await CompanyRepository.softDelete(companyId, userId);
     if (!removed.ok) return removed;
-    return ok(toCompanyDTO(removed.value));
+    const dto = toCompanyDTO(removed.value);
+    await dispatchRecordEvent({
+      workspaceId: ws.value,
+      actingUserId: userId,
+      entity: "company",
+      event: "deleted",
+      record: dto,
+    });
+    return ok(dto);
   },
 
   /** Persiste a ordem manual das empresas (drag-drop). */

@@ -12,6 +12,7 @@ import type {
   UpdateTaskInput,
 } from "@/src/schemas/task.schema";
 import { assertRelationRefs } from "@/src/services/relation-refs";
+import { dispatchRecordEvent } from "@/src/services/workflow-dispatcher";
 import { resolveWorkspaceId } from "@/src/services/workspace-scope";
 
 async function loadInWorkspace(
@@ -52,7 +53,15 @@ export const TaskService = {
       opportunityId: input.opportunityId ?? null,
     });
     if (!created.ok) return created;
-    return ok(toTaskDTO(created.value));
+    const dto = toTaskDTO(created.value);
+    await dispatchRecordEvent({
+      workspaceId: ws.value,
+      actingUserId: userId,
+      entity: "task",
+      event: "created",
+      record: dto,
+    });
+    return ok(dto);
   },
 
   async list(userId: string, slug: string): Promise<Result<TaskDTO[]>> {
@@ -100,7 +109,16 @@ export const TaskService = {
 
     const updated = await TaskRepository.update(id, data);
     if (!updated.ok) return updated;
-    return ok(toTaskDTO(updated.value));
+    const dto = toTaskDTO(updated.value);
+    await dispatchRecordEvent({
+      workspaceId: ws.value,
+      actingUserId: userId,
+      entity: "task",
+      event: "updated",
+      record: dto,
+      changedFields: Object.keys(input),
+    });
+    return ok(dto);
   },
 
   async remove(
@@ -116,7 +134,15 @@ export const TaskService = {
 
     const removed = await TaskRepository.softDelete(id, userId);
     if (!removed.ok) return removed;
-    return ok(toTaskDTO(removed.value));
+    const dto = toTaskDTO(removed.value);
+    await dispatchRecordEvent({
+      workspaceId: ws.value,
+      actingUserId: userId,
+      entity: "task",
+      event: "deleted",
+      record: dto,
+    });
+    return ok(dto);
   },
 
   /** Persiste a ordem manual das tarefas (drag-drop). */
