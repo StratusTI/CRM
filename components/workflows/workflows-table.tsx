@@ -4,8 +4,13 @@ import { DataTable } from "@/components/data-table";
 import { PageShell } from "@/components/page-shell";
 import type { GridColumn } from "@/components/tables/grid";
 import { useResourceList } from "@/src/hooks/use-resource-list";
-import { useWorkspaceLookups } from "@/src/hooks/use-workspace-lookups";
+import {
+  type LookupKind,
+  useWorkspaceLookups,
+} from "@/src/hooks/use-workspace-lookups";
 import type { WorkflowDTO } from "@/src/schemas/workflow.schema";
+
+const LOOKUP_KINDS: LookupKind[] = [];
 
 const COLUMNS: GridColumn[] = [
   {
@@ -38,7 +43,7 @@ export function WorkflowsTable({ slug }: { slug: string }) {
     slug,
     "workflows",
   );
-  const { lookups } = useWorkspaceLookups(slug, []);
+  const { lookups } = useWorkspaceLookups(slug, LOOKUP_KINDS);
   return (
     <PageShell>
       <DataTable

@@ -20,6 +20,8 @@ const PUBLIC_ROUTES = [
   "/api/invites",
   "/api/status",
   "/api/payment/webhook",
+  "/api/cron",
+  "/api/workflows/webhook",
   "/docs",
   "/legals",
   "/status",
