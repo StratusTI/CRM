@@ -6,25 +6,14 @@ import {
   PlusSignIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import {
-  Details,
-  DetailsContent,
-  DetailsSummary,
-} from "@tiptap/extension-details";
-import { Image } from "@tiptap/extension-image";
-import { TableKit } from "@tiptap/extension-table";
-import { TaskItem } from "@tiptap/extension-task-item";
-import { TaskList } from "@tiptap/extension-task-list";
 import { type Editor, EditorContent, useEditor } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
 import * as React from "react";
 import {
   BLOCK_ITEMS,
   EMOJI_ICON,
   EMOJIS,
 } from "@/components/rich-text/insert-items";
-import { Audio, Video } from "@/components/rich-text/nodes";
-import { SlashCommand } from "@/components/rich-text/slash-command";
+import { RICH_TEXT_EXTENSIONS } from "@/components/rich-text/tiptap-extensions";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -32,20 +21,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
-
-const EXTENSIONS = [
-  StarterKit,
-  TaskList,
-  TaskItem.configure({ nested: true }),
-  Details.configure({ persist: true }),
-  DetailsSummary,
-  DetailsContent,
-  TableKit,
-  Image,
-  Video,
-  Audio,
-  SlashCommand,
-];
 
 /** Menu de inserção (botão "+"): blocos + grade de emojis. */
 function InsertMenu({ editor }: { editor: Editor }) {
@@ -150,7 +125,7 @@ function RichTextBody({
   onChange: (html: string) => void;
 }) {
   const editor = useEditor({
-    extensions: EXTENSIONS,
+    extensions: RICH_TEXT_EXTENSIONS,
     content: value || "",
     immediatelyRender: false,
     editorProps: {

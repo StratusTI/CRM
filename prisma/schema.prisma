@@ -58,6 +58,11 @@ model User {
   workflowsUpdated    Workflow[]    @relation("WorkflowUpdatedBy")
   workflowRunsStarted WorkflowRun[] @relation("WorkflowRunStartedBy")
 
+  proposalsCreated Proposal[] @relation("ProposalCreatedBy")
+  proposalsUpdated Proposal[] @relation("ProposalUpdatedBy")
+
+  aiConversations AiConversation[] @relation("AiConversationUser")
+
   @@index([deletionScheduledAt])
   @@map("users")
 }
@@ -124,6 +129,8 @@ model Workspace {
   emailTemplates     EmailTemplate[]
   emailCampaigns     EmailCampaign[]
   workflows          Workflow[]
+  proposals          Proposal[]
+  aiConversations    AiConversation[]
   invite             WorkspaceInvite?
 
   @@map("workspaces")
@@ -730,4 +737,106 @@ model WorkflowRunStep {
   @@index([runId])
   @@index([status])
   @@map("workflow_run_steps")
+}
+
+enum AiMessageRole {
+  USER
+  ASSISTANT
+}
+
+/// Conversa do agente de IA do workspace. Privada por usuário (cada membro tem
+/// suas próprias conversas) e escopada por workspace. Soft-delete via deletedAt.
+model AiConversation {
+  id          String      @id @default(cuid())
+  workspaceId String      @map("workspace_id")
+  userId      String      @map("user_id")
+  title       String?
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+  deletedAt   DateTime?   @map("deleted_at")
+
+  workspace Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User        @relation("AiConversationUser", fields: [userId], references: [id], onDelete: Cascade)
+  messages  AiMessage[]
+
+  @@index([workspaceId, userId])
+  @@map("ai_conversations")
+}
+
+/// Mensagem de uma conversa. `toolCalls` registra (apenas para transparência)
+/// quais tools de leitura o agente acionou ao gerar a resposta — não é exposto
+/// no DTO público de mensagem.
+model AiMessage {
+  id             String        @id @default(cuid())
+  conversationId String        @map("conversation_id")
+  role           AiMessageRole
+  content        String
+  toolCalls      Json?         @map("tool_calls")
+  createdAt      DateTime      @default(now()) @map("created_at")
+
+  conversation AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@map("ai_messages")
+}
+
+enum ProposalStatus {
+  DRAFT
+  PUBLISHED
+}
+
+/// Documento de proposta rico (HTML do TipTap), escopado por workspace.
+/// `status` PUBLISHED = online: o `shareToken` opaco serve a página pública
+/// (`/p/<token>`) sem auth. Soft-delete via `deletedAt`. As métricas de
+/// leitura ficam em ProposalView.
+model Proposal {
+  id          String         @id @default(cuid())
+  title       String
+  content     String         @default("") @db.Text
+  status      ProposalStatus @default(DRAFT)
+  shareToken  String         @unique @map("share_token")
+  publishedAt DateTime?      @map("published_at")
+  workspaceId String         @map("workspace_id")
+  createdById String         @map("created_by_id")
+  updatedById String?        @map("updated_by_id")
+  position    Int            @default(0)
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+  deletedAt   DateTime?      @map("deleted_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy User      @relation("ProposalCreatedBy", fields: [createdById], references: [id])
+  updatedBy User?     @relation("ProposalUpdatedBy", fields: [updatedById], references: [id])
+
+  views ProposalView[]
+
+  @@index([workspaceId])
+  @@index([status])
+  @@index([deletedAt])
+  @@index([workspaceId, position])
+  @@map("proposals")
+}
+
+/// Uma sessão de visita à proposta pública. Upsertada por `viewId` (id de
+/// sessão gerado no cliente), de modo que beacons sucessivos da mesma visita
+/// atualizam a mesma linha. `ipHash` é um hash salgado do IP — nunca o IP cru
+/// (LGPD); serve só para contar visitantes únicos.
+model ProposalView {
+  id          String   @id @default(cuid())
+  proposalId  String   @map("proposal_id")
+  viewId      String   @map("view_id")
+  ipHash      String   @map("ip_hash")
+  durationMs  Int      @default(0) @map("duration_ms")
+  reachedEnd  Boolean  @default(false) @map("reached_end")
+  scrolledPct Int      @default(0) @map("scrolled_pct")
+  referrer    String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  proposal Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+
+  @@unique([proposalId, viewId])
+  @@index([proposalId])
+  @@index([proposalId, ipHash])
+  @@map("proposal_views")
 }

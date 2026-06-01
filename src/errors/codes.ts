@@ -96,6 +96,20 @@ export const ERROR_CODES = {
     status: 500,
   },
 
+  // Proposal domain
+  PROPOSAL_NOT_FOUND: { code: "PROPOSAL_NOT_FOUND", status: 404 },
+  PROPOSAL_FORBIDDEN: { code: "PROPOSAL_FORBIDDEN", status: 403 },
+  PROPOSAL_NOT_PUBLISHED: { code: "PROPOSAL_NOT_PUBLISHED", status: 404 },
+
+  // AI assistant domain
+  AI_NOT_CONFIGURED: { code: "AI_NOT_CONFIGURED", status: 503 },
+  AI_CONVERSATION_NOT_FOUND: {
+    code: "AI_CONVERSATION_NOT_FOUND",
+    status: 404,
+  },
+  AI_PROVIDER_FAILED: { code: "AI_PROVIDER_FAILED", status: 502 },
+  AI_MESSAGE_INVALID: { code: "AI_MESSAGE_INVALID", status: 422 },
+
   // Server Errors (500)
   INTERNAL_SERVER_ERROR: { code: "INTERNAL_SERVER_ERROR", status: 500 },
   DATABASE_ERROR: { code: "DATABASE_ERROR", status: 500 },

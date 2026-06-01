@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { type ReactNode, Suspense } from "react";
+import { AiAssistantWidget } from "@/components/ai/ai-assistant-widget";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { isAiConfigured } from "@/src/lib/ai/env";
 import { getAuthSession } from "@/src/lib/auth-session";
 import { MembershipRepository } from "@/src/repositories/membership.repository";
 import { WorkspaceService } from "@/src/services/workspace.service";
@@ -81,6 +83,9 @@ async function WorkspaceGate({ children, params }: WorkspaceLayoutProps) {
       <SidebarInset className="min-h-0 overflow-hidden md:peer-data-[variant=inset]:ring-1 md:peer-data-[variant=inset]:ring-white/[0.06]">
         {children}
       </SidebarInset>
+      {isAiConfigured() && (
+        <AiAssistantWidget slug={slug} userName={name ?? ""} />
+      )}
     </SidebarProvider>
   );
 }

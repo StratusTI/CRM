@@ -199,3 +199,32 @@ export const workflowExecutionFailed = (
   message = "Falha ao executar o workflow",
   details?: unknown,
 ): AppError => appError("WORKFLOW_EXECUTION_FAILED", message, details);
+
+export const proposalNotFound = (
+  message = "Proposta não encontrada",
+): AppError => appError("PROPOSAL_NOT_FOUND", message);
+
+export const proposalForbidden = (
+  message = "Você não tem acesso a esta proposta",
+): AppError => appError("PROPOSAL_FORBIDDEN", message);
+
+export const proposalNotPublished = (
+  message = "Esta proposta não está disponível",
+): AppError => appError("PROPOSAL_NOT_PUBLISHED", message);
+
+export const aiNotConfigured = (
+  message = "Assistente de IA não configurado. Falta a OPENAI_API_KEY no servidor.",
+): AppError => appError("AI_NOT_CONFIGURED", message);
+
+export const aiConversationNotFound = (
+  message = "Conversa não encontrada",
+): AppError => appError("AI_CONVERSATION_NOT_FOUND", message);
+
+export const aiProviderFailed = (
+  message = "Falha ao falar com o provedor de IA",
+  details?: unknown,
+): AppError => appError("AI_PROVIDER_FAILED", message, details);
+
+export const aiMessageInvalid = (
+  message = "Mensagem inválida",
+): AppError => appError("AI_MESSAGE_INVALID", message);

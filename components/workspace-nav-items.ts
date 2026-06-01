@@ -1,6 +1,7 @@
 import {
   Building03Icon,
   DashboardSquare01Icon,
+  DocumentValidationIcon,
   Facebook01Icon,
   GoogleIcon,
   InstagramIcon,
@@ -61,6 +62,12 @@ export const WORKSPACE_NAV: NavNode[] = [
     segment: "notes",
     icon: StickyNote01Icon,
     color: "bg-rose-500",
+  },
+  {
+    title: "Propostas",
+    segment: "proposals",
+    icon: DocumentValidationIcon,
+    color: "bg-teal-500",
   },
   {
     title: "Painéis",
