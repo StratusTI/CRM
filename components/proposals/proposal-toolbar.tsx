@@ -32,6 +32,7 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -138,47 +139,53 @@ function TableMenu({ editor }: { editor: Editor }) {
         }
       />
       <DropdownMenuContent align="start" className="w-52">
-        <DropdownMenuLabel>Linhas</DropdownMenuLabel>
-        <DropdownMenuItem onClick={() => cmd().addRowBefore().run()}>
-          Inserir linha acima
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => cmd().addRowAfter().run()}>
-          Inserir linha abaixo
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => cmd().deleteRow().run()}
-          className="text-destructive focus:text-destructive"
-        >
-          <HugeiconsIcon icon={Delete01Icon} strokeWidth={2} />
-          Excluir linha
-        </DropdownMenuItem>
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>Linhas</DropdownMenuLabel>
+          <DropdownMenuItem onClick={() => cmd().addRowBefore().run()}>
+            Inserir linha acima
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => cmd().addRowAfter().run()}>
+            Inserir linha abaixo
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => cmd().deleteRow().run()}
+            className="text-destructive focus:text-destructive"
+          >
+            <HugeiconsIcon icon={Delete01Icon} strokeWidth={2} />
+            Excluir linha
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
 
         <DropdownMenuSeparator />
 
-        <DropdownMenuLabel>Colunas</DropdownMenuLabel>
-        <DropdownMenuItem onClick={() => cmd().addColumnBefore().run()}>
-          Inserir coluna à esquerda
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => cmd().addColumnAfter().run()}>
-          Inserir coluna à direita
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => cmd().deleteColumn().run()}
-          className="text-destructive focus:text-destructive"
-        >
-          <HugeiconsIcon icon={Delete01Icon} strokeWidth={2} />
-          Excluir coluna
-        </DropdownMenuItem>
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>Colunas</DropdownMenuLabel>
+          <DropdownMenuItem onClick={() => cmd().addColumnBefore().run()}>
+            Inserir coluna à esquerda
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => cmd().addColumnAfter().run()}>
+            Inserir coluna à direita
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => cmd().deleteColumn().run()}
+            className="text-destructive focus:text-destructive"
+          >
+            <HugeiconsIcon icon={Delete01Icon} strokeWidth={2} />
+            Excluir coluna
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
 
         <DropdownMenuSeparator />
 
-        <DropdownMenuItem
-          onClick={() => cmd().deleteTable().run()}
-          className="text-destructive focus:text-destructive"
-        >
-          <HugeiconsIcon icon={Delete01Icon} strokeWidth={2} />
-          Excluir tabela
-        </DropdownMenuItem>
+        <DropdownMenuGroup>
+          <DropdownMenuItem
+            onClick={() => cmd().deleteTable().run()}
+            className="text-destructive focus:text-destructive"
+          >
+            <HugeiconsIcon icon={Delete01Icon} strokeWidth={2} />
+            Excluir tabela
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   );
