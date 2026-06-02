@@ -30,6 +30,8 @@ describe("SocialPlatformSchema", () => {
       "YOUTUBE",
       "GOOGLE_ANALYTICS",
       "TWITTER",
+      "GOOGLE_ADS",
+      "LINKEDIN",
     ]);
   });
 });

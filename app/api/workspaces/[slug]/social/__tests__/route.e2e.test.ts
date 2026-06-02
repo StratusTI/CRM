@@ -108,8 +108,8 @@ describe("/api/workspaces/[slug]/social (e2e)", () => {
     asUser(user.id);
 
     const response = await DELETE(
-      deleteRequest(workspace.slug, "linkedin"),
-      platformCtx(workspace.slug, "linkedin"),
+      deleteRequest(workspace.slug, "myspace"),
+      platformCtx(workspace.slug, "myspace"),
     );
     expect(response.status).toBe(400);
   });
