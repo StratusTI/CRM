@@ -165,7 +165,12 @@ describe("ProposalService.recordView", () => {
     proposalRepo.recordView.mockResolvedValue(ok({}));
     const result = await ProposalService.recordView(
       "tok_1",
-      { viewId: "sess-123456", durationMs: 1000, reachedEnd: true, scrolledPct: 100 },
+      {
+        viewId: "sess-123456",
+        durationMs: 1000,
+        reachedEnd: true,
+        scrolledPct: 100,
+      },
       { ip: "203.0.113.5", referrer: null },
     );
     expect(result.ok).toBe(true);
@@ -179,7 +184,12 @@ describe("ProposalService.recordView", () => {
     proposalRepo.findByShareToken.mockResolvedValue(ok(proposal()));
     const result = await ProposalService.recordView(
       "tok_1",
-      { viewId: "sess-123456", durationMs: 0, reachedEnd: false, scrolledPct: 0 },
+      {
+        viewId: "sess-123456",
+        durationMs: 0,
+        reachedEnd: false,
+        scrolledPct: 0,
+      },
       { ip: "203.0.113.5", referrer: null },
     );
     expect(result.ok).toBe(false);

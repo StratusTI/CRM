@@ -1,9 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import type { Proposal } from "@prisma/client";
-import {
-  proposalNotFound,
-  proposalNotPublished,
-} from "@/src/errors/app-error";
+import { proposalNotFound, proposalNotPublished } from "@/src/errors/app-error";
 import { err, ok, type Result } from "@/src/lib/result";
 import {
   toProposalDTO,
@@ -166,9 +163,7 @@ export const ProposalService = {
   /* --------------------------- público (sem auth) ------------------------ */
 
   /** Resolve a proposta pelo token público — só se estiver PUBLISHED. */
-  async getPublicByToken(
-    token: string,
-  ): Promise<Result<PublicProposalDTO>> {
+  async getPublicByToken(token: string): Promise<Result<PublicProposalDTO>> {
     const found = await ProposalRepository.findByShareToken(token);
     if (!found.ok) return found;
     if (!found.value) return err(proposalNotFound());

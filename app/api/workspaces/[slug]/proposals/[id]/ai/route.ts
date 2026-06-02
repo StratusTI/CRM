@@ -1,6 +1,10 @@
 import type { NextRequest } from "next/server";
 import { z } from "zod";
-import { aiNotConfigured, appError, validationError } from "@/src/errors/app-error";
+import {
+  aiNotConfigured,
+  appError,
+  validationError,
+} from "@/src/errors/app-error";
 import { getAuthSession } from "@/src/lib/auth-session";
 import { streamChat } from "@/src/lib/ai/client";
 import { isAiConfigured } from "@/src/lib/ai/env";

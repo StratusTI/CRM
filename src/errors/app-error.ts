@@ -225,6 +225,5 @@ export const aiProviderFailed = (
   details?: unknown,
 ): AppError => appError("AI_PROVIDER_FAILED", message, details);
 
-export const aiMessageInvalid = (
-  message = "Mensagem inválida",
-): AppError => appError("AI_MESSAGE_INVALID", message);
+export const aiMessageInvalid = (message = "Mensagem inválida"): AppError =>
+  appError("AI_MESSAGE_INVALID", message);

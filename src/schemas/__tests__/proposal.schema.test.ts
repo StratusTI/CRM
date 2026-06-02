@@ -33,9 +33,9 @@ describe("UpdateProposalSchema", () => {
   });
 
   it("rejeita status inválido", () => {
-    expect(
-      UpdateProposalSchema.safeParse({ status: "ONLINE" }).success,
-    ).toBe(false);
+    expect(UpdateProposalSchema.safeParse({ status: "ONLINE" }).success).toBe(
+      false,
+    );
   });
 });
 

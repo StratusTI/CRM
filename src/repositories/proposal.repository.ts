@@ -107,7 +107,10 @@ export const ProposalRepository = {
     }
   },
 
-  async update(id: string, data: UpdateProposalData): Promise<Result<Proposal>> {
+  async update(
+    id: string,
+    data: UpdateProposalData,
+  ): Promise<Result<Proposal>> {
     try {
       const proposal = await prisma.proposal.update({ where: { id }, data });
       return ok(proposal);

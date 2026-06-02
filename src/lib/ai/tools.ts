@@ -37,7 +37,8 @@ const socialRangeParam = {
     range: {
       type: "string",
       enum: ["7d", "28d", "90d"],
-      description: "Janela de tempo: 7d (7 dias), 28d (28 dias) ou 90d (90 dias). Default: 28d.",
+      description:
+        "Janela de tempo: 7d (7 dias), 28d (28 dias) ou 90d (90 dias). Default: 28d.",
     },
   },
   additionalProperties: false,
@@ -192,7 +193,11 @@ export const AI_TOOLS: ToolDef[] = [
       name: "get_instagram_overview",
       description:
         "Visão geral do perfil Instagram conectado: nome de usuário, seguidores, posts e bio. Use para perguntas sobre a conta do Instagram.",
-      parameters: { type: "object", properties: {}, additionalProperties: false },
+      parameters: {
+        type: "object",
+        properties: {},
+        additionalProperties: false,
+      },
     },
   },
   {
@@ -212,7 +217,11 @@ export const AI_TOOLS: ToolDef[] = [
       name: "get_facebook_overview",
       description:
         "Visão geral da Página do Facebook conectada: nome, seguidores, curtidas e categoria.",
-      parameters: { type: "object", properties: {}, additionalProperties: false },
+      parameters: {
+        type: "object",
+        properties: {},
+        additionalProperties: false,
+      },
     },
   },
   {
@@ -232,7 +241,11 @@ export const AI_TOOLS: ToolDef[] = [
       name: "get_youtube_overview",
       description:
         "Visão geral do canal YouTube conectado: nome, inscritos, visualizações totais e número de vídeos.",
-      parameters: { type: "object", properties: {}, additionalProperties: false },
+      parameters: {
+        type: "object",
+        properties: {},
+        additionalProperties: false,
+      },
     },
   },
   {
@@ -252,7 +265,11 @@ export const AI_TOOLS: ToolDef[] = [
       name: "get_tiktok_overview",
       description:
         "Visão geral do criador TikTok conectado: seguidores, curtidas totais e número de vídeos.",
-      parameters: { type: "object", properties: {}, additionalProperties: false },
+      parameters: {
+        type: "object",
+        properties: {},
+        additionalProperties: false,
+      },
     },
   },
   {
@@ -261,7 +278,11 @@ export const AI_TOOLS: ToolDef[] = [
       name: "get_tiktok_videos",
       description:
         "Lista os vídeos recentes do TikTok com métricas por vídeo (visualizações, curtidas, comentários, compartilhamentos) e totais agregados.",
-      parameters: { type: "object", properties: {}, additionalProperties: false },
+      parameters: {
+        type: "object",
+        properties: {},
+        additionalProperties: false,
+      },
     },
   },
 
@@ -272,7 +293,11 @@ export const AI_TOOLS: ToolDef[] = [
       name: "get_twitter_overview",
       description:
         "Visão geral do perfil X (Twitter) conectado: nome de usuário, nome de exibição e bio. Métricas detalhadas não estão disponíveis no plano gratuito da API.",
-      parameters: { type: "object", properties: {}, additionalProperties: false },
+      parameters: {
+        type: "object",
+        properties: {},
+        additionalProperties: false,
+      },
     },
   },
 
@@ -283,7 +308,11 @@ export const AI_TOOLS: ToolDef[] = [
       name: "get_google_analytics_overview",
       description:
         "Visão geral da propriedade GA4 conectada: nome da propriedade, conta e totais dos últimos 28 dias (usuários ativos, sessões, visualizações de página, eventos).",
-      parameters: { type: "object", properties: {}, additionalProperties: false },
+      parameters: {
+        type: "object",
+        properties: {},
+        additionalProperties: false,
+      },
     },
   },
   {
@@ -326,7 +355,9 @@ function parseSocialRange(rawArgs: string): SocialRange {
   try {
     const parsed = JSON.parse(rawArgs || "{}") as { range?: unknown };
     const r = parsed.range;
-    return SOCIAL_RANGES.includes(r as SocialRange) ? (r as SocialRange) : "28d";
+    return SOCIAL_RANGES.includes(r as SocialRange)
+      ? (r as SocialRange)
+      : "28d";
   } catch {
     return "28d";
   }
@@ -336,7 +367,9 @@ function parseYoutubeRange(rawArgs: string): YoutubeRange {
   try {
     const parsed = JSON.parse(rawArgs || "{}") as { range?: unknown };
     const r = parsed.range;
-    return YOUTUBE_RANGES.includes(r as YoutubeRange) ? (r as YoutubeRange) : "28d";
+    return YOUTUBE_RANGES.includes(r as YoutubeRange)
+      ? (r as YoutubeRange)
+      : "28d";
   } catch {
     return "28d";
   }
@@ -626,7 +659,10 @@ async function buildOverview(ctx: ToolContext): Promise<unknown> {
     ]);
 
   const opps = opportunities.ok ? opportunities.value : [];
-  const pipelineByStage: Record<string, { count: number; totalAmount: number }> = {};
+  const pipelineByStage: Record<
+    string,
+    { count: number; totalAmount: number }
+  > = {};
   for (const o of opps) {
     const bucket = pipelineByStage[o.stage] ?? { count: 0, totalAmount: 0 };
     bucket.count += 1;
@@ -645,7 +681,8 @@ async function buildOverview(ctx: ToolContext): Promise<unknown> {
   let proposalTotalViews = 0;
   for (const p of proposalList) {
     proposalsByStatus[p.status] = (proposalsByStatus[p.status] ?? 0) + 1;
-    proposalTotalViews += ((p as Record<string, unknown>).viewsCount as number) ?? 0;
+    proposalTotalViews +=
+      ((p as Record<string, unknown>).viewsCount as number) ?? 0;
   }
 
   const campaignList = campaigns.ok ? campaigns.value : [];
@@ -681,7 +718,8 @@ async function buildOverview(ctx: ToolContext): Promise<unknown> {
       overallDeliveryRatePct:
         campaignTotalSent + campaignTotalFailed > 0
           ? Math.round(
-              (campaignTotalSent / (campaignTotalSent + campaignTotalFailed)) * 100,
+              (campaignTotalSent / (campaignTotalSent + campaignTotalFailed)) *
+                100,
             )
           : null,
     },
