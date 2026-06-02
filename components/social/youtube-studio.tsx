@@ -39,11 +39,12 @@ import type { YoutubeVideo } from "@/src/schemas/youtube.schema";
 
 const nf = new Intl.NumberFormat("pt-BR");
 
-function formatChartDate(v: string | number | Date): string {
-  const s = String(v);
-  const parts = s.split("-");
-  return parts.length === 3 ? `${parts[2]}/${parts[1]}` : s;
-}
+import {
+  formatAxisLabel,
+  getFortnightKey,
+  getMonthKey,
+  toNivoSeries,
+} from "./chart-utils";
 
 const CHART_THEME = {
   text: { fill: "currentColor", fontSize: 11 },
@@ -652,15 +653,20 @@ export function YoutubeStudio({ slug }: { slug: string }) {
               <Card className="h-72 p-2 text-muted-foreground">
                 {insights.series.length > 0 ? (
                   <ResponsiveLine
-                    data={[
-                      {
-                        id: "Visualizações",
-                        data: insights.series.map((p) => ({
-                          x: p.date,
-                          y: p.views,
-                        })),
-                      },
-                    ]}
+                    data={(() => {
+                      const gk =
+                        range === "90d"
+                          ? getFortnightKey
+                          : range === "365d"
+                            ? getMonthKey
+                            : null;
+                      return [
+                        {
+                          id: "Visualizações",
+                          data: toNivoSeries(insights.series, (p) => p.views, gk),
+                        },
+                      ];
+                    })()}
                     margin={{ top: 36, right: 20, bottom: 48, left: 52 }}
                     colors={["#ef4444"]}
                     curve="monotoneX"
@@ -675,8 +681,8 @@ export function YoutubeStudio({ slug }: { slug: string }) {
                       tickSize: 0,
                       tickPadding: 8,
                       tickRotation: -45,
-                      tickValues: range === "365d" ? 12 : range === "7d" ? 7 : 6,
-                      format: formatChartDate,
+                      tickValues: range === "7d" || range === "28d" ? 7 : undefined,
+                      format: formatAxisLabel,
                     }}
                     axisLeft={{ tickSize: 0, tickPadding: 8 }}
                     theme={CHART_THEME}
