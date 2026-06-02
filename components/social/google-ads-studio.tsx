@@ -11,11 +11,12 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ResponsiveLine } from "@nivo/line";
 import Link from "next/link";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Tabs,
+  TabsContent,
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
@@ -68,28 +69,26 @@ const RECONNECT_CODES = new Set([
   "SOCIAL_TOKEN_EXPIRED",
 ]);
 
-function ErrorState({ error, slug }: { error: GoogleAdsError; slug: string }) {
-  const needsReconnect = error.code && RECONNECT_CODES.has(error.code);
+function ReconnectNotice({ slug, error }: { error: GoogleAdsError; slug: string }) {
   return (
-    <div className="flex flex-col items-center gap-4 py-20 text-center">
-      <HugeiconsIcon
-        icon={Megaphone01Icon}
-        className="size-10 text-muted-foreground"
-      />
-      <p className="text-sm text-muted-foreground">{error.message}</p>
-      {needsReconnect && (
-        <Link
-          href={`/settings?tab=social`}
-          className={buttonVariants({ variant: "outline", size: "sm" })}
-        >
-          Reconectar Google Ads
-        </Link>
-      )}
+    <div className="mx-auto flex max-w-md flex-col items-center gap-4 py-16 text-center">
+      <div className="flex size-14 items-center justify-center rounded-2xl border border-border/70 bg-card/70 text-muted-foreground">
+        <HugeiconsIcon icon={Megaphone01Icon} className="size-6 text-blue-500" />
+      </div>
+      <div className="space-y-1.5">
+        <h2 className="font-heading font-semibold text-xl tracking-tight">
+          Conecte o Google Ads
+        </h2>
+        <p className="text-muted-foreground text-sm">{error.message}</p>
+      </div>
+      <Link href={`/${slug}/settings`} className={buttonVariants()}>
+        Ir para configurações
+      </Link>
     </div>
   );
 }
 
-function MetricCard({
+function StatCard({
   icon,
   label,
   value,
@@ -99,23 +98,26 @@ function MetricCard({
   value: string;
 }) {
   return (
-    <Card className="flex flex-col gap-1 p-4">
-      <div className="flex items-center gap-1.5 text-muted-foreground">
-        <HugeiconsIcon icon={icon} className="size-4" />
-        <span className="text-xs">{label}</span>
+    <Card size="sm" className="gap-1 px-4 py-3">
+      <div className="flex items-center gap-1.5 text-muted-foreground text-xs">
+        <HugeiconsIcon icon={icon} className="size-3.5" />
+        {label}
       </div>
-      <span className="text-2xl font-semibold">{value}</span>
+      <span className="font-heading font-semibold text-2xl tabular-nums tracking-tight">
+        {value}
+      </span>
     </Card>
   );
 }
 
 export function GoogleAdsStudio({ slug }: { slug: string }) {
-  const { overview, insights, range, setRange, isLoading, error } =
+  const { overview, insights, range, setRange, isLoading, error, refetch } =
     useGoogleAds(slug);
 
-  if (isLoading) {
+  if (isLoading && !overview) {
     return (
-      <div className="flex flex-col gap-4">
+      <div className="mx-auto w-full max-w-5xl space-y-6 px-4 py-6 sm:px-6">
+        <Skeleton className="h-20 w-full" />
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <Skeleton key={i} className="h-24 w-full" />
@@ -126,15 +128,33 @@ export function GoogleAdsStudio({ slug }: { slug: string }) {
     );
   }
 
-  if (error) {
-    return <ErrorState error={error} slug={slug} />;
+  if (!overview && error) {
+    return (
+      <div className="px-4 py-6 sm:px-6">
+        {RECONNECT_CODES.has(error.code ?? "") ? (
+          <ReconnectNotice slug={slug} error={error} />
+        ) : (
+          <div className="text-center text-muted-foreground text-sm">
+            {error.message}
+            <div className="mt-3">
+              <Button variant="outline" size="sm" onClick={refetch}>
+                Tentar novamente
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
   }
 
+  if (!overview) return null;
+
   const ctr =
-    overview && overview.totals.impressions > 0
-      ? ((overview.totals.clicks / overview.totals.impressions) * 100).toFixed(
-          2,
-        )
+    overview.totals.impressions > 0
+      ? (
+          (overview.totals.clicks / overview.totals.impressions) *
+          100
+        ).toFixed(2)
       : "0.00";
 
   const clicksData = insights
@@ -152,127 +172,141 @@ export function GoogleAdsStudio({ slug }: { slug: string }) {
         : 6;
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <HugeiconsIcon
-            icon={Megaphone01Icon}
-            className="size-5 text-blue-500"
-          />
-          <div>
-            <h2 className="text-lg font-semibold">Google Ads</h2>
-            {overview?.customerName && (
-              <p className="text-sm text-muted-foreground">
-                {overview.customerName}
-              </p>
-            )}
+    <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6">
+      <header className="mb-6 flex items-center gap-4">
+        <div className="flex size-16 items-center justify-center rounded-full bg-blue-500/10 text-blue-500">
+          <HugeiconsIcon icon={Megaphone01Icon} className="size-7" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <h2 className="truncate font-heading font-semibold text-xl tracking-tight">
+            Google Ads
+          </h2>
+          {overview.customerName && (
+            <p className="truncate text-muted-foreground text-sm">
+              {overview.customerName}
+            </p>
+          )}
+        </div>
+        <span className="shrink-0 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
+          {nf.format(overview.activeCampaigns)} campanha
+          {overview.activeCampaigns !== 1 ? "s" : ""} ativa
+          {overview.activeCampaigns !== 1 ? "s" : ""}
+        </span>
+      </header>
+
+      <Tabs defaultValue="overview">
+        <div className="mb-6 border-b border-border/60">
+          <TabsList variant="line" className="w-full justify-start">
+            <TabsTrigger value="overview">Visão Geral</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          </TabsList>
+        </div>
+
+        <TabsContent value="overview" className="space-y-4">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            <StatCard
+              icon={EyeIcon}
+              label="Impressões (30d)"
+              value={nf.format(overview.totals.impressions)}
+            />
+            <StatCard
+              icon={Cursor01Icon}
+              label="Cliques (30d)"
+              value={nf.format(overview.totals.clicks)}
+            />
+            <StatCard
+              icon={Analytics01Icon}
+              label="CTR (30d)"
+              value={`${ctr}%`}
+            />
+            <StatCard
+              icon={MoneyBag01Icon}
+              label="Custo (30d)"
+              value={`R$ ${formatCost(overview.totals.costMicros)}`}
+            />
           </div>
-        </div>
-        {overview && (
-          <span className="rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
-            {nf.format(overview.activeCampaigns)} campanha
-            {overview.activeCampaigns !== 1 ? "s" : ""} ativa
-            {overview.activeCampaigns !== 1 ? "s" : ""}
-          </span>
-        )}
-      </div>
+        </TabsContent>
 
-      {overview && (
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          <MetricCard
-            icon={EyeIcon}
-            label="Impressões (30d)"
-            value={nf.format(overview.totals.impressions)}
-          />
-          <MetricCard
-            icon={Cursor01Icon}
-            label="Cliques (30d)"
-            value={nf.format(overview.totals.clicks)}
-          />
-          <MetricCard
-            icon={Analytics01Icon}
-            label="CTR (30d)"
-            value={`${ctr}%`}
-          />
-          <MetricCard
-            icon={MoneyBag01Icon}
-            label="Custo (30d)"
-            value={`R$ ${formatCost(overview.totals.costMicros)}`}
-          />
-        </div>
-      )}
-
-      {insights && clicksData && (
-        <Card className="p-4">
-          <div className="mb-4 flex items-center justify-between">
-            <span className="text-sm font-medium">Cliques por período</span>
+        <TabsContent value="analytics" className="space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="font-heading font-semibold text-lg tracking-tight">
+              Insights
+            </h3>
             <Tabs
               value={range}
               onValueChange={(v) => setRange(v as GoogleAdsInsightsRange)}
             >
-              <TabsList className="h-7">
+              <TabsList>
                 {RANGES.map((r) => (
-                  <TabsTrigger
-                    key={r.value}
-                    value={r.value}
-                    className="h-6 px-2 text-xs"
-                  >
+                  <TabsTrigger key={r.value} value={r.value}>
                     {r.label}
                   </TabsTrigger>
                 ))}
               </TabsList>
             </Tabs>
           </div>
-          <div className="h-56">
-            <ResponsiveLine
-              data={[{ id: "Cliques", data: clicksData }]}
-              theme={CHART_THEME}
-              margin={{ top: 8, right: 16, bottom: 32, left: 40 }}
-              xScale={{ type: "point" }}
-              yScale={{ type: "linear", min: 0, max: "auto", stacked: false }}
-              axisBottom={{
-                tickSize: 0,
-                tickPadding: 8,
-                tickValues,
-                format: (v) => formatAxisLabel(String(v)),
-              }}
-              axisLeft={{
-                tickSize: 0,
-                tickPadding: 8,
-                tickValues: 4,
-                format: (v) => nf.format(Number(v)),
-              }}
-              enablePoints={false}
-              enableGridX={false}
-              curve="monotoneX"
-              colors={["#3b82f6"]}
-              lineWidth={2}
-              useMesh
-              enableCrosshair={false}
-            />
-          </div>
-        </Card>
-      )}
 
-      {insights && (
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-          <MetricCard
-            icon={EyeIcon}
-            label={`Impressões (${range})`}
-            value={nf.format(insights.totals.impressions)}
-          />
-          <MetricCard
-            icon={Cursor01Icon}
-            label={`Cliques (${range})`}
-            value={nf.format(insights.totals.clicks)}
-          />
-          <MetricCard
-            icon={Target01Icon}
-            label={`Conversões (${range})`}
-            value={nf.format(Math.round(insights.totals.conversions))}
-          />
-        </div>
-      )}
+          {insights && clicksData ? (
+            <>
+              <Card className="p-4">
+                <p className="mb-4 text-sm font-medium">Cliques por período</p>
+                <div className="h-56">
+                  <ResponsiveLine
+                    data={[{ id: "Cliques", data: clicksData }]}
+                    theme={CHART_THEME}
+                    margin={{ top: 8, right: 16, bottom: 32, left: 40 }}
+                    xScale={{ type: "point" }}
+                    yScale={{
+                      type: "linear",
+                      min: 0,
+                      max: "auto",
+                      stacked: false,
+                    }}
+                    axisBottom={{
+                      tickSize: 0,
+                      tickPadding: 8,
+                      tickValues,
+                      format: (v) => formatAxisLabel(String(v)),
+                    }}
+                    axisLeft={{
+                      tickSize: 0,
+                      tickPadding: 8,
+                      tickValues: 4,
+                      format: (v) => nf.format(Number(v)),
+                    }}
+                    enablePoints={false}
+                    enableGridX={false}
+                    curve="monotoneX"
+                    colors={["#3b82f6"]}
+                    lineWidth={2}
+                    useMesh
+                    enableCrosshair={false}
+                  />
+                </div>
+              </Card>
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+                <StatCard
+                  icon={EyeIcon}
+                  label={`Impressões (${range})`}
+                  value={nf.format(insights.totals.impressions)}
+                />
+                <StatCard
+                  icon={Cursor01Icon}
+                  label={`Cliques (${range})`}
+                  value={nf.format(insights.totals.clicks)}
+                />
+                <StatCard
+                  icon={Target01Icon}
+                  label={`Conversões (${range})`}
+                  value={nf.format(Math.round(insights.totals.conversions))}
+                />
+              </div>
+            </>
+          ) : (
+            <Skeleton className="h-72 w-full" />
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

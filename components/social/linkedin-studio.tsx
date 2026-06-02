@@ -1,20 +1,30 @@
 "use client";
 
 import {
+  Analytics01Icon,
+  Comment01Icon,
+  FavouriteIcon,
   Linkedin01Icon,
   Mail01Icon,
   Share01Icon,
   UserCircleIcon,
+  UserMultipleIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
 import { useState } from "react";
-import { buttonVariants } from "@/components/ui/button";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { type LinkedInError, useLinkedIn } from "@/src/hooks/use-linkedin";
+import type { LinkedInOverview } from "@/src/schemas/linkedin.schema";
 
 const RECONNECT_CODES = new Set([
   "SOCIAL_CONNECTION_NOT_FOUND",
@@ -22,75 +32,94 @@ const RECONNECT_CODES = new Set([
   "SOCIAL_TOKEN_EXPIRED",
 ]);
 
-function ErrorState({
-  error,
-  slug,
-}: {
-  error: LinkedInError;
-  slug: string;
-}) {
-  const needsReconnect = error.code && RECONNECT_CODES.has(error.code);
+function ReconnectNotice({ slug, error }: { slug: string; error: LinkedInError }) {
   return (
-    <div className="flex flex-col items-center gap-4 py-20 text-center">
-      <HugeiconsIcon
-        icon={Linkedin01Icon}
-        className="size-10 text-muted-foreground"
-      />
-      <p className="text-sm text-muted-foreground">{error.message}</p>
-      {needsReconnect && (
-        <Link
-          href={`/settings?tab=social`}
-          className={buttonVariants({ variant: "outline", size: "sm" })}
-        >
-          Reconectar LinkedIn
-        </Link>
-      )}
+    <div className="mx-auto flex max-w-md flex-col items-center gap-4 py-16 text-center">
+      <div className="flex size-14 items-center justify-center rounded-2xl border border-border/70 bg-card/70 text-muted-foreground">
+        <HugeiconsIcon icon={Linkedin01Icon} className="size-6 text-blue-700" />
+      </div>
+      <div className="space-y-1.5">
+        <h2 className="font-heading font-semibold text-xl tracking-tight">
+          Conecte o LinkedIn
+        </h2>
+        <p className="text-muted-foreground text-sm">{error.message}</p>
+      </div>
+      <Link href={`/${slug}/settings`} className={buttonVariants()}>
+        Ir para configurações
+      </Link>
     </div>
   );
 }
 
-function ProfileCard({
+function LinkedInPostPreview({
   name,
-  email,
+  headline,
   picture,
+  text,
 }: {
   name: string | null;
-  email: string | null;
+  headline: string | null;
   picture: string | null;
+  text: string;
 }) {
   return (
-    <Card className="flex items-center gap-4 p-4">
-      {picture ? (
-        <img
-          src={picture}
-          alt={name ?? "Perfil"}
-          className="size-12 rounded-full object-cover"
-        />
-      ) : (
-        <div className="flex size-12 items-center justify-center rounded-full bg-blue-700/10">
-          <HugeiconsIcon
-            icon={UserCircleIcon}
-            className="size-6 text-blue-700"
+    <div className="w-full overflow-hidden rounded-xl border border-border/70 bg-background shadow-sm">
+      <div className="flex items-start gap-3 p-4 pb-3">
+        {picture ? (
+          // biome-ignore lint/performance/noImgElement: avatar externo do LinkedIn
+          <img
+            src={picture}
+            alt={name ?? "Perfil"}
+            className="size-12 shrink-0 rounded-full object-cover"
           />
+        ) : (
+          <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-blue-700/10">
+            <HugeiconsIcon icon={UserCircleIcon} className="size-7 text-blue-700" />
+          </div>
+        )}
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold text-sm leading-snug">{name ?? "Seu nome"}</p>
+          {headline && (
+            <p className="line-clamp-2 text-muted-foreground text-xs">{headline}</p>
+          )}
+          <p className="mt-0.5 text-muted-foreground/60 text-xs">Agora · 🌐</p>
         </div>
-      )}
-      <div className="min-w-0 flex-1">
-        <p className="truncate font-medium">{name ?? "—"}</p>
-        {email && (
-          <p className="flex items-center gap-1 truncate text-sm text-muted-foreground">
-            <HugeiconsIcon icon={Mail01Icon} className="size-3.5 shrink-0" />
-            {email}
+      </div>
+      <div className="px-4 pb-4">
+        {text ? (
+          <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">{text}</p>
+        ) : (
+          <p className="text-muted-foreground/40 text-sm italic">
+            O conteúdo do post aparecerá aqui…
           </p>
         )}
       </div>
-    </Card>
+      <div className="border-t border-border/60 px-4 py-2.5">
+        <div className="flex items-center gap-5 text-muted-foreground text-xs">
+          <button type="button" className="flex items-center gap-1.5 hover:text-foreground">
+            <HugeiconsIcon icon={FavouriteIcon} className="size-4" />
+            Curtir
+          </button>
+          <button type="button" className="flex items-center gap-1.5 hover:text-foreground">
+            <HugeiconsIcon icon={Comment01Icon} className="size-4" />
+            Comentar
+          </button>
+          <button type="button" className="flex items-center gap-1.5 hover:text-foreground">
+            <HugeiconsIcon icon={Share01Icon} className="size-4" />
+            Compartilhar
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
-function PublishForm({
+function PostComposer({
+  overview,
   onPublish,
   isPublishing,
 }: {
+  overview: LinkedInOverview;
   onPublish: (text: string) => Promise<{ ok: boolean; error?: LinkedInError }>;
   isPublishing: boolean;
 }) {
@@ -116,84 +145,181 @@ function PublishForm({
   }
 
   return (
-    <Card className="p-4">
-      <h3 className="mb-3 text-sm font-medium">Novo post</h3>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-        <Textarea
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="O que você quer compartilhar?"
-          rows={4}
-          maxLength={3000}
-          className="resize-none"
+    <div className="grid gap-6 lg:grid-cols-2">
+      <div className="space-y-3">
+        <h3 className="font-heading font-semibold text-base tracking-tight">
+          Publicar no LinkedIn
+        </h3>
+        <Card className="p-4 sm:p-6">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+            <Textarea
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="O que você quer compartilhar?"
+              rows={6}
+              maxLength={3000}
+              className="resize-none"
+            />
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">{text.length}/3000</span>
+              <Button type="submit" size="sm" disabled={!text.trim() || isPublishing}>
+                <HugeiconsIcon icon={Share01Icon} className="mr-1.5 size-3.5" />
+                {isPublishing ? "Publicando…" : "Publicar"}
+              </Button>
+            </div>
+            {feedback && (
+              <p
+                className={`text-sm ${feedback.type === "success" ? "text-green-600" : "text-destructive"}`}
+              >
+                {feedback.message}
+              </p>
+            )}
+          </form>
+        </Card>
+      </div>
+      <div className="space-y-3">
+        <h3 className="font-heading font-semibold text-base tracking-tight text-muted-foreground">
+          Pré-visualização
+        </h3>
+        <LinkedInPostPreview
+          name={overview.name}
+          headline={overview.headline}
+          picture={overview.picture}
+          text={text}
         />
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-muted-foreground">
-            {text.length}/3000
-          </span>
-          <Button
-            type="submit"
-            size="sm"
-            disabled={!text.trim() || isPublishing}
-          >
-            <HugeiconsIcon icon={Share01Icon} className="mr-1.5 size-3.5" />
-            {isPublishing ? "Publicando…" : "Publicar"}
-          </Button>
-        </div>
-        {feedback && (
-          <p
-            className={`text-sm ${feedback.type === "success" ? "text-green-600" : "text-destructive"}`}
-          >
-            {feedback.message}
-          </p>
-        )}
-      </form>
-    </Card>
+      </div>
+    </div>
   );
 }
 
 export function LinkedInStudio({ slug }: { slug: string }) {
-  const { overview, isLoading, isPublishing, error, publish } =
+  const { overview, isLoading, isPublishing, error, publish, refetch } =
     useLinkedIn(slug);
 
-  if (isLoading) {
+  if (isLoading && !overview) {
     return (
-      <div className="flex flex-col gap-4">
+      <div className="mx-auto w-full max-w-5xl space-y-6 px-4 py-6 sm:px-6">
         <Skeleton className="h-20 w-full" />
         <Skeleton className="h-40 w-full" />
       </div>
     );
   }
 
-  if (error) {
-    return <ErrorState error={error} slug={slug} />;
+  if (!overview && error) {
+    return (
+      <div className="px-4 py-6 sm:px-6">
+        <ReconnectNotice slug={slug} error={error} />
+      </div>
+    );
+  }
+
+  if (!overview) {
+    return (
+      <div className="px-4 py-6 text-center text-muted-foreground text-sm sm:px-6">
+        Não foi possível carregar o perfil.
+        <div className="mt-3">
+          <Button variant="outline" size="sm" onClick={refetch}>
+            Tentar novamente
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-center gap-2">
-        <HugeiconsIcon
-          icon={Linkedin01Icon}
-          className="size-5 text-blue-700"
-        />
-        <h2 className="text-lg font-semibold">LinkedIn</h2>
-      </div>
+    <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6">
+      <header className="mb-6 flex items-center gap-4">
+        {overview.picture ? (
+          // biome-ignore lint/performance/noImgElement: avatar externo do LinkedIn
+          <img
+            src={overview.picture}
+            alt={overview.name ?? "LinkedIn"}
+            className="size-16 rounded-full border border-border/70 object-cover"
+          />
+        ) : (
+          <div className="flex size-16 items-center justify-center rounded-full bg-blue-700/10 text-blue-700">
+            <HugeiconsIcon icon={Linkedin01Icon} className="size-7" />
+          </div>
+        )}
+        <div className="min-w-0">
+          <h2 className="truncate font-heading font-semibold text-xl tracking-tight">
+            {overview.name ?? "LinkedIn"}
+          </h2>
+          {overview.headline && (
+            <p className="truncate text-muted-foreground text-sm">{overview.headline}</p>
+          )}
+          {overview.email && (
+            <p className="flex items-center gap-1 truncate text-muted-foreground text-xs">
+              <HugeiconsIcon icon={Mail01Icon} className="size-3.5 shrink-0" />
+              {overview.email}
+            </p>
+          )}
+        </div>
+      </header>
 
-      {overview && (
-        <ProfileCard
-          name={overview.name}
-          email={overview.email}
-          picture={overview.picture}
-        />
-      )}
+      <Tabs defaultValue="overview">
+        <div className="mb-6 border-b border-border/60">
+          <TabsList variant="line" className="w-full justify-start">
+            <TabsTrigger value="overview">Visão Geral</TabsTrigger>
+            <TabsTrigger value="post">Post</TabsTrigger>
+          </TabsList>
+        </div>
 
-      <PublishForm onPublish={publish} isPublishing={isPublishing} />
+        <TabsContent value="overview" className="space-y-4">
+          <Card className="divide-y divide-border/60">
+            <div className="flex items-center gap-3 p-4">
+              <HugeiconsIcon
+                icon={UserCircleIcon}
+                className="size-4 shrink-0 text-muted-foreground"
+              />
+              <span className="w-24 shrink-0 text-muted-foreground text-sm">Nome</span>
+              <span className="text-sm font-medium">{overview.name ?? "—"}</span>
+            </div>
+            {overview.headline && (
+              <div className="flex items-start gap-3 p-4">
+                <HugeiconsIcon
+                  icon={UserMultipleIcon}
+                  className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+                />
+                <span className="w-24 shrink-0 text-muted-foreground text-sm">Cargo</span>
+                <span className="text-sm">{overview.headline}</span>
+              </div>
+            )}
+            {overview.email && (
+              <div className="flex items-center gap-3 p-4">
+                <HugeiconsIcon
+                  icon={Mail01Icon}
+                  className="size-4 shrink-0 text-muted-foreground"
+                />
+                <span className="w-24 shrink-0 text-muted-foreground text-sm">Email</span>
+                <span className="text-sm">{overview.email}</span>
+              </div>
+            )}
+          </Card>
+          <Card className="flex items-start gap-3 p-4">
+            <HugeiconsIcon
+              icon={Analytics01Icon}
+              className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+            />
+            <p className="text-muted-foreground text-sm">
+              Métricas avançadas (impressões, engajamento) estão disponíveis
+              apenas para contas com acesso ao{" "}
+              <span className="font-medium text-foreground">
+                LinkedIn Marketing Partner Program
+              </span>
+              .
+            </p>
+          </Card>
+        </TabsContent>
 
-      <p className="text-xs text-muted-foreground">
-        Métricas avançadas (impressões, engajamento) estão disponíveis apenas
-        para contas com acesso ao{" "}
-        <span className="font-medium">LinkedIn Marketing Partner Program</span>.
-      </p>
+        <TabsContent value="post">
+          <PostComposer
+            overview={overview}
+            onPublish={publish}
+            isPublishing={isPublishing}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

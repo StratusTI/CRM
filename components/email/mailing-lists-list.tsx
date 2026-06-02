@@ -10,13 +10,17 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { DataTable } from "@/components/data-table";
 import { PageShell } from "@/components/page-shell";
+import type { GridColumn } from "@/components/tables/grid";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { apiUrl } from "@/lib/api-url";
+import { useResourceList } from "@/src/hooks/use-resource-list";
+import { useWorkspaceLookups } from "@/src/hooks/use-workspace-lookups";
 import type {
   MailingListDTO,
   MailingListMemberDTO,
@@ -25,102 +29,65 @@ import type {
 
 const EMAIL_RX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+const COLUMNS: GridColumn[] = [
+  {
+    key: "name",
+    header: "Nome",
+    kind: "text",
+    primary: true,
+    readonly: true,
+    placeholder: "—",
+  },
+  { key: "memberCount", header: "Membros", kind: "number", readonly: true },
+  {
+    key: "description",
+    header: "Descrição",
+    kind: "text",
+    readonly: true,
+    placeholder: "—",
+  },
+  { key: "createdAt", header: "Criada em", kind: "readonly-date" },
+];
+
 export function MailingListsList({ slug }: { slug: string }) {
-  const [lists, setLists] = useState<MailingListDTO[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { items, isLoading, refetch } = useResourceList<MailingListDTO>(
+    slug,
+    "mailing-lists",
+  );
+  const { lookups } = useWorkspaceLookups(slug, []);
   const [viewing, setViewing] = useState<string | "new" | null>(null);
-
-  const refetch = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const res = await fetch(apiUrl(`/api/workspaces/${slug}/mailing-lists`));
-      const json = await res.json();
-      if (res.ok && json.success && Array.isArray(json.data)) {
-        setLists(json.data as MailingListDTO[]);
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  }, [slug]);
-
-  useEffect(() => {
-    refetch();
-  }, [refetch]);
-
-  const handleDelete = async (id: string) => {
-    const res = await fetch(
-      apiUrl(`/api/workspaces/${slug}/mailing-lists/${id}`),
-      { method: "DELETE" },
-    );
-    if (res.ok || res.status === 204) {
-      toast.success("Lista removida");
-      refetch();
-    } else {
-      toast.error("Erro ao remover lista");
-    }
-  };
 
   return (
     <PageShell>
-      <div className="flex items-center justify-between px-4 pt-4 pb-2">
-        <h1 className="font-semibold text-lg">Listas de mailing</h1>
-        <Button size="sm" onClick={() => setViewing("new")}>
-          <HugeiconsIcon icon={PlusSignIcon} strokeWidth={2} />
-          Nova lista
-        </Button>
-      </div>
-
-      <div className="px-4 pb-4">
-        {isLoading ? (
-          <div className="space-y-2">
-            {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="h-16 animate-pulse rounded-lg border border-border bg-muted/30"
-              />
-            ))}
-          </div>
-        ) : lists.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-border p-8 text-center text-muted-foreground text-sm">
-            Nenhuma lista criada ainda.
-          </div>
-        ) : (
-          <ul className="divide-y divide-border rounded-lg border border-border">
-            {lists.map((l) => (
-              <li key={l.id} className="flex items-center gap-3 px-4 py-3">
-                <div className="min-w-0 flex-1">
-                  <button
-                    type="button"
-                    className="truncate font-medium text-sm hover:underline"
-                    onClick={() => setViewing(l.id)}
-                  >
-                    {l.name}
-                  </button>
-                  <p className="truncate text-muted-foreground text-xs">
-                    {l.memberCount} membro(s)
-                    {l.description ? ` · ${l.description}` : ""}
-                  </p>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={() => handleDelete(l.id)}
-                  aria-label="Remover lista"
-                  className="shrink-0 text-muted-foreground hover:text-destructive"
-                >
-                  <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} />
-                </Button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+      <DataTable
+        columns={COLUMNS}
+        data={items}
+        slug={slug}
+        resource="mailing-lists"
+        createTitle="lista"
+        lookups={lookups}
+        isLoading={isLoading}
+        searchPlaceholder="Buscar listas…"
+        refetch={refetch}
+        disableInlineCreate
+        headerAction={
+          <Button size="sm" onClick={() => setViewing("new")}>
+            <HugeiconsIcon icon={PlusSignIcon} strokeWidth={2} />
+            Nova lista
+          </Button>
+        }
+        onOpenRecord={(record) => setViewing(record.id)}
+      />
 
       <MailingListSheet
         slug={slug}
         viewing={viewing}
         onClose={() => setViewing(null)}
         onSaved={() => {
+          setViewing(null);
+          refetch();
+        }}
+        onDeleted={() => {
           setViewing(null);
           refetch();
         }}
@@ -134,11 +101,13 @@ function MailingListSheet({
   viewing,
   onClose,
   onSaved,
+  onDeleted,
 }: {
   slug: string;
   viewing: string | "new" | null;
   onClose: () => void;
   onSaved: () => void;
+  onDeleted: () => void;
 }) {
   const open = viewing !== null;
   const isNew = viewing === "new";
@@ -157,6 +126,7 @@ function MailingListSheet({
             slug={slug}
             id={viewing as string}
             onClose={onClose}
+            onDeleted={onDeleted}
           />
         )}
       </SheetContent>
@@ -211,7 +181,10 @@ function CreateListPanel({
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: name.trim(), description: description.trim() || undefined }),
+          body: JSON.stringify({
+            name: name.trim(),
+            description: description.trim() || undefined,
+          }),
         },
       );
       const json = await res.json();
@@ -268,10 +241,12 @@ function ListDetailPanel({
   slug,
   id,
   onClose,
+  onDeleted,
 }: {
   slug: string;
   id: string;
   onClose: () => void;
+  onDeleted: () => void;
 }) {
   const [list, setList] = useState<MailingListWithMembersDTO | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -279,6 +254,7 @@ function ListDetailPanel({
   const [nameInput, setNameInput] = useState("");
   const [addError, setAddError] = useState("");
   const [adding, setAdding] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const load = useCallback(async () => {
     setIsLoading(true);
@@ -343,6 +319,24 @@ function ListDetailPanel({
       load();
     } else {
       toast.error("Erro ao remover membro");
+    }
+  };
+
+  const deleteList = async () => {
+    setDeleting(true);
+    try {
+      const res = await fetch(
+        apiUrl(`/api/workspaces/${slug}/mailing-lists/${id}`),
+        { method: "DELETE" },
+      );
+      if (res.ok || res.status === 204) {
+        toast.success("Lista removida");
+        onDeleted();
+      } else {
+        toast.error("Erro ao remover lista");
+      }
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -430,6 +424,24 @@ function ListDetailPanel({
           </div>
         )}
       </div>
+
+      {!isLoading && list && (
+        <div className="flex shrink-0 items-center justify-between gap-2 border-t p-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={deleteList}
+            disabled={deleting}
+            className="text-muted-foreground hover:text-destructive"
+          >
+            <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} className="mr-1.5 size-4" />
+            {deleting ? "Removendo…" : "Remover lista"}
+          </Button>
+          <Button variant="ghost" onClick={onClose}>
+            Fechar
+          </Button>
+        </div>
+      )}
     </>
   );
 }
