@@ -7,6 +7,7 @@ import type {
   YoutubeChannelOverview,
   YoutubeInsights,
   YoutubeInsightsRange,
+  YoutubeVideos,
 } from "@/src/schemas/youtube.schema";
 
 type ApiResponse<T> = {
@@ -43,12 +44,12 @@ async function getJson<T>(
 }
 
 /**
- * Dados do YouTube para o workspace: overview do canal + analytics (com janela
- * selecionável) + ação de publicar. Segue o padrão fetch/useState das demais
- * features (sem SWR). A janela de analytics dispara um refetch ao mudar.
+ * Dados do YouTube para o workspace: overview do canal + vídeos recentes +
+ * analytics (janela selecionável) + publicar.
  */
 export function useYoutube(slug: string) {
   const [overview, setOverview] = useState<YoutubeChannelOverview | null>(null);
+  const [videos, setVideos] = useState<YoutubeVideos | null>(null);
   const [insights, setInsights] = useState<YoutubeInsights | null>(null);
   const [range, setRange] = useState<YoutubeInsightsRange>("28d");
   const [isLoading, setIsLoading] = useState(true);
@@ -58,8 +59,9 @@ export function useYoutube(slug: string) {
     async (selectedRange: YoutubeInsightsRange) => {
       setIsLoading(true);
       setError(null);
-      const [ov, ins] = await Promise.all([
+      const [ov, vid, ins] = await Promise.all([
         getJson<YoutubeChannelOverview>(`${BASE(slug)}/overview`),
+        getJson<YoutubeVideos>(`${BASE(slug)}/videos`),
         getJson<YoutubeInsights>(
           `${BASE(slug)}/insights?range=${selectedRange}`,
         ),
@@ -68,11 +70,13 @@ export function useYoutube(slug: string) {
       if (!ov.ok) {
         setError(ov.error);
         setOverview(null);
+        setVideos(null);
         setInsights(null);
         setIsLoading(false);
         return;
       }
       setOverview(ov.data);
+      setVideos(vid.ok ? vid.data : null);
       // Analytics pode falhar isoladamente (API não habilitada) sem derrubar a
       // página inteira — guardamos o erro mas mantemos o overview visível.
       if (ins.ok) setInsights(ins.data);
@@ -124,6 +128,7 @@ export function useYoutube(slug: string) {
 
   return {
     overview,
+    videos,
     insights,
     range,
     setRange,

@@ -243,3 +243,88 @@ export async function uploadVideo(
     return err(socialOauthFailed());
   }
 }
+
+/**
+ * Vídeos recentes do canal via playlist de uploads (2 chamadas: busca o id da
+ * playlist em contentDetails e depois os itens). Não requer Analytics API.
+ */
+export async function fetchRecentVideos(
+  accessToken: string,
+): Promise<Result<import("@/src/schemas/youtube.schema").YoutubeVideos>> {
+  const headers = {
+    Authorization: `Bearer ${accessToken}`,
+    Accept: "application/json",
+  };
+
+  try {
+    // Passo 1: obter o id da playlist de uploads do canal.
+    const chRes = await fetch(
+      `${DATA_API}/channels?part=contentDetails&mine=true`,
+      { headers },
+    );
+    if (!chRes.ok) {
+      await logFailure("channels/contentDetails", chRes);
+      return err(socialOauthFailed());
+    }
+    const chJson = (await chRes.json()) as {
+      items?: {
+        contentDetails?: {
+          relatedPlaylists?: { uploads?: string };
+        };
+      }[];
+    };
+    const uploadsPlaylistId =
+      chJson.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
+    if (!uploadsPlaylistId) {
+      console.error("[youtube] playlist de uploads não encontrada");
+      return err(socialOauthFailed("Playlist de uploads não encontrada"));
+    }
+
+    // Passo 2: buscar os itens da playlist (vídeos mais recentes).
+    const params = new URLSearchParams({
+      part: "snippet,contentDetails",
+      playlistId: uploadsPlaylistId,
+      maxResults: "20",
+    });
+    const plRes = await fetch(
+      `${DATA_API}/playlistItems?${params.toString()}`,
+      { headers },
+    );
+    if (!plRes.ok) {
+      await logFailure("playlistItems", plRes);
+      return err(socialOauthFailed());
+    }
+    const plJson = (await plRes.json()) as {
+      items?: {
+        snippet?: {
+          title?: string;
+          publishedAt?: string;
+          thumbnails?: { medium?: { url?: string }; default?: { url?: string } };
+        };
+        contentDetails?: { videoId?: string };
+      }[];
+    };
+
+    const videos = (plJson.items ?? [])
+      .map((item) => {
+        const videoId = item.contentDetails?.videoId;
+        if (!videoId) return null;
+        return {
+          videoId,
+          title: item.snippet?.title ?? "",
+          thumbnailUrl:
+            item.snippet?.thumbnails?.medium?.url ??
+            item.snippet?.thumbnails?.default?.url ??
+            null,
+          publishedAt: item.snippet?.publishedAt ?? "",
+          url: `https://www.youtube.com/watch?v=${videoId}`,
+        };
+      })
+      .filter((v): v is NonNullable<typeof v> => v !== null);
+
+    return ok({ videos });
+  } catch (error) {
+    console.error("[youtube] fetchRecentVideos erro de rede", error);
+    return err(socialOauthFailed());
+  }
+}

@@ -328,6 +328,7 @@ function UploadForm({
 export function YoutubeStudio({ slug }: { slug: string }) {
   const {
     overview,
+    videos,
     insights,
     range,
     setRange,
@@ -432,6 +433,62 @@ export function YoutubeStudio({ slug }: { slug: string }) {
               value={overview.videoCount}
             />
           </div>
+
+          {videos && videos.videos.length > 0 ? (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {videos.videos.map((video) => {
+                const date = video.publishedAt
+                  ? new Date(video.publishedAt).toLocaleDateString("pt-BR", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })
+                  : null;
+                return (
+                  <a
+                    key={video.videoId}
+                    href={video.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <Card className="group overflow-hidden p-0">
+                      <div className="relative aspect-video w-full bg-muted">
+                        {video.thumbnailUrl ? (
+                          // biome-ignore lint/performance/noImgElement: thumbnail externa do YouTube
+                          <img
+                            src={video.thumbnailUrl}
+                            alt={video.title}
+                            className="size-full object-cover transition-transform group-hover:scale-[1.03]"
+                          />
+                        ) : (
+                          <div className="flex size-full items-center justify-center text-muted-foreground/30">
+                            <HugeiconsIcon icon={Video01Icon} className="size-10" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="space-y-0.5 p-3">
+                        <p className="line-clamp-2 font-medium text-sm leading-snug">
+                          {video.title}
+                        </p>
+                        {date && (
+                          <p className="text-muted-foreground text-xs">{date}</p>
+                        )}
+                      </div>
+                    </Card>
+                  </a>
+                );
+              })}
+            </div>
+          ) : videos && videos.videos.length === 0 ? (
+            <Card className="px-4 py-10 text-center text-muted-foreground text-sm">
+              <HugeiconsIcon
+                icon={Video01Icon}
+                className="mx-auto mb-2 size-6 opacity-60"
+              />
+              Nenhum vídeo recente.
+            </Card>
+          ) : null}
         </TabsContent>
 
         <TabsContent value="post">
