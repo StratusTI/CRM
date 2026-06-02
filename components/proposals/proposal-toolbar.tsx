@@ -3,6 +3,7 @@
 import {
   ArrowDown01Icon,
   CodeIcon,
+  Delete01Icon,
   Heading01Icon,
   Heading02Icon,
   Heading03Icon,
@@ -32,6 +33,8 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
@@ -109,6 +112,76 @@ function promptLink(editor: Editor) {
 function promptImage(editor: Editor) {
   const url = window.prompt("Cole a URL da imagem")?.trim();
   if (url) editor.chain().focus().setImage({ src: url }).run();
+}
+
+/** Dropdown contextual com operações de linha/coluna — aparece dentro de tabelas. */
+function TableMenu({ editor }: { editor: Editor }) {
+  if (!editor.isActive("table")) return null;
+
+  const cmd = () => editor.chain().focus();
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        nativeButton={true}
+        render={
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="gap-1.5 bg-accent text-accent-foreground"
+          >
+            <HugeiconsIcon icon={Table01Icon} strokeWidth={2} />
+            <span>Tabela</span>
+            <HugeiconsIcon icon={ArrowDown01Icon} strokeWidth={2} />
+          </Button>
+        }
+      />
+      <DropdownMenuContent align="start" className="w-52">
+        <DropdownMenuLabel>Linhas</DropdownMenuLabel>
+        <DropdownMenuItem onClick={() => cmd().addRowBefore().run()}>
+          Inserir linha acima
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => cmd().addRowAfter().run()}>
+          Inserir linha abaixo
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => cmd().deleteRow().run()}
+          className="text-destructive focus:text-destructive"
+        >
+          <HugeiconsIcon icon={Delete01Icon} strokeWidth={2} />
+          Excluir linha
+        </DropdownMenuItem>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuLabel>Colunas</DropdownMenuLabel>
+        <DropdownMenuItem onClick={() => cmd().addColumnBefore().run()}>
+          Inserir coluna à esquerda
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => cmd().addColumnAfter().run()}>
+          Inserir coluna à direita
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => cmd().deleteColumn().run()}
+          className="text-destructive focus:text-destructive"
+        >
+          <HugeiconsIcon icon={Delete01Icon} strokeWidth={2} />
+          Excluir coluna
+        </DropdownMenuItem>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuItem
+          onClick={() => cmd().deleteTable().run()}
+          className="text-destructive focus:text-destructive"
+        >
+          <HugeiconsIcon icon={Delete01Icon} strokeWidth={2} />
+          Excluir tabela
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 }
 
 /** Menu superior com as opções do TipTap organizadas em grupos. */
@@ -265,6 +338,7 @@ export function ProposalToolbar({ editor }: { editor: Editor }) {
             .run()
         }
       />
+      <TableMenu editor={editor} />
       <ToolButton
         icon={Image01Icon}
         label="Inserir imagem"
