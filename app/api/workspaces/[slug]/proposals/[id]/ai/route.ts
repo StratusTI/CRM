@@ -30,7 +30,7 @@ const SYSTEM_PROMPTS: Record<z.infer<typeof ActionSchema>["action"], string> = {
     "You are an expert editor. Based on the given text, generate a short, compelling title (max 10 words). Return only the title—no punctuation at the end, no explanations.",
 };
 
-export async function POST(request: NextRequest, { params }: RouteContext) {
+export async function POST(request: NextRequest, { params: _params }: RouteContext) {
   const session = await getAuthSession();
   if (!session.ok) return handleError(session.error);
 
