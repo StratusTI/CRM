@@ -134,27 +134,29 @@ function InstagramPostPreview({
   }, [imageFile]);
 
   return (
-    <div className="mx-auto max-w-[340px] overflow-hidden rounded-xl border border-border/70 bg-background shadow-sm">
-      <div className="flex items-center gap-2.5 px-3 py-2.5">
+    <div className="w-full overflow-hidden rounded-xl border border-border/70 bg-background shadow-sm">
+      <div className="flex items-center gap-2.5 px-3 py-3">
         <div className="rounded-full bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 p-0.5">
           {avatarUrl ? (
             // biome-ignore lint/performance/noImgElement: avatar externo do Instagram
             <img
               src={avatarUrl}
               alt={username}
-              className="size-8 rounded-full border-2 border-background object-cover"
+              className="size-9 rounded-full border-2 border-background object-cover"
             />
           ) : (
-            <div className="flex size-8 items-center justify-center rounded-full bg-background">
+            <div className="flex size-9 items-center justify-center rounded-full bg-background">
               <HugeiconsIcon
                 icon={InstagramIcon}
-                className="size-4 text-pink-500"
+                className="size-5 text-pink-500"
               />
             </div>
           )}
         </div>
         <span className="font-semibold text-sm">{username || "username"}</span>
-        <span className="ml-auto select-none text-muted-foreground">···</span>
+        <span className="ml-auto select-none text-muted-foreground text-lg leading-none">
+          ···
+        </span>
       </div>
 
       <div className="aspect-square w-full bg-muted">
@@ -166,19 +168,19 @@ function InstagramPostPreview({
             className="size-full object-cover"
           />
         ) : (
-          <div className="flex size-full flex-col items-center justify-center gap-2 text-muted-foreground/30">
-            <HugeiconsIcon icon={InstagramIcon} className="size-10" />
-            <span className="text-xs">Selecione uma imagem</span>
+          <div className="flex size-full flex-col items-center justify-center gap-3 text-muted-foreground/30">
+            <HugeiconsIcon icon={InstagramIcon} className="size-14" />
+            <span className="text-sm">Selecione uma imagem</span>
           </div>
         )}
       </div>
 
-      <div className="space-y-2 px-3 py-2.5">
-        <div className="flex items-center gap-3.5">
-          <HugeiconsIcon icon={FavouriteIcon} className="size-[22px]" />
-          <HugeiconsIcon icon={Comment01Icon} className="size-[22px]" />
-          <HugeiconsIcon icon={Share08Icon} className="size-[22px]" />
-          <HugeiconsIcon icon={BookmarkIcon} className="ml-auto size-[22px]" />
+      <div className="space-y-2.5 px-3 py-3">
+        <div className="flex items-center gap-4">
+          <HugeiconsIcon icon={FavouriteIcon} className="size-6" />
+          <HugeiconsIcon icon={Comment01Icon} className="size-6" />
+          <HugeiconsIcon icon={Share08Icon} className="size-6" />
+          <HugeiconsIcon icon={BookmarkIcon} className="ml-auto size-6" />
         </div>
         {caption ? (
           <p className="text-sm leading-snug">
@@ -186,7 +188,7 @@ function InstagramPostPreview({
             <span className="line-clamp-3">{caption}</span>
           </p>
         ) : (
-          <p className="text-muted-foreground/50 text-xs italic">
+          <p className="text-muted-foreground/40 text-sm italic">
             A legenda aparecerá aqui…
           </p>
         )}

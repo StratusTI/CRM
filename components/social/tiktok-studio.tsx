@@ -117,69 +117,104 @@ function TiktokVideoPreview({
     PRIVACY_OPTIONS.find((o) => o.value === privacy)?.label ?? privacy;
 
   return (
-    <div className="mx-auto max-w-[220px]">
-      <div className="relative overflow-hidden rounded-2xl border border-border/70 bg-neutral-950 shadow-lg">
-        <div className="aspect-[9/16] w-full">
-          <div className="flex size-full flex-col items-center justify-center gap-2 text-white/20">
-            <HugeiconsIcon icon={TiktokIcon} className="size-12" />
-            <span className="text-xs">Vídeo</span>
+    <div className="mx-auto max-w-[300px]">
+      {/* Moldura estilo smartphone */}
+      <div className="relative rounded-[2.5rem] border-[5px] border-neutral-800 bg-neutral-950 shadow-2xl ring-1 ring-white/5">
+        {/* Barra de status */}
+        <div className="flex items-center justify-between px-5 pt-2.5 pb-1">
+          <span className="text-white/50 text-[10px] font-medium">9:41</span>
+          <div className="flex items-center gap-1">
+            <div className="h-1.5 w-3.5 rounded-sm bg-white/40" />
+            <div className="h-1.5 w-1 rounded-sm bg-white/40" />
+            <div className="h-1.5 w-3 rounded-sm bg-white/40" />
           </div>
+        </div>
 
-          {/* Side actions */}
-          <div className="absolute right-2 bottom-20 flex flex-col items-center gap-4">
-            <div className="flex flex-col items-center gap-0.5">
-              <div className="flex size-9 items-center justify-center rounded-full bg-white/10">
-                <HugeiconsIcon
-                  icon={FavouriteIcon}
-                  className="size-5 text-white"
-                />
-              </div>
-              <span className="text-white/70 text-xs">0</span>
+        {/* Área de vídeo 9:16 */}
+        <div className="relative overflow-hidden bg-neutral-900">
+          <div className="aspect-[9/16] w-full">
+            {/* Placeholder de vídeo */}
+            <div className="flex size-full flex-col items-center justify-center gap-3 text-white/15">
+              <HugeiconsIcon icon={TiktokIcon} className="size-14" />
+              <span className="text-xs tracking-wide">Vídeo</span>
             </div>
-            <div className="flex flex-col items-center gap-0.5">
-              <div className="flex size-9 items-center justify-center rounded-full bg-white/10">
-                <HugeiconsIcon
-                  icon={Comment01Icon}
-                  className="size-5 text-white"
-                />
-              </div>
-              <span className="text-white/70 text-xs">0</span>
-            </div>
-            <div className="flex flex-col items-center gap-0.5">
-              <div className="flex size-9 items-center justify-center rounded-full bg-white/10">
-                <HugeiconsIcon
-                  icon={Share08Icon}
-                  className="size-5 text-white"
-                />
-              </div>
-              <span className="text-white/70 text-xs">0</span>
-            </div>
-          </div>
 
-          {/* Bottom overlay */}
-          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-3 pt-8 pb-3">
-            <div className="flex items-center gap-1.5">
-              <span className="font-semibold text-white text-xs">
-                @{displayName}
-              </span>
-              {isVerified && (
-                <HugeiconsIcon
-                  icon={CheckmarkBadge01Icon}
-                  className="size-3 text-sky-400"
-                />
+            {/* Avatar do perfil + botão follow (lado direito, topo) */}
+            <div className="absolute top-4 right-3 flex flex-col items-center gap-4">
+              <div className="relative">
+                <div className="size-10 rounded-full border-2 border-white bg-gradient-to-br from-pink-500 to-purple-600 p-0.5">
+                  <div className="size-full rounded-full bg-neutral-800" />
+                </div>
+                <div className="absolute -bottom-2 left-1/2 flex size-5 -translate-x-1/2 items-center justify-center rounded-full bg-[#FE2C55] text-white font-bold text-xs leading-none">
+                  +
+                </div>
+              </div>
+            </div>
+
+            {/* Ações (lado direito, centro-baixo) */}
+            <div className="absolute right-3 bottom-24 flex flex-col items-center gap-4">
+              <div className="flex flex-col items-center gap-0.5">
+                <div className="flex size-10 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm">
+                  <HugeiconsIcon
+                    icon={FavouriteIcon}
+                    className="size-[22px] text-white"
+                  />
+                </div>
+                <span className="text-white/80 text-[11px] font-medium">0</span>
+              </div>
+              <div className="flex flex-col items-center gap-0.5">
+                <div className="flex size-10 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm">
+                  <HugeiconsIcon
+                    icon={Comment01Icon}
+                    className="size-[22px] text-white"
+                  />
+                </div>
+                <span className="text-white/80 text-[11px] font-medium">0</span>
+              </div>
+              <div className="flex flex-col items-center gap-0.5">
+                <div className="flex size-10 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm">
+                  <HugeiconsIcon
+                    icon={Share08Icon}
+                    className="size-[22px] text-white"
+                  />
+                </div>
+                <span className="text-white/80 text-[11px] font-medium">0</span>
+              </div>
+            </div>
+
+            {/* Overlay inferior */}
+            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent px-3 pt-12 pb-4">
+              <div className="flex items-center gap-1.5">
+                <span className="font-semibold text-sm text-white drop-shadow">
+                  @{displayName}
+                </span>
+                {isVerified && (
+                  <HugeiconsIcon
+                    icon={CheckmarkBadge01Icon}
+                    className="size-3.5 shrink-0 text-sky-400"
+                  />
+                )}
+              </div>
+              {caption ? (
+                <p className="mt-1 line-clamp-2 text-white/90 text-xs leading-relaxed drop-shadow">
+                  {caption}
+                </p>
+              ) : (
+                <p className="mt-1 text-white/40 text-xs italic">
+                  Legenda aqui…
+                </p>
               )}
+              <div className="mt-2 flex items-center gap-1.5">
+                <div className="size-3.5 rounded-full border border-white/60 bg-white/10" />
+                <p className="text-white/60 text-[11px]">{privacyLabel}</p>
+              </div>
             </div>
-            {caption ? (
-              <p className="mt-0.5 line-clamp-2 text-white/80 text-xs leading-snug">
-                {caption}
-              </p>
-            ) : (
-              <p className="mt-0.5 text-white/40 text-xs italic">
-                Legenda aqui…
-              </p>
-            )}
-            <p className="mt-1.5 text-white/50 text-xs">{privacyLabel}</p>
           </div>
+        </div>
+
+        {/* Barra de navegação */}
+        <div className="flex items-center justify-around px-4 pt-2 pb-3">
+          <div className="h-1 w-8 rounded-full bg-white/20" />
         </div>
       </div>
     </div>
