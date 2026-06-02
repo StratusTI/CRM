@@ -16,6 +16,9 @@ import {
   SourceCodeIcon,
   Table01Icon,
   TaskDone01Icon,
+  TextAlignCenterIcon,
+  TextAlignLeftIcon,
+  TextAlignRightIcon,
   TextBoldIcon,
   TextItalicIcon,
   TextStrikethroughIcon,
@@ -185,6 +188,27 @@ export function ProposalToolbar({ editor }: { editor: Editor }) {
         label="Link"
         active={editor.isActive("link")}
         onClick={() => promptLink(editor)}
+      />
+
+      <Separator orientation="vertical" className="mx-1 h-5" />
+
+      <ToolButton
+        icon={TextAlignLeftIcon}
+        label="Alinhar à esquerda"
+        active={editor.isActive({ textAlign: "left" })}
+        onClick={() => editor.chain().focus().setTextAlign("left").run()}
+      />
+      <ToolButton
+        icon={TextAlignCenterIcon}
+        label="Centralizar"
+        active={editor.isActive({ textAlign: "center" })}
+        onClick={() => editor.chain().focus().setTextAlign("center").run()}
+      />
+      <ToolButton
+        icon={TextAlignRightIcon}
+        label="Alinhar à direita"
+        active={editor.isActive({ textAlign: "right" })}
+        onClick={() => editor.chain().focus().setTextAlign("right").run()}
       />
 
       <Separator orientation="vertical" className="mx-1 h-5" />

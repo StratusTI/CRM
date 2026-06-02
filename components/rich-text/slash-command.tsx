@@ -110,7 +110,7 @@ export const SlashCommand = Extension.create({
           const q = query.toLowerCase();
           return SLASH_ITEMS.filter((item) =>
             `${item.title} ${item.keywords ?? ""}`.toLowerCase().includes(q),
-          ).slice(0, 12);
+          );
         },
         render: () => {
           let component: ReactRenderer<

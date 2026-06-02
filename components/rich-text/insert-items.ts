@@ -1,5 +1,6 @@
 import {
   ArrowRight01Icon,
+  FunctionIcon,
   Heading01Icon,
   Heading02Icon,
   Heading03Icon,
@@ -7,8 +8,12 @@ import {
   Heading05Icon,
   Heading06Icon,
   Image01Icon,
+  LayoutGridIcon,
+  LayoutThreeColumnIcon,
+  LayoutTwoColumnIcon,
   LeftToRightListBulletIcon,
   LeftToRightListNumberIcon,
+  MathIcon,
   MinusSignIcon,
   MusicNote01Icon,
   ParagraphIcon,
@@ -181,6 +186,49 @@ export const BLOCK_ITEMS: InsertItem[] = [
     icon: MusicNote01Icon,
     keywords: "audio som musica",
     action: (e) => promptMedia(e, "audio"),
+  },
+  {
+    key: "2cols",
+    title: "2 Colunas",
+    icon: LayoutTwoColumnIcon,
+    keywords: "2 colunas layout columns dois",
+    action: (e) => e.chain().focus().insertColumns(2).run(),
+  },
+  {
+    key: "3cols",
+    title: "3 Colunas",
+    icon: LayoutThreeColumnIcon,
+    keywords: "3 colunas layout columns tres",
+    action: (e) => e.chain().focus().insertColumns(3).run(),
+  },
+  {
+    key: "4cols",
+    title: "4 Colunas",
+    icon: LayoutGridIcon,
+    keywords: "4 colunas layout columns quatro grid",
+    action: (e) => e.chain().focus().insertColumns(4).run(),
+  },
+  {
+    key: "block-equation",
+    title: "Equação em bloco",
+    icon: MathIcon,
+    keywords: "equacao matematica latex formula bloco block math",
+    action: (e) => {
+      const latex = window.prompt("Fórmula LaTeX (ex: E = mc^2)")?.trim();
+      if (latex) e.chain().focus().insertBlockMath({ latex }).run();
+    },
+  },
+  {
+    key: "inline-equation",
+    title: "Equação inline",
+    icon: FunctionIcon,
+    keywords: "equacao matematica latex formula inline math",
+    action: (e) => {
+      const latex = window
+        .prompt("Fórmula LaTeX inline (ex: E = mc^2)")
+        ?.trim();
+      if (latex) e.chain().focus().insertInlineMath({ latex }).run();
+    },
   },
 ];
 

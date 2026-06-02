@@ -1,3 +1,6 @@
+import { Mathematics } from "@tiptap/extension-mathematics";
+import { Placeholder } from "@tiptap/extension-placeholder";
+import { TextAlign } from "@tiptap/extension-text-align";
 import {
   Details,
   DetailsContent,
@@ -9,7 +12,7 @@ import { TaskItem } from "@tiptap/extension-task-item";
 import { TaskList } from "@tiptap/extension-task-list";
 import type { Extensions } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import { Audio, Video } from "@/components/rich-text/nodes";
+import { Audio, Column, Columns, Video } from "@/components/rich-text/nodes";
 import { SlashCommand } from "@/components/rich-text/slash-command";
 
 /**
@@ -18,6 +21,7 @@ import { SlashCommand } from "@/components/rich-text/slash-command";
  */
 const BASE_EXTENSIONS: Extensions = [
   StarterKit,
+  TextAlign.configure({ types: ["heading", "paragraph"] }),
   TaskList,
   TaskItem.configure({ nested: true }),
   Details.configure({ persist: true }),
@@ -27,12 +31,22 @@ const BASE_EXTENSIONS: Extensions = [
   Image,
   Video,
   Audio,
+  Column,
+  Columns,
+  Mathematics.configure({ katexOptions: { throwOnError: false } }),
 ];
 
-/** Extensões do editor (inclui o comando "/"). */
+/** Extensões do editor (inclui o comando "/" e placeholder). */
 export const RICH_TEXT_EXTENSIONS: Extensions = [
   ...BASE_EXTENSIONS,
   SlashCommand,
+  Placeholder.configure({
+    placeholder: ({ node }) => {
+      if (node.type.name === "heading") return "Cabeçalho...";
+      return "Digite '/' para inserir um bloco...";
+    },
+    showOnlyWhenEditable: true,
+  }),
 ];
 
 /** Extensões para render read-only (página pública) — sem o menu "/". */
