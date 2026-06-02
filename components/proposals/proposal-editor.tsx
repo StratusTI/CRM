@@ -11,7 +11,9 @@ import { EditorContent, useEditor } from "@tiptap/react";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 import { toast } from "sonner";
+import { ProposalAiMenu } from "@/components/proposals/proposal-ai-menu";
 import { ProposalMetricsDrawer } from "@/components/proposals/proposal-metrics-drawer";
+import { ProposalOptionsMenu } from "@/components/proposals/proposal-options-menu";
 import { ProposalSidebar } from "@/components/proposals/proposal-sidebar";
 import { ProposalToolbar } from "@/components/proposals/proposal-toolbar";
 import { analyzeDoc, type DocStats } from "@/components/rich-text/analyze";
@@ -212,6 +214,17 @@ function ProposalEditorInner({
           <HugeiconsIcon icon={Analytics01Icon} strokeWidth={2} />
           Métricas
         </Button>
+        {editor ? (
+          <ProposalAiMenu
+            editor={editor}
+            slug={slug}
+            proposalId={initial.id}
+            onTitleChange={onTitleChange}
+          />
+        ) : null}
+        {editor ? (
+          <ProposalOptionsMenu editor={editor} slug={slug} title={title} />
+        ) : null}
       </header>
 
       {/* toolbar do TipTap */}
@@ -222,7 +235,7 @@ function ProposalEditorInner({
       {/* corpo: editor + sidebar */}
       <div className="flex min-h-0 flex-1">
         <div className="min-w-0 flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-3xl px-6 py-8">
+          <div className="px-8 py-8">
             {editor ? <EditorContent editor={editor} /> : null}
           </div>
         </div>
