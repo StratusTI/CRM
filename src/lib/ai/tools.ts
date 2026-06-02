@@ -1,11 +1,13 @@
 import { CompanyService } from "@/src/services/company.service";
 import { DashboardService } from "@/src/services/dashboard.service";
+import { EmailCampaignService } from "@/src/services/email-campaign.service";
 import { FacebookService } from "@/src/services/facebook.service";
 import { GoogleAnalyticsService } from "@/src/services/google-analytics.service";
 import { InstagramService } from "@/src/services/instagram.service";
 import { NoteService } from "@/src/services/note.service";
 import { OpportunityService } from "@/src/services/opportunity.service";
 import { PersonService } from "@/src/services/person.service";
+import { ProposalService } from "@/src/services/proposal.service";
 import { TaskService } from "@/src/services/task.service";
 import { TiktokService } from "@/src/services/tiktok.service";
 import { TwitterService } from "@/src/services/twitter.service";
@@ -61,7 +63,7 @@ export const AI_TOOLS: ToolDef[] = [
     function: {
       name: "get_workspace_overview",
       description:
-        "Resumo agregado do workspace: contagens de empresas, pessoas, oportunidades, tarefas e notas; pipeline de oportunidades por estágio (com soma de valores) e tarefas por status. Use isto primeiro para perguntas gerais ou de totais.",
+        "Resumo agregado do workspace em uma única chamada: contagens de empresas, pessoas, oportunidades, tarefas, notas, propostas (total, por status, total de visualizações) e campanhas de e-mail (total, por status, total de e-mails enviados). Pipeline de oportunidades por estágio (count + soma de valores) e tarefas por status. Use isto primeiro para perguntas gerais, de totais ou quando o usuário pedir uma visão geral.",
       parameters: {
         type: "object",
         properties: {},
@@ -120,6 +122,66 @@ export const AI_TOOLS: ToolDef[] = [
       name: "list_dashboards",
       description: "Lista os dashboards do workspace (título).",
       parameters: limitParam,
+    },
+  },
+
+  // ── Propostas ─────────────────────────────────────────────────────────
+  {
+    type: "function",
+    function: {
+      name: "list_proposals",
+      description:
+        "Lista as propostas comerciais do workspace com título, status (DRAFT/PUBLISHED/ARCHIVED), total de visualizações, data de publicação e criação. Use para ter o portfólio completo de propostas antes de aprofundar métricas de uma específica.",
+      parameters: limitParam,
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_proposal_metrics",
+      description:
+        "Métricas detalhadas de uma proposta específica: total de visualizações, visitantes únicos, taxa de conclusão (reachedEnd %), duração média de leitura e visualizações recentes. Chame após list_proposals para obter o ID.",
+      parameters: {
+        type: "object",
+        properties: {
+          proposalId: {
+            type: "string",
+            description: "ID da proposta (obtido via list_proposals).",
+          },
+        },
+        required: ["proposalId"],
+        additionalProperties: false,
+      },
+    },
+  },
+
+  // ── Campanhas de e-mail ───────────────────────────────────────────────
+  {
+    type: "function",
+    function: {
+      name: "list_email_campaigns",
+      description:
+        "Lista as campanhas de e-mail do workspace: assunto, status (SCHEDULED/SENDING/SENT/FAILED), total de destinatários, contagem de envios e falhas, taxa de entrega, data de envio/agendamento. Use para uma visão panorâmica do marketing por e-mail.",
+      parameters: limitParam,
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_email_campaign_details",
+      description:
+        "Detalhes completos de uma campanha de e-mail específica: métricas de entrega, endereço de origem, escopo de destinatários e amostra de falhas (se houver). Chame após list_email_campaigns para obter o ID.",
+      parameters: {
+        type: "object",
+        properties: {
+          campaignId: {
+            type: "string",
+            description: "ID da campanha (obtido via list_email_campaigns).",
+          },
+        },
+        required: ["campaignId"],
+        additionalProperties: false,
+      },
     },
   },
 
@@ -250,6 +312,16 @@ function parseLimit(rawArgs: string): number {
   }
 }
 
+function parseStringArg(rawArgs: string, key: string): string | null {
+  try {
+    const parsed = JSON.parse(rawArgs || "{}") as Record<string, unknown>;
+    const val = parsed[key];
+    return typeof val === "string" && val.trim().length > 0 ? val.trim() : null;
+  } catch {
+    return null;
+  }
+}
+
 function parseSocialRange(rawArgs: string): SocialRange {
   try {
     const parsed = JSON.parse(rawArgs || "{}") as { range?: unknown };
@@ -367,6 +439,98 @@ export async function executeTool(
       );
     }
 
+    // ── Propostas ─────────────────────────────────────────────────────────
+    case "list_proposals": {
+      const r = await ProposalService.list(userId, slug);
+      if (!r.ok) return toolError(r.error.message);
+      return JSON.stringify(
+        r.value.slice(0, limit).map((p) => ({
+          id: p.id,
+          title: p.title,
+          status: p.status,
+          viewsCount: (p as Record<string, unknown>).viewsCount ?? 0,
+          publishedAt: p.publishedAt,
+          createdAt: p.createdAt,
+        })),
+      );
+    }
+
+    case "get_proposal_metrics": {
+      const proposalId = parseStringArg(rawArgs, "proposalId");
+      if (!proposalId) return toolError("proposalId é obrigatório.");
+      const r = await ProposalService.getMetrics(userId, slug, proposalId);
+      if (!r.ok) return toolError(r.error.message);
+      const m = r.value;
+      return JSON.stringify({
+        totalViews: m.totalViews,
+        uniqueVisitors: m.uniqueVisitors,
+        completionRatePct: Math.round(m.completionRate * 100),
+        avgDurationMs: m.avgDurationMs,
+        avgReadingMinutes: (m.avgDurationMs / 60_000).toFixed(1),
+        recentViews: m.views.slice(0, 10).map((v) => ({
+          durationMs: v.durationMs,
+          scrolledPct: v.scrolledPct,
+          reachedEnd: v.reachedEnd,
+          referrer: v.referrer,
+          visitedAt: v.createdAt,
+        })),
+      });
+    }
+
+    // ── Campanhas de e-mail ───────────────────────────────────────────────
+    case "list_email_campaigns": {
+      const r = await EmailCampaignService.list(userId, slug);
+      if (!r.ok) return toolError(r.error.message);
+      return JSON.stringify(
+        r.value.slice(0, limit).map((c) => ({
+          id: c.id,
+          subject: c.subject,
+          status: c.status,
+          recipientCount: c.recipientCount,
+          sentCount: c.sentCount,
+          failedCount: c.failedCount,
+          deliveryRatePct:
+            c.recipientCount > 0
+              ? Math.round((c.sentCount / c.recipientCount) * 100)
+              : null,
+          recipientScope: c.recipientScope,
+          scheduledAt: c.scheduledAt,
+          sentAt: c.sentAt,
+          createdAt: c.createdAt,
+        })),
+      );
+    }
+
+    case "get_email_campaign_details": {
+      const campaignId = parseStringArg(rawArgs, "campaignId");
+      if (!campaignId) return toolError("campaignId é obrigatório.");
+      const r = await EmailCampaignService.getById(userId, slug, campaignId);
+      if (!r.ok) return toolError(r.error.message);
+      const c = r.value;
+      const failed = c.recipients
+        .filter((rec) => rec.status === "FAILED")
+        .slice(0, 10)
+        .map((rec) => ({ email: rec.email, error: rec.errorMessage }));
+      return JSON.stringify({
+        id: c.id,
+        subject: c.subject,
+        status: c.status,
+        fromAddress: c.fromAddress,
+        recipientScope: c.recipientScope,
+        recipientCount: c.recipientCount,
+        sentCount: c.sentCount,
+        failedCount: c.failedCount,
+        deliveryRatePct:
+          c.recipientCount > 0
+            ? Math.round((c.sentCount / c.recipientCount) * 100)
+            : null,
+        scheduledAt: c.scheduledAt,
+        sentAt: c.sentAt,
+        createdAt: c.createdAt,
+        failedSample: failed.length > 0 ? failed : null,
+      });
+    }
+
     // ── Instagram ─────────────────────────────────────────────────────────
     case "get_instagram_overview": {
       const r = await InstagramService.getOverview(userId, slug);
@@ -450,20 +614,23 @@ export async function executeTool(
 
 async function buildOverview(ctx: ToolContext): Promise<unknown> {
   const { userId, slug } = ctx;
-  const [companies, people, opportunities, tasks, notes] = await Promise.all([
-    CompanyService.list(userId, slug),
-    PersonService.list(userId, slug),
-    OpportunityService.list(userId, slug),
-    TaskService.list(userId, slug),
-    NoteService.list(userId, slug),
-  ]);
+  const [companies, people, opportunities, tasks, notes, proposals, campaigns] =
+    await Promise.all([
+      CompanyService.list(userId, slug),
+      PersonService.list(userId, slug),
+      OpportunityService.list(userId, slug),
+      TaskService.list(userId, slug),
+      NoteService.list(userId, slug),
+      ProposalService.list(userId, slug),
+      EmailCampaignService.list(userId, slug),
+    ]);
 
   const opps = opportunities.ok ? opportunities.value : [];
-  const pipelineByStage: Record<string, { count: number; amount: number }> = {};
+  const pipelineByStage: Record<string, { count: number; totalAmount: number }> = {};
   for (const o of opps) {
-    const bucket = pipelineByStage[o.stage] ?? { count: 0, amount: 0 };
+    const bucket = pipelineByStage[o.stage] ?? { count: 0, totalAmount: 0 };
     bucket.count += 1;
-    bucket.amount += o.amount ?? 0;
+    bucket.totalAmount += o.amount ?? 0;
     pipelineByStage[o.stage] = bucket;
   }
 
@@ -473,8 +640,26 @@ async function buildOverview(ctx: ToolContext): Promise<unknown> {
     tasksByStatus[t.status] = (tasksByStatus[t.status] ?? 0) + 1;
   }
 
+  const proposalList = proposals.ok ? proposals.value : [];
+  const proposalsByStatus: Record<string, number> = {};
+  let proposalTotalViews = 0;
+  for (const p of proposalList) {
+    proposalsByStatus[p.status] = (proposalsByStatus[p.status] ?? 0) + 1;
+    proposalTotalViews += ((p as Record<string, unknown>).viewsCount as number) ?? 0;
+  }
+
+  const campaignList = campaigns.ok ? campaigns.value : [];
+  const campaignsByStatus: Record<string, number> = {};
+  let campaignTotalSent = 0;
+  let campaignTotalFailed = 0;
+  for (const c of campaignList) {
+    campaignsByStatus[c.status] = (campaignsByStatus[c.status] ?? 0) + 1;
+    campaignTotalSent += c.sentCount ?? 0;
+    campaignTotalFailed += c.failedCount ?? 0;
+  }
+
   return {
-    counts: {
+    crm: {
       companies: companies.ok ? companies.value.length : 0,
       people: people.ok ? people.value.length : 0,
       opportunities: opps.length,
@@ -483,6 +668,23 @@ async function buildOverview(ctx: ToolContext): Promise<unknown> {
     },
     pipelineByStage,
     tasksByStatus,
+    proposals: {
+      total: proposalList.length,
+      byStatus: proposalsByStatus,
+      totalViews: proposalTotalViews,
+    },
+    emailCampaigns: {
+      total: campaignList.length,
+      byStatus: campaignsByStatus,
+      totalEmailsSent: campaignTotalSent,
+      totalEmailsFailed: campaignTotalFailed,
+      overallDeliveryRatePct:
+        campaignTotalSent + campaignTotalFailed > 0
+          ? Math.round(
+              (campaignTotalSent / (campaignTotalSent + campaignTotalFailed)) * 100,
+            )
+          : null,
+    },
   };
 }
 
