@@ -2,9 +2,11 @@
 
 import {
   Album02Icon,
+  Comment01Icon,
   EyeIcon,
   FavouriteIcon,
   Share08Icon,
+  Time01Icon,
   UserMultipleIcon,
   Video01Icon,
 } from "@hugeicons/core-free-icons";
@@ -128,11 +130,13 @@ function YoutubeVideoPreview({
   channelThumbnailUrl,
   title,
   privacyStatus,
+  filePreview,
 }: {
   channelTitle: string;
   channelThumbnailUrl?: string | null;
   title: string;
   privacyStatus: string;
+  filePreview?: FilePreview | null;
 }) {
   const privacyLabel =
     privacyStatus === "public"
@@ -143,14 +147,23 @@ function YoutubeVideoPreview({
 
   return (
     <div className="mx-auto max-w-[380px] overflow-hidden rounded-xl border border-border/70 bg-background shadow-sm">
-      {/* Thumbnail placeholder 16:9 */}
+      {/* Thumbnail 16:9 — real preview when file selected */}
       <div className="relative aspect-video w-full bg-muted">
-        <div className="flex size-full flex-col items-center justify-center gap-2 text-muted-foreground/30">
-          <HugeiconsIcon icon={Video01Icon} className="size-10" />
-          <span className="text-xs">Miniatura do vídeo</span>
-        </div>
+        {filePreview ? (
+          <video
+            src={filePreview.objectUrl}
+            className="size-full object-cover"
+            muted
+            preload="metadata"
+          />
+        ) : (
+          <div className="flex size-full flex-col items-center justify-center gap-2 text-muted-foreground/30">
+            <HugeiconsIcon icon={Video01Icon} className="size-10" />
+            <span className="text-xs">Miniatura do vídeo</span>
+          </div>
+        )}
         <div className="absolute right-2 bottom-2 rounded bg-black/80 px-1.5 py-0.5 text-white text-xs">
-          0:00
+          {filePreview?.duration || "0:00"}
         </div>
       </div>
 
@@ -206,6 +219,17 @@ function YoutubeVideoPreview({
   );
 }
 
+function parseDuration(iso: string | null): string | null {
+  if (!iso) return null;
+  const m = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+  if (!m) return null;
+  const h = Number(m[1] ?? 0);
+  const min = Number(m[2] ?? 0);
+  const sec = Number(m[3] ?? 0);
+  if (h > 0) return `${h}:${String(min).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+  return `${min}:${String(sec).padStart(2, "0")}`;
+}
+
 function YoutubeVideoModal({
   video,
   channelTitle,
@@ -222,27 +246,25 @@ function YoutubeVideoModal({
         year: "numeric",
       })
     : null;
+  const durationLabel = parseDuration(video.duration);
+
+  const stats = [
+    { icon: EyeIcon, label: "Visualizações", value: video.viewCount },
+    { icon: FavouriteIcon, label: "Curtidas", value: video.likeCount },
+    { icon: Comment01Icon, label: "Comentários", value: video.commentCount },
+  ];
 
   return (
     <div className="overflow-hidden rounded-xl">
+      {/* iframe embed para reprodução in-app */}
       <div className="relative aspect-video w-full bg-neutral-950">
-        {video.thumbnailUrl ? (
-          // biome-ignore lint/performance/noImgElement: thumbnail externa do YouTube
-          <img
-            src={video.thumbnailUrl}
-            alt={video.title}
-            className="size-full object-cover"
-          />
-        ) : (
-          <div className="flex size-full items-center justify-center text-white/20">
-            <HugeiconsIcon icon={Video01Icon} className="size-14" />
-          </div>
-        )}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="flex size-16 items-center justify-center rounded-full bg-red-600 shadow-lg">
-            <HugeiconsIcon icon={Video01Icon} className="size-7 text-white" />
-          </div>
-        </div>
+        <iframe
+          src={`https://www.youtube.com/embed/${video.videoId}?autoplay=0&rel=0`}
+          title={video.title}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          className="size-full border-0"
+        />
       </div>
 
       <div className="space-y-4 p-5">
@@ -265,9 +287,18 @@ function YoutubeVideoModal({
           )}
           <div>
             <p className="font-medium text-sm">{channelTitle}</p>
-            {date && (
-              <p className="text-muted-foreground text-xs">{date}</p>
-            )}
+            <div className="flex items-center gap-2 text-muted-foreground text-xs">
+              {date && <span>{date}</span>}
+              {durationLabel && (
+                <>
+                  <span>·</span>
+                  <span className="flex items-center gap-0.5">
+                    <HugeiconsIcon icon={Time01Icon} className="size-3" />
+                    {durationLabel}
+                  </span>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
@@ -279,8 +310,63 @@ function YoutubeVideoModal({
         >
           Abrir no YouTube
         </a>
+
+        {/* Analytics por post */}
+        <div className="grid grid-cols-3 gap-2 border-t border-border/60 pt-3">
+          {stats.map(({ icon, label, value }) => (
+            <div
+              key={label}
+              className="flex flex-col items-center gap-0.5 rounded-lg border border-border/50 px-2 py-2 text-center"
+            >
+              <HugeiconsIcon icon={icon} className="size-3.5 text-muted-foreground" />
+              <span className="font-semibold text-sm tabular-nums">{nf.format(value)}</span>
+              <span className="text-muted-foreground text-[10px] leading-tight">{label}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
+  );
+}
+
+type FilePreview = { objectUrl: string; duration: string };
+
+function VideoFileInput({
+  id,
+  name,
+  required,
+  onPreview,
+}: {
+  id: string;
+  name: string;
+  required?: boolean;
+  onPreview: (p: FilePreview | null) => void;
+}) {
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) { onPreview(null); return; }
+    const objectUrl = URL.createObjectURL(file);
+    const vid = document.createElement("video");
+    vid.preload = "metadata";
+    vid.src = objectUrl;
+    vid.onloadedmetadata = () => {
+      const d = Math.round(vid.duration);
+      const min = Math.floor(d / 60);
+      const sec = String(d % 60).padStart(2, "0");
+      onPreview({ objectUrl, duration: `${min}:${sec}` });
+    };
+    vid.onerror = () => { onPreview({ objectUrl, duration: "" }); };
+  }
+
+  return (
+    <Input
+      id={id}
+      name={name}
+      type="file"
+      accept="video/*"
+      required={required}
+      onChange={handleChange}
+    />
   );
 }
 
@@ -292,6 +378,7 @@ function UploadForm({
   onTitleChange,
   privacyStatus,
   onPrivacyStatusChange,
+  onPreview,
 }: {
   slug: string;
   publish: ReturnType<typeof useYoutube>["publish"];
@@ -300,8 +387,15 @@ function UploadForm({
   onTitleChange: (v: string) => void;
   privacyStatus: string;
   onPrivacyStatusChange: (v: string) => void;
+  onPreview?: (p: FilePreview | null) => void;
 }) {
   const [submitting, setSubmitting] = useState(false);
+  const [filePreview, setFilePreview] = useState<FilePreview | null>(null);
+
+  function handlePreview(p: FilePreview | null) {
+    setFilePreview(p);
+    onPreview?.(p);
+  }
 
   async function handleSubmit(event: React.SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -322,6 +416,8 @@ function UploadForm({
       toast.success("Vídeo enviado para o YouTube.");
       formEl.reset();
       onTitleChange("");
+      if (filePreview) URL.revokeObjectURL(filePreview.objectUrl);
+      handlePreview(null);
       onPublished();
     } else if (RECONNECT_CODES.has(result.error.code ?? "")) {
       toast.error(
@@ -390,16 +486,32 @@ function UploadForm({
 
         <div className="space-y-1.5">
           <Label htmlFor="yt-file">Arquivo de vídeo</Label>
-          <Input
+          <VideoFileInput
             id="yt-file"
             name="file"
-            type="file"
-            accept="video/*"
             required
+            onPreview={handlePreview}
           />
-          <p className="text-muted-foreground text-xs">
-            Máximo 256 MB. O vídeo entra como privado por padrão.
-          </p>
+          {filePreview ? (
+            <div className="relative mt-1 overflow-hidden rounded-lg border border-border/60 bg-black">
+              {/* biome-ignore lint/performance/noImgElement: preview local gerado via createObjectURL */}
+              <video
+                src={filePreview.objectUrl}
+                className="aspect-video w-full object-contain"
+                muted
+                preload="metadata"
+              />
+              {filePreview.duration && (
+                <div className="absolute right-2 bottom-2 rounded bg-black/80 px-1.5 py-0.5 text-white text-xs font-medium">
+                  {filePreview.duration}
+                </div>
+              )}
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-xs">
+              Máximo 256 MB. O vídeo entra como privado por padrão.
+            </p>
+          )}
         </div>
 
         <div className="flex justify-end">
@@ -428,6 +540,7 @@ export function YoutubeStudio({ slug }: { slug: string }) {
   const [title, setTitle] = useState("");
   const [privacyStatus, setPrivacyStatus] = useState("private");
   const [selectedVideo, setSelectedVideo] = useState<YoutubeVideo | null>(null);
+  const [uploadPreview, setUploadPreview] = useState<FilePreview | null>(null);
 
   if (isLoading && !overview) {
     return (
@@ -587,11 +700,12 @@ export function YoutubeStudio({ slug }: { slug: string }) {
               <UploadForm
                 slug={slug}
                 publish={publish}
-                onPublished={refetch}
+                onPublished={() => { setUploadPreview(null); refetch(); }}
                 title={title}
                 onTitleChange={setTitle}
                 privacyStatus={privacyStatus}
                 onPrivacyStatusChange={setPrivacyStatus}
+                onPreview={setUploadPreview}
               />
             </div>
             <div className="space-y-3">
@@ -603,6 +717,7 @@ export function YoutubeStudio({ slug }: { slug: string }) {
                 channelThumbnailUrl={overview.thumbnailUrl}
                 title={title}
                 privacyStatus={privacyStatus}
+                filePreview={uploadPreview}
               />
             </div>
           </div>

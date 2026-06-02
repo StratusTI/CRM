@@ -93,13 +93,17 @@ export const PublishVideoResultSchema = z.object({
 
 export type PublishVideoResult = z.infer<typeof PublishVideoResultSchema>;
 
-/** Um vídeo recente do canal (Data API — playlist de uploads). */
+/** Um vídeo recente do canal (Data API — playlist de uploads + statistics). */
 export const YoutubeVideoSchema = z.object({
   videoId: z.string(),
   title: z.string(),
   thumbnailUrl: z.string().nullable(),
   publishedAt: z.string(),
   url: z.string(),
+  viewCount: z.number().int().nonnegative().default(0),
+  likeCount: z.number().int().nonnegative().default(0),
+  commentCount: z.number().int().nonnegative().default(0),
+  duration: z.string().nullable().default(null),
 });
 
 export type YoutubeVideo = z.infer<typeof YoutubeVideoSchema>;

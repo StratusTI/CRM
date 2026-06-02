@@ -1,8 +1,13 @@
 "use client";
 
+import { Calendar01Icon, TaskDone01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { DataTable } from "@/components/data-table";
 import { PageShell } from "@/components/page-shell";
 import type { GridColumn } from "@/components/tables/grid";
+import { cn } from "@/lib/utils";
 import { useResourceList } from "@/src/hooks/use-resource-list";
 import {
   type LookupKind,
@@ -99,12 +104,47 @@ const COLUMNS: GridColumn[] = [
   { key: "updatedAt", header: "Última atualização", kind: "readonly-date" },
 ];
 
+function ViewToggle({ slug }: { slug: string }) {
+  const pathname = usePathname();
+  const isCalendar = pathname.endsWith("/calendar");
+  const base = `/${slug}/tasks`;
+
+  return (
+    <div className="flex items-center gap-0.5 rounded-lg border border-border/60 bg-background p-0.5">
+      <Link
+        href={base}
+        className={cn(
+          "flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+          !isCalendar
+            ? "bg-primary text-primary-foreground shadow-sm"
+            : "text-muted-foreground hover:text-foreground",
+        )}
+      >
+        <HugeiconsIcon icon={TaskDone01Icon} className="size-3.5" />
+        Lista
+      </Link>
+      <Link
+        href={`${base}/calendar`}
+        className={cn(
+          "flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+          isCalendar
+            ? "bg-primary text-primary-foreground shadow-sm"
+            : "text-muted-foreground hover:text-foreground",
+        )}
+      >
+        <HugeiconsIcon icon={Calendar01Icon} className="size-3.5" />
+        Calendário
+      </Link>
+    </div>
+  );
+}
+
 export function TasksTable({ slug }: { slug: string }) {
   const { items, isLoading, refetch } = useResourceList<TaskDTO>(slug, "tasks");
   const { lookups } = useWorkspaceLookups(slug, LOOKUP_KINDS);
 
   return (
-    <PageShell>
+    <PageShell action={<ViewToggle slug={slug} />}>
       <DataTable
         columns={COLUMNS}
         data={items}

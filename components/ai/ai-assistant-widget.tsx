@@ -12,6 +12,8 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useEffect, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
@@ -334,7 +336,15 @@ function MessageBubble({
           <ThinkingIndicator tools={thinkingTools} />
         ) : (
           <>
-            <span className="whitespace-pre-wrap">{message.content}</span>
+            {isUser ? (
+              <span className="whitespace-pre-wrap">{message.content}</span>
+            ) : (
+              <div className="prose prose-sm prose-neutral dark:prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_code]:rounded [&_code]:bg-black/10 [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-[0.8em] [&_code]:font-mono dark:[&_code]:bg-white/15 [&_pre]:rounded-lg [&_pre]:bg-black/10 [&_pre]:p-3 dark:[&_pre]:bg-white/10 [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_li]:my-0.5 [&_p]:my-1 [&_h1]:text-base [&_h1]:font-semibold [&_h2]:text-sm [&_h2]:font-semibold [&_h3]:text-sm [&_h3]:font-medium [&_blockquote]:border-l-2 [&_blockquote]:border-current [&_blockquote]:pl-3 [&_blockquote]:opacity-70 [&_strong]:font-semibold [&_a]:underline [&_a]:underline-offset-2 [&_hr]:border-current [&_hr]:opacity-20 [&_table]:w-full [&_th]:text-left [&_th]:font-medium [&_td]:py-1">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {message.content}
+                </ReactMarkdown>
+              </div>
+            )}
             {showEmptyCursor && (
               <span className="inline-block size-3.5 animate-pulse rounded-full bg-current align-middle opacity-60" />
             )}

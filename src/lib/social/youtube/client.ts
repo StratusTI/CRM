@@ -305,7 +305,7 @@ export async function fetchRecentVideos(
       }[];
     };
 
-    const videos = (plJson.items ?? [])
+    const baseVideos = (plJson.items ?? [])
       .map((item) => {
         const videoId = item.contentDetails?.videoId;
         if (!videoId) return null;
@@ -321,6 +321,57 @@ export async function fetchRecentVideos(
         };
       })
       .filter((v): v is NonNullable<typeof v> => v !== null);
+
+    // Passo 3: buscar estatísticas e duração por vídeo.
+    const statsMap = new Map<
+      string,
+      { viewCount: number; likeCount: number; commentCount: number; duration: string | null }
+    >();
+    if (baseVideos.length > 0) {
+      const ids = baseVideos.map((v) => v.videoId).join(",");
+      const statsParams = new URLSearchParams({
+        part: "statistics,contentDetails",
+        id: ids,
+      });
+      const statsRes = await fetch(
+        `${DATA_API}/videos?${statsParams.toString()}`,
+        { headers },
+      );
+      if (statsRes.ok) {
+        const statsJson = (await statsRes.json()) as {
+          items?: {
+            id?: string;
+            statistics?: {
+              viewCount?: string;
+              likeCount?: string;
+              commentCount?: string;
+            };
+            contentDetails?: { duration?: string };
+          }[];
+        };
+        for (const item of statsJson.items ?? []) {
+          if (item.id) {
+            statsMap.set(item.id, {
+              viewCount: toInt(item.statistics?.viewCount),
+              likeCount: toInt(item.statistics?.likeCount),
+              commentCount: toInt(item.statistics?.commentCount),
+              duration: item.contentDetails?.duration ?? null,
+            });
+          }
+        }
+      }
+    }
+
+    const videos = baseVideos.map((v) => {
+      const stats = statsMap.get(v.videoId);
+      return {
+        ...v,
+        viewCount: stats?.viewCount ?? 0,
+        likeCount: stats?.likeCount ?? 0,
+        commentCount: stats?.commentCount ?? 0,
+        duration: stats?.duration ?? null,
+      };
+    });
 
     return ok({ videos });
   } catch (error) {

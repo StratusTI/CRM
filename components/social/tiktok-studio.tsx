@@ -108,11 +108,13 @@ function TiktokVideoPreview({
   isVerified,
   caption,
   privacy,
+  filePreview,
 }: {
   displayName: string;
   isVerified: boolean;
   caption: string;
   privacy: TiktokPrivacy;
+  filePreview?: TikTokFilePreview | null;
 }) {
   const privacyLabel =
     PRIVACY_OPTIONS.find((o) => o.value === privacy)?.label ?? privacy;
@@ -134,11 +136,21 @@ function TiktokVideoPreview({
         {/* Área de vídeo 9:16 */}
         <div className="relative overflow-hidden bg-neutral-900">
           <div className="aspect-[9/16] w-full">
-            {/* Placeholder de vídeo */}
-            <div className="flex size-full flex-col items-center justify-center gap-3 text-white/15">
-              <HugeiconsIcon icon={TiktokIcon} className="size-14" />
-              <span className="text-xs tracking-wide">Vídeo</span>
-            </div>
+            {/* Preview real ou placeholder */}
+            {filePreview ? (
+              <video
+                src={filePreview.objectUrl}
+                className="size-full object-cover"
+                muted
+                preload="metadata"
+                playsInline
+              />
+            ) : (
+              <div className="flex size-full flex-col items-center justify-center gap-3 text-white/15">
+                <HugeiconsIcon icon={TiktokIcon} className="size-14" />
+                <span className="text-xs tracking-wide">Vídeo</span>
+              </div>
+            )}
 
             {/* Avatar do perfil + botão follow (lado direito, topo) */}
             <div className="absolute top-4 right-3 flex flex-col items-center gap-4">
@@ -312,7 +324,19 @@ function TiktokVideoModal({
         </div>
 
         <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-2">
+          {video.shareUrl && (
+            <a
+              href={video.shareUrl}
+              target="_blank"
+              rel="noreferrer"
+              className={`${buttonVariants({ size: "sm" })} block w-full text-center`}
+            >
+              Abrir no TikTok
+            </a>
+          )}
+
+          {/* Analytics por post */}
+          <div className="grid grid-cols-2 gap-2 border-t border-border/60 pt-3">
             {[
               { icon: EyeIcon, label: "Visualizações", value: video.viewCount },
               { icon: FavouriteIcon, label: "Curtidas", value: video.likeCount },
@@ -333,17 +357,6 @@ function TiktokVideoModal({
               </div>
             ))}
           </div>
-
-          {video.shareUrl && (
-            <a
-              href={video.shareUrl}
-              target="_blank"
-              rel="noreferrer"
-              className={`${buttonVariants({ size: "sm" })} block w-full text-center`}
-            >
-              Abrir no TikTok
-            </a>
-          )}
         </div>
       </div>
     </div>
@@ -408,6 +421,41 @@ function VideoCard({ video }: { video: TiktokVideo }) {
   );
 }
 
+type TikTokFilePreview = { objectUrl: string; duration: string };
+
+function TikTokVideoFileInput({
+  onPreview,
+}: {
+  onPreview: (p: TikTokFilePreview | null) => void;
+}) {
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) { onPreview(null); return; }
+    const objectUrl = URL.createObjectURL(file);
+    const vid = document.createElement("video");
+    vid.preload = "metadata";
+    vid.src = objectUrl;
+    vid.onloadedmetadata = () => {
+      const d = Math.round(vid.duration);
+      const min = Math.floor(d / 60);
+      const sec = String(d % 60).padStart(2, "0");
+      onPreview({ objectUrl, duration: `${min}:${sec}` });
+    };
+    vid.onerror = () => { onPreview({ objectUrl, duration: "" }); };
+  }
+
+  return (
+    <Input
+      id="tt-file"
+      name="file"
+      type="file"
+      accept="video/*"
+      required
+      onChange={handleChange}
+    />
+  );
+}
+
 function UploadForm({
   slug,
   publish,
@@ -422,6 +470,7 @@ function UploadForm({
   onDisableDuetChange,
   disableStitch,
   onDisableStitchChange,
+  onPreview,
 }: {
   slug: string;
   publish: ReturnType<typeof useTiktok>["publish"];
@@ -436,8 +485,15 @@ function UploadForm({
   onDisableDuetChange: (v: boolean) => void;
   disableStitch: boolean;
   onDisableStitchChange: (v: boolean) => void;
+  onPreview?: (p: TikTokFilePreview | null) => void;
 }) {
   const [submitting, setSubmitting] = useState(false);
+  const [filePreview, setFilePreview] = useState<TikTokFilePreview | null>(null);
+
+  function handlePreview(p: TikTokFilePreview | null) {
+    setFilePreview(p);
+    onPreview?.(p);
+  }
 
   async function handleSubmit(event: React.SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -462,6 +518,8 @@ function UploadForm({
       toast.success("Vídeo enviado ao TikTok. O processamento é assíncrono.");
       formEl.reset();
       onCaptionChange("");
+      if (filePreview) URL.revokeObjectURL(filePreview.objectUrl);
+      handlePreview(null);
       onPublished();
     } else if (RECONNECT_CODES.has(result.error.code ?? "")) {
       toast.error(
@@ -510,15 +568,25 @@ function UploadForm({
 
           <div className="space-y-1.5">
             <Label htmlFor="tt-file">Arquivo de vídeo</Label>
-            <Input
-              id="tt-file"
-              name="file"
-              type="file"
-              accept="video/*"
-              required
-            />
+            <TikTokVideoFileInput onPreview={handlePreview} />
           </div>
         </div>
+
+        {filePreview && (
+          <div className="relative overflow-hidden rounded-lg border border-border/60 bg-black">
+            <video
+              src={filePreview.objectUrl}
+              className="mx-auto max-h-48 object-contain"
+              muted
+              preload="metadata"
+            />
+            {filePreview.duration && (
+              <div className="absolute right-2 bottom-2 rounded bg-black/80 px-1.5 py-0.5 text-white text-xs font-medium">
+                {filePreview.duration}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="space-y-3 rounded-lg border border-border/70 p-3">
           <ToggleRow
@@ -580,6 +648,7 @@ export function TiktokStudio({ slug }: { slug: string }) {
   const [disableComment, setDisableComment] = useState(false);
   const [disableDuet, setDisableDuet] = useState(false);
   const [disableStitch, setDisableStitch] = useState(false);
+  const [uploadPreview, setUploadPreview] = useState<TikTokFilePreview | null>(null);
 
   if (isLoading && !overview) {
     return (
@@ -739,7 +808,7 @@ export function TiktokStudio({ slug }: { slug: string }) {
               <UploadForm
                 slug={slug}
                 publish={publish}
-                onPublished={refetch}
+                onPublished={() => { setUploadPreview(null); refetch(); }}
                 caption={caption}
                 onCaptionChange={setCaption}
                 privacy={privacy}
@@ -750,6 +819,7 @@ export function TiktokStudio({ slug }: { slug: string }) {
                 onDisableDuetChange={setDisableDuet}
                 disableStitch={disableStitch}
                 onDisableStitchChange={setDisableStitch}
+                onPreview={setUploadPreview}
               />
             </div>
             <div className="space-y-3">
@@ -761,6 +831,7 @@ export function TiktokStudio({ slug }: { slug: string }) {
                 isVerified={overview.isVerified}
                 caption={caption}
                 privacy={privacy}
+                filePreview={uploadPreview}
               />
             </div>
           </div>
