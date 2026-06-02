@@ -6,7 +6,7 @@ import {
 import type { ChatMessage, ToolCallPayload } from "@/src/lib/ai/client";
 import { streamChat } from "@/src/lib/ai/client";
 import { buildSystemPrompt } from "@/src/lib/ai/context";
-import { isAiConfigured } from "@/src/lib/ai/env";
+import { getOpenAiModel, isAiConfigured } from "@/src/lib/ai/env";
 import { AI_TOOLS, executeTool } from "@/src/lib/ai/tools";
 import { err, ok, type Result } from "@/src/lib/result";
 import {
@@ -17,6 +17,7 @@ import {
   AiAssistantRepository,
   type AiConversationWithMessages,
 } from "@/src/repositories/ai-assistant.repository";
+import { AiUsageRepository } from "@/src/repositories/ai-usage.repository";
 import { MembershipRepository } from "@/src/repositories/membership.repository";
 import type {
   AiConversationDTO,
@@ -152,7 +153,7 @@ export const AiAssistantService = {
 
     return ok({
       conversationId,
-      run: runAgent({ userId, slug, conversationId, messages }),
+      run: runAgent({ userId, slug, conversationId, workspaceId, messages }),
     });
   },
 };
@@ -162,9 +163,10 @@ async function* runAgent(ctx: {
   userId: string;
   slug: string;
   conversationId: string;
+  workspaceId: string;
   messages: ChatMessage[];
 }): AsyncGenerator<ReplyChunk> {
-  const { userId, slug, conversationId, messages } = ctx;
+  const { userId, slug, conversationId, workspaceId, messages } = ctx;
   let assistantText = "";
   const usedTools: { name: string; args: string }[] = [];
 
@@ -191,6 +193,15 @@ async function* runAgent(ctx: {
         finishReason = ev.finishReason;
         roundContent = ev.content;
         toolCalls = ev.toolCalls;
+        if (ev.usage) {
+          AiUsageRepository.create({
+            workspaceId,
+            conversationId,
+            inputTokens: ev.usage.inputTokens,
+            outputTokens: ev.usage.outputTokens,
+            model: getOpenAiModel(),
+          }).catch(() => {});
+        }
       }
     }
 
