@@ -9,12 +9,14 @@ import { putBlob, removeBlob } from "@/src/lib/social/blob-store";
 import {
   fetchInsights,
   fetchProfile,
+  fetchRecentMedia,
   publishPost,
 } from "@/src/lib/social/instagram/client";
 import {
   IG_INSIGHTS_RANGE_DAYS,
   type InstagramInsights,
   type InstagramInsightsRange,
+  type InstagramMediaList,
   type InstagramProfileOverview,
   type PublishInstagramPostInput,
   type PublishInstagramPostResult,
@@ -75,6 +77,22 @@ export const InstagramService = {
         startDate: isoDate(-IG_INSIGHTS_RANGE_DAYS[range]),
         endDate: isoDate(0),
       },
+    );
+  },
+
+  /** Mídias recentes do perfil (feed): imagens, vídeos e carrosséis. */
+  async getRecentMedia(
+    userId: string,
+    slug: string,
+  ): Promise<Result<InstagramMediaList>> {
+    const fresh = await getFreshAccessToken(userId, slug, "INSTAGRAM");
+    if (!fresh.ok) return fresh;
+    if (!hasScope(fresh.value.connection, REQUIRED_SCOPES.read)) {
+      return err(socialScopeMissing());
+    }
+    return fetchRecentMedia(
+      fresh.value.accessToken,
+      fresh.value.connection.externalAccountId,
     );
   },
 

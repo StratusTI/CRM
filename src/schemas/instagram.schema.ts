@@ -90,3 +90,23 @@ export const PublishInstagramPostResultSchema = z.object({
 export type PublishInstagramPostResult = z.infer<
   typeof PublishInstagramPostResultSchema
 >;
+
+/** Um item de mídia recente do perfil (feed). */
+export const InstagramMediaSchema = z.object({
+  id: z.string(),
+  mediaType: z.enum(["IMAGE", "VIDEO", "CAROUSEL_ALBUM"]),
+  mediaUrl: z.string().nullable(),
+  thumbnailUrl: z.string().nullable(),
+  caption: z.string().nullable(),
+  timestamp: z.string(),
+  permalink: z.string().nullable(),
+});
+
+export type InstagramMedia = z.infer<typeof InstagramMediaSchema>;
+
+/** Lista de mídias recentes do perfil. */
+export const InstagramMediaListSchema = z.object({
+  media: z.array(InstagramMediaSchema),
+});
+
+export type InstagramMediaList = z.infer<typeof InstagramMediaListSchema>;

@@ -5,6 +5,7 @@ import { apiUrl } from "@/lib/api-url";
 import type {
   InstagramInsights,
   InstagramInsightsRange,
+  InstagramMediaList,
   InstagramProfileOverview,
   PublishInstagramPostResult,
 } from "@/src/schemas/instagram.schema";
@@ -44,13 +45,14 @@ async function getJson<T>(
 }
 
 /**
- * Dados do Instagram para o workspace: overview do perfil + insights (janela
- * selecionável) + publicar. Mesmo padrão fetch/useState do [[use-facebook]].
+ * Dados do Instagram para o workspace: overview do perfil + mídias recentes +
+ * insights (janela selecionável) + publicar.
  */
 export function useInstagram(slug: string) {
   const [overview, setOverview] = useState<InstagramProfileOverview | null>(
     null,
   );
+  const [media, setMedia] = useState<InstagramMediaList | null>(null);
   const [insights, setInsights] = useState<InstagramInsights | null>(null);
   const [range, setRange] = useState<InstagramInsightsRange>("28d");
   const [isLoading, setIsLoading] = useState(true);
@@ -60,8 +62,9 @@ export function useInstagram(slug: string) {
     async (selectedRange: InstagramInsightsRange) => {
       setIsLoading(true);
       setError(null);
-      const [ov, ins] = await Promise.all([
+      const [ov, med, ins] = await Promise.all([
         getJson<InstagramProfileOverview>(`${BASE(slug)}/overview`),
+        getJson<InstagramMediaList>(`${BASE(slug)}/videos`),
         getJson<InstagramInsights>(
           `${BASE(slug)}/insights?range=${selectedRange}`,
         ),
@@ -70,11 +73,13 @@ export function useInstagram(slug: string) {
       if (!ov.ok) {
         setError(ov.error);
         setOverview(null);
+        setMedia(null);
         setInsights(null);
         setIsLoading(false);
         return;
       }
       setOverview(ov.data);
+      setMedia(med.ok ? med.data : null);
       if (ins.ok) setInsights(ins.data);
       else {
         setInsights(null);
@@ -125,6 +130,7 @@ export function useInstagram(slug: string) {
 
   return {
     overview,
+    media,
     insights,
     range,
     setRange,

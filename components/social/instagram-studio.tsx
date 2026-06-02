@@ -7,6 +7,7 @@ import {
   EyeIcon,
   FavouriteIcon,
   InstagramIcon,
+  PlayIcon,
   Share08Icon,
   UserMultipleIcon,
 } from "@hugeicons/core-free-icons";
@@ -287,6 +288,7 @@ function PostComposer({
 export function InstagramStudio({ slug }: { slug: string }) {
   const {
     overview,
+    media,
     insights,
     range,
     setRange,
@@ -396,6 +398,73 @@ export function InstagramStudio({ slug }: { slug: string }) {
               value={overview.mediaCount}
             />
           </div>
+
+          {media && media.media.length > 0 ? (
+            <div className="grid grid-cols-3 gap-1 sm:gap-2">
+              {media.media.map((item) => {
+                const imgSrc =
+                  item.mediaType === "VIDEO"
+                    ? item.thumbnailUrl
+                    : item.mediaUrl;
+                const card = (
+                  <Card
+                    key={item.id}
+                    className="group relative overflow-hidden p-0"
+                  >
+                    <div className="aspect-square w-full bg-muted">
+                      {imgSrc ? (
+                        // biome-ignore lint/performance/noImgElement: mídia externa do Instagram
+                        <img
+                          src={imgSrc}
+                          alt={item.caption ?? ""}
+                          className="size-full object-cover transition-transform group-hover:scale-[1.03]"
+                        />
+                      ) : (
+                        <div className="flex size-full items-center justify-center text-muted-foreground/30">
+                          <HugeiconsIcon icon={InstagramIcon} className="size-8" />
+                        </div>
+                      )}
+                      {item.mediaType === "VIDEO" && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="flex size-8 items-center justify-center rounded-full bg-black/50 text-white">
+                            <HugeiconsIcon icon={PlayIcon} className="size-4" />
+                          </div>
+                        </div>
+                      )}
+                      {item.mediaType === "CAROUSEL_ALBUM" && (
+                        <div className="absolute top-2 right-2">
+                          <div className="flex size-5 items-center justify-center rounded bg-black/50">
+                            <HugeiconsIcon icon={Analytics01Icon} className="size-3 text-white" />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+                );
+                return item.permalink ? (
+                  <a
+                    key={item.id}
+                    href={item.permalink}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    {card}
+                  </a>
+                ) : (
+                  card
+                );
+              })}
+            </div>
+          ) : media && media.media.length === 0 ? (
+            <Card className="px-4 py-10 text-center text-muted-foreground text-sm">
+              <HugeiconsIcon
+                icon={InstagramIcon}
+                className="mx-auto mb-2 size-6 opacity-60"
+              />
+              Nenhuma publicação recente.
+            </Card>
+          ) : null}
         </TabsContent>
 
         <TabsContent value="post">

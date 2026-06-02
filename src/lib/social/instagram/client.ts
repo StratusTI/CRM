@@ -241,3 +241,43 @@ export async function publishPost(
     return err(socialOauthFailed());
   }
 }
+
+/** Mídias recentes do perfil (feed): imagens, vídeos e carrosséis. */
+export async function fetchRecentMedia(
+  pageToken: string,
+  igAccountId: string,
+): Promise<Result<import("@/src/schemas/instagram.schema").InstagramMediaList>> {
+  const params = new URLSearchParams({
+    fields:
+      "id,media_type,media_url,thumbnail_url,caption,timestamp,permalink",
+    limit: "20",
+    access_token: pageToken,
+  });
+  const result = await graphGet<{
+    data?: {
+      id?: string;
+      media_type?: string;
+      media_url?: string;
+      thumbnail_url?: string;
+      caption?: string;
+      timestamp?: string;
+      permalink?: string;
+    }[];
+  }>("media", `${GRAPH}/${igAccountId}/media?${params.toString()}`);
+  if (!result.ok) return result;
+
+  const media = (result.value.data ?? []).map((item) => ({
+    id: item.id ?? "",
+    mediaType: (item.media_type ?? "IMAGE") as
+      | "IMAGE"
+      | "VIDEO"
+      | "CAROUSEL_ALBUM",
+    mediaUrl: item.media_url ?? null,
+    thumbnailUrl: item.thumbnail_url ?? null,
+    caption: item.caption ?? null,
+    timestamp: item.timestamp ?? "",
+    permalink: item.permalink ?? null,
+  }));
+
+  return ok({ media });
+}
