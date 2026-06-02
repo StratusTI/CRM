@@ -1,7 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { PageShell } from "@/components/page-shell";
-import { BillingSection } from "@/components/settings/billing-section";
 import { SocialConnectionsSection } from "@/components/settings/social-connections-section";
 import { WorkspaceMembersSection } from "@/components/settings/workspace-members-section";
 import { SOCIAL_PLATFORM_META } from "@/components/social-platforms";
@@ -46,9 +45,6 @@ export default async function SettingsPage({
           slug={slug}
           configuredSlugs={configuredSlugs}
         />
-      </Suspense>
-      <Suspense>
-        <BillingSection slug={slug} />
       </Suspense>
     </PageShell>
   );

@@ -3,12 +3,14 @@
 import {
   ComputerIcon,
   LogoutIcon,
+  MoneyBag01Icon,
   Moon02Icon,
   Sun03Icon,
   UnfoldMoreIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useTheme } from "next-themes";
+import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -38,16 +40,20 @@ function initials(name: string) {
 
 export function NavUser({
   user,
+  slug,
 }: {
   user: {
     name: string;
     email: string;
     avatar: string;
   };
+  slug: string;
 }) {
   const { isMobile } = useSidebar();
   const { theme, setTheme } = useTheme();
   const { signOut } = useAuth();
+  const router = useRouter();
+
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -91,6 +97,13 @@ export function NavUser({
                   </div>
                 </div>
               </DropdownMenuLabel>
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <DropdownMenuItem onClick={() => router.push(`/${slug}/billing`)}>
+                <HugeiconsIcon icon={MoneyBag01Icon} strokeWidth={2} />
+                Billing
+              </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuRadioGroup value={theme} onValueChange={setTheme}>

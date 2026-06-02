@@ -42,7 +42,7 @@ export function AppSidebar({
         <NavWorkspace slug={currentSlug} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={user} />
+        <NavUser user={user} slug={currentSlug} />
       </SidebarFooter>
     </Sidebar>
   );
