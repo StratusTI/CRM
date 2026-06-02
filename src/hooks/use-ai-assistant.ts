@@ -22,6 +22,7 @@ export type UiMessage = {
 /** Eventos SSE emitidos pela rota de chat. */
 type ChatEvent =
   | { type: "start"; conversationId: string }
+  | { type: "thinking"; tools: string[] }
   | { type: "text"; delta: string }
   | { type: "done"; conversationId: string; message: AiMessageDTO }
   | { type: "error"; message: string };
@@ -36,6 +37,8 @@ export function useAiAssistant(slug: string) {
   const [isStreaming, setIsStreaming] = useState(false);
   const [isLoadingConversation, setIsLoadingConversation] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** Ferramentas que estão sendo consultadas no momento (para o indicador de pesquisa). */
+  const [thinkingTools, setThinkingTools] = useState<string[]>([]);
   const activeIdRef = useRef<string | null>(null);
 
   const setActive = useCallback((id: string | null) => {
@@ -151,7 +154,10 @@ export function useAiAssistant(slug: string) {
         await consumeStream(res.body, (event) => {
           if (event.type === "start") {
             if (!activeIdRef.current) setActive(event.conversationId);
+          } else if (event.type === "thinking") {
+            setThinkingTools(event.tools);
           } else if (event.type === "text") {
+            setThinkingTools([]); // limpa o indicador assim que o texto começa
             appendDelta(event.delta);
           } else if (event.type === "done") {
             setMessages((prev) =>
@@ -183,6 +189,7 @@ export function useAiAssistant(slug: string) {
         );
       } finally {
         setIsStreaming(false);
+        setThinkingTools([]);
       }
     },
     [slug, isStreaming, refreshList, setActive],
@@ -195,6 +202,7 @@ export function useAiAssistant(slug: string) {
     isStreaming,
     isLoadingConversation,
     error,
+    thinkingTools,
     refreshList,
     startNew,
     openConversation,

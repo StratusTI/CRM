@@ -40,16 +40,20 @@ export type AiStreamEvent =
   | { type: "error"; message: string };
 
 const TEMPERATURE = 0.3;
-const MAX_TOKENS = 1024;
+const MAX_TOKENS = 4096;
 
 /**
  * Faz uma chamada streaming ao endpoint Chat Completions e emite eventos:
  * deltas de texto conforme chegam, e um evento `finish` com o conteúdo
  * completo + tool_calls acumuladas. Erros viram um único evento `error`.
+ *
+ * @param toolChoice "required" força pelo menos uma tool_call (round 0 do agente);
+ *                   "auto" deixa o modelo decidir; "none" proíbe tool calls.
  */
 export async function* streamChat(
   messages: ChatMessage[],
   tools: ToolDef[],
+  toolChoice: "auto" | "required" | "none" = "auto",
 ): AsyncGenerator<AiStreamEvent, void, unknown> {
   let response: Response;
   try {
@@ -62,7 +66,7 @@ export async function* streamChat(
       body: JSON.stringify({
         model: getOpenAiModel(),
         messages,
-        ...(tools.length > 0 && { tools, tool_choice: "auto" }),
+        ...(tools.length > 0 && { tools, tool_choice: toolChoice }),
         stream: true,
         temperature: TEMPERATURE,
         max_tokens: MAX_TOKENS,

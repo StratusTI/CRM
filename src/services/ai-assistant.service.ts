@@ -25,14 +25,20 @@ import type {
 } from "@/src/schemas/ai-assistant.schema";
 import { resolveWorkspaceId } from "@/src/services/workspace-scope";
 
-const MAX_TOOL_ROUNDS = 5;
-const MAX_HISTORY = 20;
+/** Rounds de tool_call por pergunta (cada round = 1 chamada ao modelo). */
+const MAX_TOOL_ROUNDS = 10;
+/**
+ * Mensagens de histórico preservadas no contexto de uma conversa existente.
+ * Mantemos mais para evitar que o modelo "esqueça" pesquisas anteriores.
+ */
+const MAX_HISTORY = 40;
 const TITLE_MAX = 60;
 const EMPTY_REPLY = "Não consegui gerar uma resposta. Tente reformular.";
 
 /** Chunk emitido pelo loop de agente, consumido pela rota como SSE. */
 export type ReplyChunk =
   | { type: "text"; delta: string }
+  | { type: "thinking"; tools: string[] }
   | { type: "done"; conversationId: string; message: AiMessageDTO }
   | { type: "error"; message: string };
 
@@ -167,7 +173,14 @@ async function* runAgent(ctx: {
     let roundContent = "";
     let toolCalls: { id: string; name: string; args: string }[] = [];
 
-    for await (const ev of streamChat(messages, AI_TOOLS)) {
+    /*
+     * Round 0: tool_choice "required" força o modelo a consultar pelo menos
+     * uma ferramenta do workspace antes de compor a resposta final. Rounds
+     * subsequentes usam "auto" — o modelo decide se precisa de mais dados.
+     */
+    const toolChoice = round === 0 ? "required" : "auto";
+
+    for await (const ev of streamChat(messages, AI_TOOLS, toolChoice)) {
       if (ev.type === "text") {
         assistantText += ev.delta;
         yield { type: "text", delta: ev.delta };
@@ -182,6 +195,9 @@ async function* runAgent(ctx: {
     }
 
     if (finishReason === "tool_calls" && toolCalls.length > 0) {
+      // Sinaliza ao cliente quais ferramentas serão consultadas.
+      yield { type: "thinking", tools: toolCalls.map((tc) => tc.name) };
+
       const payloads: ToolCallPayload[] = toolCalls.map((tc) => ({
         id: tc.id,
         type: "function",
@@ -192,13 +208,18 @@ async function* runAgent(ctx: {
         content: roundContent || null,
         tool_calls: payloads,
       });
-      for (const tc of toolCalls) {
-        usedTools.push({ name: tc.name, args: tc.args });
-        const result = await executeTool(tc.name, tc.args, { userId, slug });
+
+      // Executa todas as tools do round em paralelo.
+      const results = await Promise.all(
+        toolCalls.map((tc) => executeTool(tc.name, tc.args, { userId, slug })),
+      );
+
+      for (let i = 0; i < toolCalls.length; i++) {
+        usedTools.push({ name: toolCalls[i].name, args: toolCalls[i].args });
         messages.push({
           role: "tool",
-          content: result,
-          tool_call_id: tc.id,
+          content: results[i],
+          tool_call_id: toolCalls[i].id,
         });
       }
       continue;
@@ -247,17 +268,30 @@ async function loadOwned(
   return ok(conversation);
 }
 
+/**
+ * Reconstrói o histórico de mensagens para o contexto da API.
+ * Anota os turns do assistente com as ferramentas já consultadas, evitando
+ * que o modelo repita pesquisas desnecessárias em perguntas de acompanhamento.
+ */
 function toChatHistory(
   conversation: AiConversationWithMessages,
 ): ChatMessage[] {
   return conversation.messages
     .slice(-MAX_HISTORY)
-    .map(
-      (m: AiMessage): ChatMessage =>
-        m.role === "ASSISTANT"
-          ? { role: "assistant", content: m.content }
-          : { role: "user", content: m.content },
-    );
+    .map((m: AiMessage): ChatMessage => {
+      if (m.role === "ASSISTANT") {
+        const toolsUsed =
+          m.toolCalls && Array.isArray(m.toolCalls) && m.toolCalls.length > 0
+            ? (m.toolCalls as { name: string }[]).map((t) => t.name)
+            : [];
+        const annotation =
+          toolsUsed.length > 0
+            ? `\n\n[Dados consultados nesta resposta via ferramentas: ${toolsUsed.join(", ")}]`
+            : "";
+        return { role: "assistant", content: m.content + annotation };
+      }
+      return { role: "user", content: m.content };
+    });
 }
 
 function deriveTitle(message: string): string {
