@@ -34,6 +34,14 @@ const serverEnv = {
   // Chave AES-256 (base64 de 32 bytes) para cifrar tokens em repouso.
   SOCIAL_TOKEN_ENCRYPTION_KEY:
     process.env.SOCIAL_TOKEN_ENCRYPTION_KEY || undefined,
+  // MinIO (S3 local) — guarda a mídia dos posts agendados até a publicação.
+  // É tudo local: region e path-style são fixos no client (ver src/lib/storage/s3.ts).
+  S3_ENDPOINT: process.env.S3_ENDPOINT || undefined,
+  S3_ACCESS_KEY: process.env.S3_ACCESS_KEY || undefined,
+  S3_SECRET_KEY: process.env.S3_SECRET_KEY || undefined,
+  S3_BUCKET: process.env.S3_BUCKET || undefined,
+  // Segredo (Bearer) que autentica os endpoints /api/cron/* chamados pelo cron.
+  CRON_SECRET: process.env.CRON_SECRET || undefined,
 };
 
 const serverEnvSchema = z.object({
@@ -61,6 +69,11 @@ const serverEnvSchema = z.object({
   LINKEDIN_CLIENT_SECRET: z.string().min(1).optional(),
   GOOGLE_ADS_DEVELOPER_TOKEN: z.string().min(1).optional(),
   SOCIAL_TOKEN_ENCRYPTION_KEY: z.string().min(1).optional(),
+  S3_ENDPOINT: z.url().startsWith("http").optional(),
+  S3_ACCESS_KEY: z.string().min(1).optional(),
+  S3_SECRET_KEY: z.string().min(1).optional(),
+  S3_BUCKET: z.string().min(1).optional(),
+  CRON_SECRET: z.string().min(16).optional(),
 });
 
 const validatedServerEnv =
@@ -89,4 +102,9 @@ export const {
   LINKEDIN_CLIENT_SECRET,
   GOOGLE_ADS_DEVELOPER_TOKEN,
   SOCIAL_TOKEN_ENCRYPTION_KEY,
+  S3_ENDPOINT,
+  S3_ACCESS_KEY,
+  S3_SECRET_KEY,
+  S3_BUCKET,
+  CRON_SECRET,
 } = validatedServerEnv;

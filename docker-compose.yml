@@ -11,6 +11,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      minio:
+        condition: service_healthy
     networks:
       - app-network
 
@@ -38,8 +40,33 @@ services:
     networks:
       - app-network
 
+  minio:
+    image: minio/minio:latest
+    container_name: crm-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY}
+    ports:
+      # API S3 e console web (acesso local apenas).
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+    mem_limit: 256m
+    mem_reservation: 128m
+    volumes:
+      - miniodata:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
 volumes:
   pgdata:
+  miniodata:
 
 networks:
   app-network:
