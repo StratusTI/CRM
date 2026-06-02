@@ -185,8 +185,8 @@ function TiktokVideoPreview({
 
             {/* Overlay inferior */}
             <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent px-3 pt-12 pb-4">
-              <div className="flex items-center gap-1.5">
-                <span className="font-semibold text-sm text-white drop-shadow">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className="min-w-0 truncate font-semibold text-sm text-white drop-shadow">
                   @{displayName}
                 </span>
                 {isVerified && (
@@ -197,7 +197,7 @@ function TiktokVideoPreview({
                 )}
               </div>
               {caption ? (
-                <p className="mt-1 line-clamp-2 text-white/90 text-xs leading-relaxed drop-shadow">
+                <p className="mt-1 break-words line-clamp-2 text-white/90 text-xs leading-relaxed drop-shadow">
                   {caption}
                 </p>
               ) : (

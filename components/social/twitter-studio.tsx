@@ -112,7 +112,7 @@ function TweetPreview({
           </div>
 
           {text ? (
-            <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed">
+            <p className="mt-1 break-words whitespace-pre-wrap text-sm leading-relaxed">
               {text}
             </p>
           ) : (
@@ -205,7 +205,7 @@ function TwitterTweetModal({
         />
       </div>
 
-      <p className="whitespace-pre-wrap text-base leading-relaxed">{tweet.text}</p>
+      <p className="break-words whitespace-pre-wrap text-base leading-relaxed">{tweet.text}</p>
 
       {tweet.metrics && (
         <>
@@ -452,7 +452,7 @@ export function TwitterStudio({ slug }: { slug: string }) {
                   className="block w-full cursor-pointer rounded-xl text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <Card className="space-y-2 p-3 transition-colors hover:bg-muted/40">
-                    <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                    <p className="break-words whitespace-pre-wrap text-sm leading-relaxed">
                       {tweet.text}
                     </p>
                     <div className="flex items-center gap-4 text-muted-foreground text-xs">

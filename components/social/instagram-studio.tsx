@@ -35,6 +35,12 @@ import type { InstagramMedia } from "@/src/schemas/instagram.schema";
 
 const nf = new Intl.NumberFormat("pt-BR");
 
+function formatChartDate(v: string | number | Date): string {
+  const s = String(v);
+  const parts = s.split("-");
+  return parts.length === 3 ? `${parts[2]}/${parts[1]}` : s;
+}
+
 const CHART_THEME = {
   text: { fill: "currentColor", fontSize: 11 },
   axis: {
@@ -185,7 +191,7 @@ function InstagramPostPreview({
           <HugeiconsIcon icon={BookmarkIcon} className="ml-auto size-6" />
         </div>
         {caption ? (
-          <p className="text-sm leading-snug">
+          <p className="break-words text-sm leading-snug">
             <span className="font-semibold">{username}</span>{" "}
             <span className="line-clamp-3">{caption}</span>
           </p>
@@ -666,10 +672,10 @@ export function InstagramStudio({ slug }: { slug: string }) {
                         })),
                       },
                     ]}
-                    margin={{ top: 16, right: 20, bottom: 64, left: 52 }}
+                    margin={{ top: 36, right: 20, bottom: 64, left: 52 }}
                     colors={["#ec4899", "#a855f7", "#f59e0b"]}
                     curve="monotoneX"
-                    pointSize={4}
+                    pointSize={range === "7d" ? 5 : range === "28d" ? 3 : 0}
                     pointColor={{ from: "color" }}
                     useMesh
                     xScale={{ type: "point" }}
@@ -678,7 +684,8 @@ export function InstagramStudio({ slug }: { slug: string }) {
                       tickSize: 0,
                       tickPadding: 8,
                       tickRotation: -45,
-                      tickValues: 6,
+                      tickValues: range === "7d" ? 7 : 6,
+                      format: formatChartDate,
                     }}
                     axisLeft={{ tickSize: 0, tickPadding: 8 }}
                     legends={[

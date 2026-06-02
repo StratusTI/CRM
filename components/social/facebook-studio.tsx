@@ -32,6 +32,12 @@ import type { FacebookPost } from "@/src/schemas/facebook.schema";
 
 const nf = new Intl.NumberFormat("pt-BR");
 
+function formatChartDate(v: string | number | Date): string {
+  const s = String(v);
+  const parts = s.split("-");
+  return parts.length === 3 ? `${parts[2]}/${parts[1]}` : s;
+}
+
 const CHART_THEME = {
   text: { fill: "currentColor", fontSize: 11 },
   axis: {
@@ -157,7 +163,7 @@ function FacebookPostPreview({
       </div>
 
       {message ? (
-        <p className="line-clamp-5 px-3 pb-3 text-sm leading-relaxed">
+        <p className="line-clamp-5 break-words px-3 pb-3 text-sm leading-relaxed">
           {message}
         </p>
       ) : (
@@ -262,7 +268,7 @@ function FacebookPostModal({
         </div>
 
         {text && (
-          <p className="text-sm leading-relaxed whitespace-pre-wrap">{text}</p>
+          <p className="break-words whitespace-pre-wrap text-sm leading-relaxed">{text}</p>
         )}
 
         <div className="flex items-center gap-1 border-t border-border/60 pt-3">
@@ -665,10 +671,10 @@ export function FacebookStudio({ slug }: { slug: string }) {
                         })),
                       },
                     ]}
-                    margin={{ top: 16, right: 20, bottom: 64, left: 52 }}
+                    margin={{ top: 36, right: 20, bottom: 64, left: 52 }}
                     colors={["#2563eb", "#22c55e"]}
                     curve="monotoneX"
-                    pointSize={4}
+                    pointSize={range === "7d" ? 5 : range === "28d" ? 3 : 0}
                     pointColor={{ from: "color" }}
                     useMesh
                     xScale={{ type: "point" }}
@@ -677,7 +683,8 @@ export function FacebookStudio({ slug }: { slug: string }) {
                       tickSize: 0,
                       tickPadding: 8,
                       tickRotation: -45,
-                      tickValues: 6,
+                      tickValues: range === "7d" ? 7 : 6,
+                      format: formatChartDate,
                     }}
                     axisLeft={{ tickSize: 0, tickPadding: 8 }}
                     legends={[

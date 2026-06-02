@@ -27,6 +27,12 @@ import type { GoogleAnalyticsInsightsRange } from "@/src/schemas/google-analytic
 
 const nf = new Intl.NumberFormat("pt-BR");
 
+function formatChartDate(v: string | number | Date): string {
+  const s = String(v);
+  const parts = s.split("-");
+  return parts.length === 3 ? `${parts[2]}/${parts[1]}` : s;
+}
+
 const CHART_THEME = {
   text: { fill: "currentColor", fontSize: 11 },
   axis: {
@@ -256,12 +262,12 @@ export function GoogleAnalyticsStudio({ slug }: { slug: string }) {
                         })),
                       },
                     ]}
-                    margin={{ top: 16, right: 20, bottom: 48, left: 52 }}
+                    margin={{ top: 36, right: 20, bottom: 48, left: 52 }}
                     colors={["#f97316"]}
                     curve="monotoneX"
                     enableArea
                     areaOpacity={0.12}
-                    pointSize={4}
+                    pointSize={range === "7d" ? 5 : range === "28d" ? 3 : 0}
                     pointColor={{ from: "color" }}
                     useMesh
                     xScale={{ type: "point" }}
@@ -270,7 +276,8 @@ export function GoogleAnalyticsStudio({ slug }: { slug: string }) {
                       tickSize: 0,
                       tickPadding: 8,
                       tickRotation: -45,
-                      tickValues: 6,
+                      tickValues: range === "7d" ? 7 : 6,
+                      format: formatChartDate,
                     }}
                     axisLeft={{ tickSize: 0, tickPadding: 8 }}
                     theme={CHART_THEME}
