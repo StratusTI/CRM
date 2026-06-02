@@ -20,9 +20,9 @@ export async function generateMetadata({
   const { "workspace-slug": slug } = await params;
 
   return {
-    title: `${slug} | Nexo`,
+    title: `${slug} | Arco`,
     description:
-      "Nexo brings projects, docs, and AI-powered workflows into one unified workspace so teams and agents can plan, execute, and stay aligned.",
+      "Arco reúne empresas, pessoas, negócios e notas em um workspace de CRM rápido e focado.",
   };
 }
 

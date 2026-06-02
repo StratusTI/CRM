@@ -64,7 +64,7 @@ export function AuthShell({
         </div>
 
         {/* Rodapé */}
-        <p className="relative text-xs text-white/25">© 2026 Nexo</p>
+        <p className="relative text-xs text-white/25">© 2026 Arco</p>
       </div>
 
       {/* ── Painel direito: formulário ────────────────────────────── */}

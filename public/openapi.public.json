@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Nexo CRM — API pública",
+    "title": "Arco CRM — API pública",
     "version": "1.0.0",
     "description": "Endpoints acessíveis sem sessão de usuário do CRM: autenticação (better-auth), ingestão server-to-server por chave de API e callbacks de OAuth social."
   },

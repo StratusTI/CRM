@@ -1,8 +1,8 @@
 import { cn } from "@/lib/utils";
 
 /**
- * Marca do Nexo: dois nós conectados por um traço — o "nexo".
- * Tile lime com brilho, alinhado ao acento do tema.
+ * Marca do Arco: arco arquitetônico — duas colunas unidas por uma curva.
+ * Representa conexão, solidez e amplitude.
  */
 export function BrandMark({ className }: { className?: string }) {
   return (
@@ -20,13 +20,11 @@ export function BrandMark({ className }: { className?: string }) {
         aria-hidden="true"
       >
         <path
-          d="M7 8.5 L17 15.5"
+          d="M5 19.5L5 12C5 4.5 19 4.5 19 12L19 19.5"
           stroke="currentColor"
           strokeWidth="1.75"
           strokeLinecap="round"
         />
-        <circle cx="7" cy="8.5" r="2.6" fill="currentColor" />
-        <circle cx="17" cy="15.5" r="2.6" fill="currentColor" />
       </svg>
     </span>
   );
@@ -38,7 +36,7 @@ export function BrandLockup({ className }: { className?: string }) {
     <div className={cn("flex items-center gap-2.5", className)}>
       <BrandMark />
       <span className="font-heading font-semibold text-lg tracking-tight">
-        Nexo
+        Arco
       </span>
     </div>
   );

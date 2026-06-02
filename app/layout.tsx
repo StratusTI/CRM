@@ -20,11 +20,11 @@ const mono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Nexo",
-    template: "%s · Nexo",
+    default: "Arco",
+    template: "%s · Arco",
   },
   description:
-    "Nexo reúne empresas, pessoas, negócios e notas em um workspace de CRM rápido e focado.",
+    "Arco reúne empresas, pessoas, negócios e notas em um workspace de CRM rápido e focado.",
 };
 
 export default function RootLayout({

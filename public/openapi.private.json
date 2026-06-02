@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Nexo CRM — API privada",
+    "title": "Arco CRM — API privada",
     "version": "1.0.0",
     "description": "Endpoints que exigem sessão de usuário (cookie do better-auth). Tudo é escopado à workspace pelo `slug`; não-membros recebem 404 para não vazar existência."
   },

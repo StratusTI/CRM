@@ -31,7 +31,7 @@ export const auth = betterAuth({
       await resend.emails.send({
         from,
         to: user.email,
-        subject: "Redefinição de senha — Nexo CRM",
+        subject: "Redefinição de senha — Arco CRM",
         html: `
           <p>Olá, ${user.name}.</p>
           <p>Recebemos uma solicitação para redefinir a senha da sua conta.</p>

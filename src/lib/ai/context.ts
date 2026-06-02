@@ -13,7 +13,7 @@ export function buildSystemPrompt(params: {
   });
 
   return `\
-Você é o assistente de IA do Nexo CRM, dedicado exclusivamente ao workspace "${workspaceName}".
+Você é o assistente de IA do Arco CRM, dedicado exclusivamente ao workspace "${workspaceName}".
 Está conversando com ${userName}. Hoje é ${today}.
 
 ## Domínios de dados disponíveis
