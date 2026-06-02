@@ -29,6 +29,8 @@ export type ToolDef = {
 /** tool_call acumulada ao longo do stream. */
 export type AccumulatedToolCall = { id: string; name: string; args: string };
 
+export type AiUsageData = { inputTokens: number; outputTokens: number };
+
 export type AiStreamEvent =
   | { type: "text"; delta: string }
   | {
@@ -36,6 +38,7 @@ export type AiStreamEvent =
       finishReason: string | null;
       content: string;
       toolCalls: AccumulatedToolCall[];
+      usage: AiUsageData | null;
     }
   | { type: "error"; message: string };
 
@@ -68,6 +71,7 @@ export async function* streamChat(
         messages,
         ...(tools.length > 0 && { tools, tool_choice: toolChoice }),
         stream: true,
+        stream_options: { include_usage: true },
         temperature: TEMPERATURE,
         max_tokens: MAX_TOKENS,
       }),
@@ -90,6 +94,7 @@ export async function* streamChat(
   const toolAcc = new Map<number, AccumulatedToolCall>();
   let content = "";
   let finishReason: string | null = null;
+  let usageData: AiUsageData | null = null;
   let buffer = "";
 
   while (true) {
@@ -111,6 +116,13 @@ export async function* streamChat(
         chunk = JSON.parse(data) as OpenAiChunk;
       } catch {
         continue;
+      }
+
+      if (chunk.usage) {
+        usageData = {
+          inputTokens: chunk.usage.prompt_tokens,
+          outputTokens: chunk.usage.completion_tokens,
+        };
       }
 
       const choice = chunk.choices?.[0];
@@ -138,7 +150,7 @@ export async function* streamChat(
   }
 
   const toolCalls = [...toolAcc.values()].filter((t) => t.name.length > 0);
-  yield { type: "finish", finishReason, content, toolCalls };
+  yield { type: "finish", finishReason, content, toolCalls, usage: usageData };
 }
 
 type OpenAiChunk = {
@@ -153,4 +165,9 @@ type OpenAiChunk = {
     };
     finish_reason?: string | null;
   }>;
+  usage?: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+  };
 };

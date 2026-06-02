@@ -51,6 +51,7 @@ model User {
   emailTemplatesCreated EmailTemplate[] @relation("EmailTemplateCreatedBy")
   emailTemplatesUpdated EmailTemplate[] @relation("EmailTemplateUpdatedBy")
   emailCampaignsCreated EmailCampaign[] @relation("EmailCampaignCreatedBy")
+  mailingListsCreated   MailingList[]   @relation("MailingListCreatedBy")
 
   workspaceInvitesCreated WorkspaceInvite[] @relation("WorkspaceInviteCreator")
 
@@ -128,9 +129,11 @@ model Workspace {
   integrationApiKeys IntegrationApiKey[]
   emailTemplates     EmailTemplate[]
   emailCampaigns     EmailCampaign[]
+  mailingLists       MailingList[]
   workflows          Workflow[]
   proposals          Proposal[]
   aiConversations    AiConversation[]
+  aiUsage            AiUsage[]
   invite             WorkspaceInvite?
 
   @@map("workspaces")
@@ -371,6 +374,8 @@ enum SocialPlatform {
   YOUTUBE
   GOOGLE_ANALYTICS
   TWITTER
+  GOOGLE_ADS
+  LINKEDIN
 }
 
 enum SocialConnectionStatus {
@@ -585,6 +590,45 @@ model EmailCampaignRecipient {
   @@map("email_campaign_recipients")
 }
 
+/// Lista de distribuição de emails. Agrupa membros (com ou sem vínculo a uma
+/// Pessoa do CRM) para facilitar o envio de campanhas a grupos recorrentes.
+model MailingList {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  workspaceId String    @map("workspace_id")
+  createdById String    @map("created_by_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  workspace Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy User               @relation("MailingListCreatedBy", fields: [createdById], references: [id])
+  members   MailingListMember[]
+
+  @@index([workspaceId])
+  @@index([deletedAt])
+  @@map("mailing_lists")
+}
+
+/// Membro de uma MailingList. Pode ser um email avulso ou vinculado a uma
+/// Pessoa do CRM (personId opcional). `email` é único por lista.
+model MailingListMember {
+  id            String   @id @default(cuid())
+  mailingListId String   @map("mailing_list_id")
+  email         String
+  name          String?
+  personId      String?  @map("person_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  mailingList MailingList @relation(fields: [mailingListId], references: [id], onDelete: Cascade)
+
+  @@unique([mailingListId, email])
+  @@index([mailingListId])
+  @@index([personId])
+  @@map("mailing_list_members")
+}
+
 enum WorkflowStatus {
   DRAFT
   ACTIVE
@@ -758,6 +802,7 @@ model AiConversation {
   workspace Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   user      User        @relation("AiConversationUser", fields: [userId], references: [id], onDelete: Cascade)
   messages  AiMessage[]
+  aiUsage   AiUsage[]
 
   @@index([workspaceId, userId])
   @@map("ai_conversations")
@@ -839,4 +884,24 @@ model ProposalView {
   @@index([proposalId])
   @@index([proposalId, ipHash])
   @@map("proposal_views")
+}
+
+/// Registro de uso de tokens IA por round de agente. Gravado após cada chamada
+/// ao modelo, permitindo calcular o custo acumulado por workspace.
+model AiUsage {
+  id             String   @id @default(cuid())
+  workspaceId    String   @map("workspace_id")
+  conversationId String   @map("conversation_id")
+  inputTokens    Int      @default(0) @map("input_tokens")
+  outputTokens   Int      @default(0) @map("output_tokens")
+  model          String
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  workspace    Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  conversation AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([conversationId])
+  @@index([createdAt])
+  @@map("ai_usage")
 }
