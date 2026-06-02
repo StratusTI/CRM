@@ -6,9 +6,11 @@ import { z } from "zod";
  * do destinatário no momento do envio).
  *
  * Fluxo:
- * - `recipientScope: "all"`  → todas as pessoas do workspace com pelo menos um email
- * - `recipientScope: "selected"` → ids explícitos via `personIds`
- * - `scheduledAt` opcional (ISO) — se ausente, envia imediatamente
+ * - `recipientScope: "all"`       → todas as pessoas do workspace com pelo menos um email
+ * - `recipientScope: "selected"`  → ids explícitos via `personIds`
+ * - `mailingListIds` opcional     → membros das listas de mailing selecionadas (somado)
+ * - `extraEmails` opcional        → emails avulsos não cadastrados no CRM
+ * - `scheduledAt` opcional (ISO)  — se ausente, envia imediatamente
  */
 
 export const CampaignStatusSchema = z.enum([
@@ -46,14 +48,21 @@ export const CreateEmailCampaignSchema = z
     contentJson: ContentJsonSchema.optional(),
     recipientScope: RecipientScopeSchema,
     personIds: z.array(z.string().trim().min(1)).max(5000).optional(),
+    mailingListIds: z.array(z.string().trim().min(1)).max(200).optional(),
+    extraEmails: z
+      .array(z.string().trim().email("Email inválido"))
+      .max(500)
+      .optional(),
     scheduledAt: z.iso.datetime().optional(),
   })
   .refine(
     (data) =>
       data.recipientScope === "all" ||
-      (Array.isArray(data.personIds) && data.personIds.length > 0),
+      (Array.isArray(data.personIds) && data.personIds.length > 0) ||
+      (Array.isArray(data.mailingListIds) && data.mailingListIds.length > 0) ||
+      (Array.isArray(data.extraEmails) && data.extraEmails.length > 0),
     {
-      message: "Selecione ao menos uma pessoa",
+      message: "Selecione ao menos um destinatário",
       path: ["personIds"],
     },
   );

@@ -15,6 +15,7 @@ import {
   EmailCampaignRepository,
   type RecipientSeed,
 } from "@/src/repositories/email-campaign.repository";
+import { MailingListRepository } from "@/src/repositories/mailing-list.repository";
 import type {
   CreateEmailCampaignInput,
   EmailCampaignDTO,
@@ -25,38 +26,64 @@ import { resolveWorkspaceId } from "@/src/services/workspace-scope";
 const EMAIL_RX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
- * Coleta destinatários para a campanha. Retorna snapshots {personId, email,
- * name} prontos para persistir. Para `all`, varre todas as Pessoas do
- * workspace e expande o array `emails` (uma linha por endereço). Para
- * `selected`, valida que os ids pertencem ao workspace e expande igual.
+ * Coleta destinatários consolidados: pessoas do CRM (scope all/selected),
+ * membros de mailing lists e emails avulsos (extraEmails). Deduplicata por
+ * endereço de email (prioriza entradas com personId).
  */
 async function collectRecipients(
   workspaceId: string,
-  scope: "all" | "selected",
-  personIds: string[] | undefined,
+  input: CreateEmailCampaignInput,
 ): Promise<Result<RecipientSeed[]>> {
+  const seeds: RecipientSeed[] = [];
+  const seen = new Set<string>();
+
+  // 1. Pessoas do CRM via scope all/selected
   const where =
-    scope === "all"
+    input.recipientScope === "all"
       ? { workspaceId, deletedAt: null }
-      : { workspaceId, deletedAt: null, id: { in: personIds ?? [] } };
+      : { workspaceId, deletedAt: null, id: { in: input.personIds ?? [] } };
 
   const people = await prisma.person.findMany({
     where,
     select: { id: true, name: true, emails: true },
   });
 
-  const seeds: RecipientSeed[] = [];
-  const seen = new Set<string>();
   for (const p of people) {
     for (const raw of p.emails) {
       const email = raw.trim().toLowerCase();
       if (!email || !EMAIL_RX.test(email)) continue;
-      const key = `${p.id}:${email}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
+      if (seen.has(email)) continue;
+      seen.add(email);
       seeds.push({ personId: p.id, email, name: p.name });
     }
   }
+
+  // 2. Membros de mailing lists
+  if (input.mailingListIds && input.mailingListIds.length > 0) {
+    const mlResult = await MailingListRepository.getMembersByListIds(
+      input.mailingListIds,
+    );
+    if (!mlResult.ok) return mlResult;
+    for (const m of mlResult.value) {
+      const email = m.email.trim().toLowerCase();
+      if (!email || !EMAIL_RX.test(email)) continue;
+      if (seen.has(email)) continue;
+      seen.add(email);
+      seeds.push({ personId: m.personId, email, name: m.name });
+    }
+  }
+
+  // 3. Emails avulsos
+  if (input.extraEmails && input.extraEmails.length > 0) {
+    for (const raw of input.extraEmails) {
+      const email = raw.trim().toLowerCase();
+      if (!email || !EMAIL_RX.test(email)) continue;
+      if (seen.has(email)) continue;
+      seen.add(email);
+      seeds.push({ personId: null, email, name: null });
+    }
+  }
+
   if (seeds.length === 0) return err(emailNoRecipients());
   return ok(seeds);
 }
@@ -80,11 +107,7 @@ export const EmailCampaignService = {
     const from = getFromAddress();
     if (!resend || !from) return err(emailProviderNotConfigured());
 
-    const recipients = await collectRecipients(
-      ws.value,
-      input.recipientScope,
-      input.personIds,
-    );
+    const recipients = await collectRecipients(ws.value, input);
     if (!recipients.ok) return recipients;
 
     const scheduledAt = input.scheduledAt ? new Date(input.scheduledAt) : null;

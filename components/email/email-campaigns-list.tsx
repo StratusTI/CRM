@@ -244,6 +244,9 @@ function CampaignComposer({
   const [scheduledAtLocal, setScheduledAtLocal] = useState("");
   const [recipients, setRecipients] = useState<RecipientSelection>({
     scope: "all",
+    personIds: [],
+    mailingListIds: [],
+    extraEmails: [],
   });
   const [templates, setTemplates] = useState<EmailTemplateDTO[]>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -290,8 +293,13 @@ function CampaignComposer({
       toast.error("Informe o assunto");
       return;
     }
-    if (recipients.scope === "selected" && recipients.personIds.length === 0) {
-      toast.error("Selecione ao menos uma pessoa");
+    const hasRecipients =
+      recipients.scope === "all" ||
+      recipients.personIds.length > 0 ||
+      recipients.mailingListIds.length > 0 ||
+      recipients.extraEmails.length > 0;
+    if (!hasRecipients) {
+      toast.error("Selecione ao menos um destinatário");
       return;
     }
     const html = (await editorRef.current?.getEmailHTML())?.trim();
@@ -323,7 +331,17 @@ function CampaignComposer({
         contentJson: json,
         recipientScope: recipients.scope,
         personIds:
-          recipients.scope === "selected" ? recipients.personIds : undefined,
+          recipients.scope === "selected" && recipients.personIds.length > 0
+            ? recipients.personIds
+            : undefined,
+        mailingListIds:
+          recipients.mailingListIds.length > 0
+            ? recipients.mailingListIds
+            : undefined,
+        extraEmails:
+          recipients.extraEmails.length > 0
+            ? recipients.extraEmails
+            : undefined,
         scheduledAt: scheduledAtISO,
       });
       if (!res.ok || !res.data) {

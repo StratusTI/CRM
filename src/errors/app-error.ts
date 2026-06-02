@@ -149,6 +149,10 @@ export const emailCampaignNotFound = (
   message = "Campanha de email não encontrada",
 ): AppError => appError("EMAIL_CAMPAIGN_NOT_FOUND", message);
 
+export const mailingListNotFound = (
+  message = "Lista de mailing não encontrada",
+): AppError => appError("MAILING_LIST_NOT_FOUND", message);
+
 export const emailProviderNotConfigured = (
   message = "Provedor de email não configurado. Verifique RESEND_API_KEY e EMAIL_FROM.",
 ): AppError => appError("EMAIL_PROVIDER_NOT_CONFIGURED", message);
