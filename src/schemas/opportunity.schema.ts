@@ -26,6 +26,11 @@ const AmountSchema = z
 const CloseDateSchema = z.iso.datetime("Data de fechamento inválida");
 const StageSchema = z.enum(OPPORTUNITY_STAGES);
 const IdSchema = z.string().trim().min(1);
+const SourceSchema = z
+  .string()
+  .trim()
+  .min(1, "Origem inválida")
+  .max(60, "Origem muito longa");
 
 export const CreateOpportunitySchema = z.object({
   name: NameSchema,
@@ -35,6 +40,7 @@ export const CreateOpportunitySchema = z.object({
   companyId: IdSchema.optional(),
   pointOfContactId: IdSchema.optional(),
   ownerId: IdSchema.optional(),
+  source: SourceSchema.optional(),
 });
 
 export const UpdateOpportunitySchema = z
@@ -46,6 +52,7 @@ export const UpdateOpportunitySchema = z
     companyId: IdSchema.nullable(),
     pointOfContactId: IdSchema.nullable(),
     ownerId: IdSchema.nullable(),
+    source: SourceSchema.nullable(),
   })
   .partial()
   .refine((data) => Object.keys(data).length > 0, {
@@ -61,6 +68,7 @@ export const OpportunityOutputSchema = z.object({
   companyId: z.string().nullable(),
   pointOfContactId: z.string().nullable(),
   ownerId: z.string().nullable(),
+  source: z.string().nullable(),
   workspaceId: z.string(),
   createdById: z.string(),
   updatedById: z.string().nullable(),

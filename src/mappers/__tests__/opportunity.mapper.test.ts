@@ -12,6 +12,7 @@ const base: Opportunity = {
   companyId: "co_1",
   pointOfContactId: "p_1",
   ownerId: "user_1",
+  source: null,
   workspaceId: "ws_1",
   createdById: "user_1",
   updatedById: null,

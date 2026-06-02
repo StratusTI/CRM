@@ -13,6 +13,7 @@ export type CreateOpportunityData = {
   companyId: string | null;
   pointOfContactId: string | null;
   ownerId: string | null;
+  source: string | null;
 };
 
 export type UpdateOpportunityData = {
@@ -24,6 +25,7 @@ export type UpdateOpportunityData = {
   companyId?: string | null;
   pointOfContactId?: string | null;
   ownerId?: string | null;
+  source?: string | null;
 };
 
 /** Acesso a dados de oportunidade. Sem regra de negócio — só Prisma. */
