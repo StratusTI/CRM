@@ -3,8 +3,10 @@ import { badRequest } from "@/src/errors/app-error";
 import { getAuthSession } from "@/src/lib/auth-session";
 import { parsePlatformSlug } from "@/src/schemas/social-connection.schema";
 import { FacebookService } from "@/src/services/facebook.service";
+import { GoogleAdsService } from "@/src/services/google-ads.service";
 import { GoogleAnalyticsService } from "@/src/services/google-analytics.service";
 import { InstagramService } from "@/src/services/instagram.service";
+import { LinkedInService } from "@/src/services/linkedin.service";
 import { TiktokService } from "@/src/services/tiktok.service";
 import { TwitterService } from "@/src/services/twitter.service";
 import { YoutubeService } from "@/src/services/youtube.service";
@@ -36,7 +38,11 @@ export async function GET(_request: NextRequest, { params }: RouteContext) {
               ? await GoogleAnalyticsService.getOverview(userId, slug)
               : platform === "TWITTER"
                 ? await TwitterService.getOverview(userId, slug)
-                : null;
+                : platform === "GOOGLE_ADS"
+                  ? await GoogleAdsService.getOverview(userId, slug)
+                  : platform === "LINKEDIN"
+                    ? await LinkedInService.getOverview(userId, slug)
+                    : null;
 
   if (!result) return handleError(badRequest("Plataforma não suportada"));
   if (!result.ok) return handleError(result.error);

@@ -23,6 +23,14 @@ const serverEnv = {
   // Twitter/X — app OAuth 2.0 (confidential client) no Developer Portal.
   TWITTER_CLIENT_ID: process.env.TWITTER_CLIENT_ID || undefined,
   TWITTER_CLIENT_SECRET: process.env.TWITTER_CLIENT_SECRET || undefined,
+  // LinkedIn — app OAuth 2.0 no LinkedIn Developer Portal (linkedin.com/developers).
+  // Escopos free: r_liteprofile, r_emailaddress, w_member_social.
+  LINKEDIN_CLIENT_ID: process.env.LINKEDIN_CLIENT_ID || undefined,
+  LINKEDIN_CLIENT_SECRET: process.env.LINKEDIN_CLIENT_SECRET || undefined,
+  // Google Ads — token de desenvolvedor obtido no Google Ads API Center.
+  // Reusa GOOGLE_CLIENT_ID/SECRET; adicione o escopo adwords no OAuth consent.
+  GOOGLE_ADS_DEVELOPER_TOKEN:
+    process.env.GOOGLE_ADS_DEVELOPER_TOKEN || undefined,
   // Chave AES-256 (base64 de 32 bytes) para cifrar tokens em repouso.
   SOCIAL_TOKEN_ENCRYPTION_KEY:
     process.env.SOCIAL_TOKEN_ENCRYPTION_KEY || undefined,
@@ -49,6 +57,9 @@ const serverEnvSchema = z.object({
   TIKTOK_CLIENT_SECRET: z.string().min(1).optional(),
   TWITTER_CLIENT_ID: z.string().min(1).optional(),
   TWITTER_CLIENT_SECRET: z.string().min(1).optional(),
+  LINKEDIN_CLIENT_ID: z.string().min(1).optional(),
+  LINKEDIN_CLIENT_SECRET: z.string().min(1).optional(),
+  GOOGLE_ADS_DEVELOPER_TOKEN: z.string().min(1).optional(),
   SOCIAL_TOKEN_ENCRYPTION_KEY: z.string().min(1).optional(),
 });
 
@@ -74,5 +85,8 @@ export const {
   TIKTOK_CLIENT_SECRET,
   TWITTER_CLIENT_ID,
   TWITTER_CLIENT_SECRET,
+  LINKEDIN_CLIENT_ID,
+  LINKEDIN_CLIENT_SECRET,
+  GOOGLE_ADS_DEVELOPER_TOKEN,
   SOCIAL_TOKEN_ENCRYPTION_KEY,
 } = validatedServerEnv;

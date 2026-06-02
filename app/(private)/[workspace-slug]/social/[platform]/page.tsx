@@ -2,8 +2,10 @@ import { notFound } from "next/navigation";
 import { PagePlaceholder } from "@/components/page-placeholder";
 import { PageShell } from "@/components/page-shell";
 import { FacebookStudio } from "@/components/social/facebook-studio";
+import { GoogleAdsStudio } from "@/components/social/google-ads-studio";
 import { GoogleAnalyticsStudio } from "@/components/social/google-analytics-studio";
 import { InstagramStudio } from "@/components/social/instagram-studio";
+import { LinkedInStudio } from "@/components/social/linkedin-studio";
 import { TiktokStudio } from "@/components/social/tiktok-studio";
 import { TwitterStudio } from "@/components/social/twitter-studio";
 import { YoutubeStudio } from "@/components/social/youtube-studio";
@@ -32,6 +34,10 @@ export default async function SocialPlatformPage({
         <GoogleAnalyticsStudio slug={slug} />
       ) : meta.platform === "TWITTER" ? (
         <TwitterStudio slug={slug} />
+      ) : meta.platform === "GOOGLE_ADS" ? (
+        <GoogleAdsStudio slug={slug} />
+      ) : meta.platform === "LINKEDIN" ? (
+        <LinkedInStudio slug={slug} />
       ) : (
         <PagePlaceholder
           title={meta.label}

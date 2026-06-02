@@ -66,6 +66,7 @@ export const ERROR_CODES = {
   // Email marketing domain
   EMAIL_TEMPLATE_NOT_FOUND: { code: "EMAIL_TEMPLATE_NOT_FOUND", status: 404 },
   EMAIL_CAMPAIGN_NOT_FOUND: { code: "EMAIL_CAMPAIGN_NOT_FOUND", status: 404 },
+  MAILING_LIST_NOT_FOUND: { code: "MAILING_LIST_NOT_FOUND", status: 404 },
   EMAIL_PROVIDER_NOT_CONFIGURED: {
     code: "EMAIL_PROVIDER_NOT_CONFIGURED",
     status: 400,

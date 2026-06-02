@@ -37,12 +37,14 @@ export async function postForm<T>(
 export async function getJson<T>(
   url: string,
   accessToken?: string,
+  extraHeaders: Record<string, string> = {},
 ): Promise<Result<T>> {
   try {
     const response = await fetch(url, {
       headers: {
         Accept: "application/json",
         ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
+        ...extraHeaders,
       },
     });
     if (!response.ok) {

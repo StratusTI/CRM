@@ -5,12 +5,14 @@ import { getAuthSession } from "@/src/lib/auth-session";
 import { TIKTOK_SINGLE_CHUNK_MAX_BYTES } from "@/src/lib/social/tiktok/client";
 import { PublishPostSchema } from "@/src/schemas/facebook.schema";
 import { PublishInstagramPostSchema } from "@/src/schemas/instagram.schema";
+import { LinkedInPublishInputSchema } from "@/src/schemas/linkedin.schema";
 import { parsePlatformSlug } from "@/src/schemas/social-connection.schema";
 import { PublishTiktokVideoSchema } from "@/src/schemas/tiktok.schema";
 import { PublishTweetSchema } from "@/src/schemas/twitter.schema";
 import { PublishVideoSchema } from "@/src/schemas/youtube.schema";
 import { FacebookService } from "@/src/services/facebook.service";
 import { InstagramService } from "@/src/services/instagram.service";
+import { LinkedInService } from "@/src/services/linkedin.service";
 import { TiktokService } from "@/src/services/tiktok.service";
 import { TwitterService } from "@/src/services/twitter.service";
 import { YoutubeService } from "@/src/services/youtube.service";
@@ -31,6 +33,26 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   const { slug, platform: platformSlug } = await params;
   const userId = session.value.user.id;
   const platform = parsePlatformSlug(platformSlug);
+
+  /* --------------------------------- LinkedIn ------------------------------- */
+  // LinkedIn envia JSON (não multipart), portanto é tratado antes do FormData.
+  if (platform === "LINKEDIN") {
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return handleError(badRequest("Corpo JSON inválido"));
+    }
+    const parsed = LinkedInPublishInputSchema.safeParse(body);
+    if (!parsed.success) {
+      return handleError(
+        validationError("Dados da publicação inválidos", z.flattenError(parsed.error)),
+      );
+    }
+    const result = await LinkedInService.publish(userId, slug, parsed.data);
+    if (!result.ok) return handleError(result.error);
+    return successResponse(result.value, 201);
+  }
 
   if (
     platform !== "YOUTUBE" &&

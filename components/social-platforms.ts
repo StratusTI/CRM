@@ -2,6 +2,8 @@ import {
   Facebook01Icon,
   GoogleIcon,
   InstagramIcon,
+  Linkedin01Icon,
+  Megaphone01Icon,
   NewTwitterIcon,
   TiktokIcon,
   YoutubeIcon,
@@ -62,5 +64,19 @@ export const SOCIAL_PLATFORM_META: SocialPlatformMeta[] = [
     label: "X (Twitter)",
     icon: NewTwitterIcon,
     color: "bg-neutral-900",
+  },
+  {
+    platform: "GOOGLE_ADS",
+    slug: "google_ads",
+    label: "Google Ads",
+    icon: Megaphone01Icon,
+    color: "bg-blue-500",
+  },
+  {
+    platform: "LINKEDIN",
+    slug: "linkedin",
+    label: "LinkedIn",
+    icon: Linkedin01Icon,
+    color: "bg-blue-700",
   },
 ];

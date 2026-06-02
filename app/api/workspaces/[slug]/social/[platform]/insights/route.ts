@@ -2,11 +2,13 @@ import type { NextRequest } from "next/server";
 import { badRequest, validationError } from "@/src/errors/app-error";
 import { getAuthSession } from "@/src/lib/auth-session";
 import { FacebookInsightsRangeSchema } from "@/src/schemas/facebook.schema";
+import { GoogleAdsInsightsRangeSchema } from "@/src/schemas/google-ads.schema";
 import { GoogleAnalyticsInsightsRangeSchema } from "@/src/schemas/google-analytics.schema";
 import { InstagramInsightsRangeSchema } from "@/src/schemas/instagram.schema";
 import { parsePlatformSlug } from "@/src/schemas/social-connection.schema";
 import { YoutubeInsightsRangeSchema } from "@/src/schemas/youtube.schema";
 import { FacebookService } from "@/src/services/facebook.service";
+import { GoogleAdsService } from "@/src/services/google-ads.service";
 import { GoogleAnalyticsService } from "@/src/services/google-analytics.service";
 import { InstagramService } from "@/src/services/instagram.service";
 import { YoutubeService } from "@/src/services/youtube.service";
@@ -69,6 +71,17 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       slug,
       range.data,
     );
+    return result.ok
+      ? successResponse(result.value)
+      : handleError(result.error);
+  }
+
+  if (platform === "GOOGLE_ADS") {
+    const range = GoogleAdsInsightsRangeSchema.safeParse(rawRange);
+    if (!range.success) {
+      return handleError(validationError("Janela de tempo inválida"));
+    }
+    const result = await GoogleAdsService.getInsights(userId, slug, range.data);
     return result.ok
       ? successResponse(result.value)
       : handleError(result.error);
