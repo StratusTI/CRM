@@ -65,6 +65,36 @@ export const PersonRepository = {
     }
   },
 
+  /**
+   * Procura uma pessoa da workspace que compartilhe ao menos um e-mail ou
+   * telefone com os informados — base da deduplicação na ingestão de leads.
+   * Retorna a mais recente quando há mais de um match. `null` se nada casar
+   * (ou se nenhum identificador foi fornecido).
+   */
+  async findByEmailOrPhone(
+    workspaceId: string,
+    emails: string[],
+    phones: string[],
+  ): Promise<Result<Person | null>> {
+    if (emails.length === 0 && phones.length === 0) return ok(null);
+    try {
+      const person = await prisma.person.findFirst({
+        where: {
+          workspaceId,
+          deletedAt: null,
+          OR: [
+            ...(emails.length > 0 ? [{ emails: { hasSome: emails } }] : []),
+            ...(phones.length > 0 ? [{ phones: { hasSome: phones } }] : []),
+          ],
+        },
+        orderBy: { createdAt: "desc" },
+      });
+      return ok(person);
+    } catch {
+      return err(databaseError());
+    }
+  },
+
   /** Soft delete já filtra; usado por outras features para validar referência. */
   async listByWorkspace(workspaceId: string): Promise<Result<Person[]>> {
     try {
