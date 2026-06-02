@@ -15,6 +15,7 @@ export function toOpportunityDTO(opportunity: Opportunity): OpportunityDTO {
     companyId: opportunity.companyId,
     pointOfContactId: opportunity.pointOfContactId,
     ownerId: opportunity.ownerId,
+    source: opportunity.source,
     workspaceId: opportunity.workspaceId,
     createdById: opportunity.createdById,
     updatedById: opportunity.updatedById,

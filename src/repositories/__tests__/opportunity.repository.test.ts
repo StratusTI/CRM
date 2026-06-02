@@ -23,6 +23,7 @@ describe("OpportunityRepository (integração)", () => {
       companyId: null,
       pointOfContactId: null,
       ownerId: owner.id,
+      source: null,
     });
     expect(result.ok).toBe(true);
     if (result.ok) {

@@ -46,6 +46,8 @@ model User {
   socialConnectionsCreated SocialConnection[] @relation("SocialConnectionCreatedBy")
   socialConnectionsUpdated SocialConnection[] @relation("SocialConnectionUpdatedBy")
 
+  scheduledPostsCreated ScheduledPost[] @relation("ScheduledPostCreatedBy")
+
   integrationApiKeysCreated IntegrationApiKey[] @relation("IntegrationApiKeyCreatedBy")
 
   emailTemplatesCreated EmailTemplate[] @relation("EmailTemplateCreatedBy")
@@ -126,6 +128,7 @@ model Workspace {
   notes              Note[]
   dashboards         Dashboard[]
   socialConnections  SocialConnection[]
+  scheduledPosts     ScheduledPost[]
   integrationApiKeys IntegrationApiKey[]
   emailTemplates     EmailTemplate[]
   emailCampaigns     EmailCampaign[]
@@ -223,6 +226,7 @@ model Opportunity {
   companyId        String?          @map("company_id")
   pointOfContactId String?          @map("point_of_contact_id")
   ownerId          String?          @map("owner_id")
+  source           String?
   workspaceId      String           @map("workspace_id")
   createdById      String           @map("created_by_id")
   updatedById      String?          @map("updated_by_id")
@@ -384,6 +388,33 @@ enum SocialConnectionStatus {
   REVOKED
 }
 
+/// Estado do post agendado como um todo. PARTIALLY_FAILED = ao menos um alvo
+/// publicou e ao menos um falhou (vide ScheduledPostTarget para o detalhe).
+enum ScheduledPostStatus {
+  SCHEDULED
+  PUBLISHING
+  PUBLISHED
+  PARTIALLY_FAILED
+  FAILED
+  CANCELED
+}
+
+/// Estado da publicação em UMA plataforma do post (o "fan-out").
+enum ScheduledPostTargetStatus {
+  PENDING
+  PUBLISHING
+  PUBLISHED
+  FAILED
+  CANCELED
+}
+
+/// Tipo de mídia anexada — determina para quais plataformas o post é elegível
+/// (ex.: VIDEO habilita YouTube/TikTok; IMAGE habilita Instagram).
+enum ScheduledMediaKind {
+  IMAGE
+  VIDEO
+}
+
 /// Conta de rede social da empresa conectada via OAuth, escopada por workspace.
 /// Uma conexão por plataforma (@@unique). Tokens são cifrados em repouso
 /// (AES-256-GCM) pela camada de serviço — o banco guarda só o ciphertext.
@@ -410,6 +441,74 @@ model SocialConnection {
   @@unique([workspaceId, platform])
   @@index([workspaceId])
   @@map("social_connections")
+}
+
+/// Post agendado (ou publicado "agora") para uma ou mais redes sociais. O texto
+/// é compartilhado entre as plataformas; `title`/`options` cobrem requisitos
+/// específicos (ex.: título do YouTube, privacidade do TikTok). A mídia fica no
+/// MinIO (ver ScheduledPostMedia) e o cron `social-posts-tick` publica os
+/// agendamentos vencidos chamando os mesmos services de publicação manual.
+model ScheduledPost {
+  id           String              @id @default(cuid())
+  content      String              @default("")
+  title        String?
+  options      Json?
+  status       ScheduledPostStatus @default(SCHEDULED)
+  scheduledFor DateTime            @map("scheduled_for")
+  publishedAt  DateTime?           @map("published_at")
+  lastError    String?             @map("last_error")
+  workspaceId  String              @map("workspace_id")
+  createdById  String              @map("created_by_id")
+  createdAt    DateTime            @default(now()) @map("created_at")
+  updatedAt    DateTime            @updatedAt @map("updated_at")
+
+  workspace Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy User                  @relation("ScheduledPostCreatedBy", fields: [createdById], references: [id])
+  targets   ScheduledPostTarget[]
+  media     ScheduledPostMedia[]
+
+  @@index([workspaceId])
+  @@index([status, scheduledFor])
+  @@map("scheduled_posts")
+}
+
+/// Alvo de publicação: uma plataforma de um ScheduledPost, com status próprio.
+/// `externalPostId` guarda o id retornado pela rede após publicar.
+model ScheduledPostTarget {
+  id             String                    @id @default(cuid())
+  postId         String                    @map("post_id")
+  platform       SocialPlatform
+  status         ScheduledPostTargetStatus @default(PENDING)
+  externalPostId String?                   @map("external_post_id")
+  error          String?
+  attempts       Int                       @default(0)
+  publishedAt    DateTime?                 @map("published_at")
+  createdAt      DateTime                  @default(now()) @map("created_at")
+  updatedAt      DateTime                  @updatedAt @map("updated_at")
+
+  post ScheduledPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, platform])
+  @@index([postId])
+  @@map("scheduled_post_targets")
+}
+
+/// Mídia anexada a um ScheduledPost. Os bytes vivem no MinIO sob `storageKey`;
+/// aqui guardamos só metadados. `order` mantém a sequência (carrossel/anexos).
+model ScheduledPostMedia {
+  id          String             @id @default(cuid())
+  postId      String             @map("post_id")
+  kind        ScheduledMediaKind
+  storageKey  String             @map("storage_key")
+  contentType String             @map("content_type")
+  sizeBytes   Int                @map("size_bytes")
+  order       Int                @default(0)
+  createdAt   DateTime           @default(now()) @map("created_at")
+
+  post ScheduledPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+  @@map("scheduled_post_media")
 }
 
 /// Chave de API por workspace para ingestão server-to-server (ex.: outros
@@ -602,8 +701,8 @@ model MailingList {
   updatedAt   DateTime  @updatedAt @map("updated_at")
   deletedAt   DateTime? @map("deleted_at")
 
-  workspace Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  createdBy User               @relation("MailingListCreatedBy", fields: [createdById], references: [id])
+  workspace Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy User                @relation("MailingListCreatedBy", fields: [createdById], references: [id])
   members   MailingListMember[]
 
   @@index([workspaceId])
@@ -791,13 +890,13 @@ enum AiMessageRole {
 /// Conversa do agente de IA do workspace. Privada por usuário (cada membro tem
 /// suas próprias conversas) e escopada por workspace. Soft-delete via deletedAt.
 model AiConversation {
-  id          String      @id @default(cuid())
-  workspaceId String      @map("workspace_id")
-  userId      String      @map("user_id")
+  id          String    @id @default(cuid())
+  workspaceId String    @map("workspace_id")
+  userId      String    @map("user_id")
   title       String?
-  createdAt   DateTime    @default(now()) @map("created_at")
-  updatedAt   DateTime    @updatedAt @map("updated_at")
-  deletedAt   DateTime?   @map("deleted_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
 
   workspace Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   user      User        @relation("AiConversationUser", fields: [userId], references: [id], onDelete: Cascade)

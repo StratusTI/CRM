@@ -59,6 +59,11 @@ export const ERROR_CODES = {
   SOCIAL_NO_PAGE: { code: "SOCIAL_NO_PAGE", status: 400 },
   SOCIAL_IG_NOT_LINKED: { code: "SOCIAL_IG_NOT_LINKED", status: 400 },
 
+  // Scheduled posts domain
+  SCHEDULED_POST_NOT_FOUND: { code: "SCHEDULED_POST_NOT_FOUND", status: 404 },
+  SCHEDULED_POST_INVALID: { code: "SCHEDULED_POST_INVALID", status: 422 },
+  STORAGE_NOT_CONFIGURED: { code: "STORAGE_NOT_CONFIGURED", status: 503 },
+
   // Integration API key domain
   INTEGRATION_KEY_INVALID: { code: "INTEGRATION_KEY_INVALID", status: 401 },
   INTEGRATION_KEY_NOT_FOUND: { code: "INTEGRATION_KEY_NOT_FOUND", status: 404 },

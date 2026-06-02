@@ -133,6 +133,19 @@ export const socialIgNotLinked = (
   message = "Nenhuma Página possui conta do Instagram Business/Creator vinculada. Vincule no Facebook e reconecte.",
 ): AppError => appError("SOCIAL_IG_NOT_LINKED", message);
 
+export const scheduledPostNotFound = (
+  message = "Post agendado não encontrado",
+): AppError => appError("SCHEDULED_POST_NOT_FOUND", message);
+
+export const scheduledPostInvalid = (
+  message: string,
+  details?: unknown,
+): AppError => appError("SCHEDULED_POST_INVALID", message, details);
+
+export const storageNotConfigured = (
+  message = "Armazenamento de mídia (MinIO/S3) não configurado.",
+): AppError => appError("STORAGE_NOT_CONFIGURED", message);
+
 export const integrationKeyInvalid = (
   message = "Chave de API ausente ou inválida",
 ): AppError => appError("INTEGRATION_KEY_INVALID", message);

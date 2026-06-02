@@ -124,6 +124,12 @@ export const WORKSPACE_NAV: NavNode[] = [
     color: "bg-fuchsia-500",
     children: [
       {
+        title: "Agendar posts",
+        segment: "social/scheduled",
+        icon: Calendar01Icon,
+        color: "bg-fuchsia-500",
+      },
+      {
         title: "Instagram",
         segment: "social/instagram",
         icon: InstagramIcon,

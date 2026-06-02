@@ -83,6 +83,7 @@ export const OpportunityService = {
       companyId: input.companyId ?? null,
       pointOfContactId: input.pointOfContactId ?? null,
       ownerId: input.ownerId ?? null,
+      source: input.source ?? null,
     });
     if (!created.ok) return created;
     const dto = toOpportunityDTO(created.value);
