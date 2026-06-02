@@ -251,7 +251,7 @@ function TweetComposer({
 }
 
 export function TwitterStudio({ slug }: { slug: string }) {
-  const { overview, isLoading, error, refetch, publish } = useTwitter(slug);
+  const { overview, tweets, isLoading, error, refetch, publish } = useTwitter(slug);
 
   const [text, setText] = useState("");
   const [imageFile, setImageFile] = useState<File | undefined>();
@@ -322,17 +322,67 @@ export function TwitterStudio({ slug }: { slug: string }) {
           </TabsList>
         </div>
 
-        <TabsContent value="overview">
-          <Card className="px-4 py-6 text-center text-muted-foreground text-sm">
-            <HugeiconsIcon
-              icon={NewTwitterIcon}
-              className="mx-auto mb-3 size-8 opacity-40"
-            />
-            <p>
-              Estatísticas detalhadas do perfil não estão disponíveis no plano
-              gratuito da API do X.
-            </p>
-          </Card>
+        <TabsContent value="overview" className="space-y-3">
+          {tweets && tweets.tweets.length > 0 ? (
+            tweets.tweets.map((tweet) => {
+              const date = tweet.createdAt
+                ? new Date(tweet.createdAt).toLocaleDateString("pt-BR", {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                  })
+                : null;
+              return (
+                <a
+                  key={tweet.id}
+                  href={tweet.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="block rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <Card className="space-y-2 p-3 transition-colors hover:bg-muted/40">
+                    <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                      {tweet.text}
+                    </p>
+                    <div className="flex items-center gap-4 text-muted-foreground text-xs">
+                      {tweet.metrics && (
+                        <>
+                          <span className="flex items-center gap-1">
+                            <HugeiconsIcon icon={FavouriteIcon} className="size-3.5" />
+                            {tweet.metrics.likeCount}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <HugeiconsIcon icon={Share08Icon} className="size-3.5" />
+                            {tweet.metrics.retweetCount}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <HugeiconsIcon icon={Comment01Icon} className="size-3.5" />
+                            {tweet.metrics.replyCount}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <HugeiconsIcon icon={Analytics01Icon} className="size-3.5" />
+                            {tweet.metrics.impressionCount}
+                          </span>
+                        </>
+                      )}
+                      {date && <span className="ml-auto">{date}</span>}
+                    </div>
+                  </Card>
+                </a>
+              );
+            })
+          ) : (
+            <Card className="px-4 py-6 text-center text-muted-foreground text-sm">
+              <HugeiconsIcon
+                icon={NewTwitterIcon}
+                className="mx-auto mb-3 size-8 opacity-40"
+              />
+              <p>
+                Nenhum tweet recente encontrado ou acesso à timeline não
+                disponível no plano atual da API do X.
+              </p>
+            </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="post">

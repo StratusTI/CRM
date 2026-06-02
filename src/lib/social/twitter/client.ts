@@ -150,3 +150,66 @@ export async function publishTweet(
     return err(socialOauthFailed());
   }
 }
+
+/** Tweets recentes do perfil autenticado (requer `tweet.read`). */
+export async function fetchRecentTweets(
+  accessToken: string,
+  userId: string,
+): Promise<Result<import("@/src/schemas/twitter.schema").TwitterTweets>> {
+  const params = new URLSearchParams({
+    "tweet.fields": "created_at,public_metrics",
+    max_results: "10",
+    exclude: "retweets,replies",
+  });
+
+  try {
+    const response = await fetch(
+      `${API}/users/${userId}/tweets?${params.toString()}`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          Accept: "application/json",
+        },
+      },
+    );
+    if (!response.ok) {
+      await logFailure("users/tweets", response);
+      return err(socialOauthFailed());
+    }
+    const json = (await response.json().catch(() => ({}))) as {
+      data?: {
+        id?: string;
+        text?: string;
+        created_at?: string;
+        public_metrics?: {
+          like_count?: number;
+          retweet_count?: number;
+          reply_count?: number;
+          impression_count?: number;
+        };
+      }[];
+    };
+
+    const tweets = (json.data ?? []).map((t) => ({
+      id: t.id ?? "",
+      text: t.text ?? "",
+      createdAt: t.created_at ?? null,
+      url: t.id
+        ? `https://twitter.com/i/web/status/${t.id}`
+        : "",
+      metrics: t.public_metrics
+        ? {
+            likeCount: t.public_metrics.like_count ?? 0,
+            retweetCount: t.public_metrics.retweet_count ?? 0,
+            replyCount: t.public_metrics.reply_count ?? 0,
+            impressionCount: t.public_metrics.impression_count ?? 0,
+          }
+        : null,
+    }));
+
+    return ok({ tweets });
+  } catch (error) {
+    console.error("[twitter] users/tweets erro de rede", error);
+    return err(socialOauthFailed());
+  }
+}

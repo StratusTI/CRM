@@ -38,3 +38,28 @@ export const PublishTweetResultSchema = z.object({
 });
 
 export type PublishTweetResult = z.infer<typeof PublishTweetResultSchema>;
+
+/** Um tweet recente do perfil. */
+export const TwitterTweetSchema = z.object({
+  id: z.string(),
+  text: z.string(),
+  createdAt: z.string().nullable(),
+  url: z.string(),
+  metrics: z
+    .object({
+      likeCount: z.number().int().nonnegative(),
+      retweetCount: z.number().int().nonnegative(),
+      replyCount: z.number().int().nonnegative(),
+      impressionCount: z.number().int().nonnegative(),
+    })
+    .nullable(),
+});
+
+export type TwitterTweet = z.infer<typeof TwitterTweetSchema>;
+
+/** Lista de tweets recentes do perfil. */
+export const TwitterTweetsSchema = z.object({
+  tweets: z.array(TwitterTweetSchema),
+});
+
+export type TwitterTweets = z.infer<typeof TwitterTweetsSchema>;

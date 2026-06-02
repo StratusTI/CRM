@@ -5,6 +5,7 @@ import { apiUrl } from "@/lib/api-url";
 import type {
   PublishTweetResult,
   TwitterProfileOverview,
+  TwitterTweets,
 } from "@/src/schemas/twitter.schema";
 
 type ApiResponse<T> = {
@@ -41,25 +42,33 @@ async function getJson<T>(
 }
 
 /**
- * Dados do Twitter/X para o workspace: overview do perfil + publicar tweet. Sem
- * insights/posts recentes (paywall no tier gratuito). Mesmo padrão fetch/useState
- * do [[use-instagram]].
+ * Dados do Twitter/X para o workspace: overview do perfil + tweets recentes
+ * (best-effort, depende do tier da API) + publicar tweet.
  */
 export function useTwitter(slug: string) {
   const [overview, setOverview] = useState<TwitterProfileOverview | null>(null);
+  const [tweets, setTweets] = useState<TwitterTweets | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<TwitterError | null>(null);
 
   const load = useCallback(async () => {
     setIsLoading(true);
     setError(null);
-    const ov = await getJson<TwitterProfileOverview>(`${BASE(slug)}/overview`);
+    const [ov, tw] = await Promise.all([
+      getJson<TwitterProfileOverview>(`${BASE(slug)}/overview`),
+      getJson<TwitterTweets>(`${BASE(slug)}/videos`),
+    ]);
+
     if (!ov.ok) {
       setError(ov.error);
       setOverview(null);
-    } else {
-      setOverview(ov.data);
+      setTweets(null);
+      setIsLoading(false);
+      return;
     }
+    setOverview(ov.data);
+    // Tweets são best-effort: falha de tier/escopo não derruba a página.
+    setTweets(tw.ok ? tw.data : null);
     setIsLoading(false);
   }, [slug]);
 
@@ -100,5 +109,5 @@ export function useTwitter(slug: string) {
     [slug],
   );
 
-  return { overview, isLoading, error, refetch: load, publish };
+  return { overview, tweets, isLoading, error, refetch: load, publish };
 }
