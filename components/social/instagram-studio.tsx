@@ -33,13 +33,13 @@ import { type InstagramError, useInstagram } from "@/src/hooks/use-instagram";
 import type { InstagramInsightsRange } from "@/src/schemas/instagram.schema";
 import type { InstagramMedia } from "@/src/schemas/instagram.schema";
 
-const nf = new Intl.NumberFormat("pt-BR");
-
 import {
   formatAxisLabel,
   getFortnightKey,
   toNivoSeries,
 } from "./chart-utils";
+
+const nf = new Intl.NumberFormat("pt-BR");
 
 const CHART_THEME = {
   text: { fill: "currentColor", fontSize: 11 },
@@ -648,52 +648,51 @@ export function InstagramStudio({ slug }: { slug: string }) {
               </div>
               <Card className="h-72 p-2 text-muted-foreground">
                 {insights.series.length > 0 ? (
-                  <ResponsiveLine
-                    data={(() => {
-                      const gk = range === "90d" ? getFortnightKey : null;
-                      return [
-                        {
-                          id: "Impressões",
-                          data: toNivoSeries(insights.series, (p) => p.impressions, gk),
-                        },
-                        {
-                          id: "Alcance",
-                          data: toNivoSeries(insights.series, (p) => p.reach, gk),
-                        },
-                        {
-                          id: "Visitas",
-                          data: toNivoSeries(insights.series, (p) => p.profileViews, gk),
-                        },
-                      ];
-                    })()}
-                    margin={{ top: 36, right: 20, bottom: 64, left: 52 }}
-                    colors={["#ec4899", "#a855f7", "#f59e0b"]}
-                    curve="monotoneX"
-                    pointSize={range === "7d" ? 5 : range === "28d" ? 3 : 0}
-                    pointColor={{ from: "color" }}
-                    useMesh
-                    xScale={{ type: "point" }}
-                    yScale={{ type: "linear", min: 0, max: "auto" }}
-                    axisBottom={{
-                      tickSize: 0,
-                      tickPadding: 8,
-                      tickRotation: -45,
-                      tickValues: range === "7d" || range === "28d" ? 7 : undefined,
-                      format: formatAxisLabel,
-                    }}
-                    axisLeft={{ tickSize: 0, tickPadding: 8 }}
-                    legends={[
-                      {
-                        anchor: "bottom",
-                        direction: "row",
-                        translateY: 56,
-                        itemWidth: 110,
-                        itemHeight: 16,
-                        symbolSize: 10,
-                      },
-                    ]}
-                    theme={CHART_THEME}
-                  />
+                  (() => {
+                    const gk = range === "90d" ? getFortnightKey : null;
+                    const s1 = toNivoSeries(insights.series, (p) => p.impressions, gk);
+                    const s2 = toNivoSeries(insights.series, (p) => p.reach, gk);
+                    const s3 = toNivoSeries(insights.series, (p) => p.profileViews, gk);
+                    const ticks: string[] | number = gk
+                      ? s1.map((d) => d.x)
+                      : range === "7d" ? 7 : 7;
+                    return (
+                      <ResponsiveLine
+                        data={[
+                          { id: "Impressões", data: s1 },
+                          { id: "Alcance", data: s2 },
+                          { id: "Visitas", data: s3 },
+                        ]}
+                        margin={{ top: 36, right: 20, bottom: 64, left: 52 }}
+                        colors={["#ec4899", "#a855f7", "#f59e0b"]}
+                        curve="monotoneX"
+                        pointSize={range === "7d" ? 5 : range === "28d" ? 3 : 0}
+                        pointColor={{ from: "color" }}
+                        useMesh
+                        xScale={{ type: "point" }}
+                        yScale={{ type: "linear", min: 0, max: "auto" }}
+                        axisBottom={{
+                          tickSize: 0,
+                          tickPadding: 8,
+                          tickRotation: -45,
+                          tickValues: ticks,
+                          format: formatAxisLabel,
+                        }}
+                        axisLeft={{ tickSize: 0, tickPadding: 8 }}
+                        legends={[
+                          {
+                            anchor: "bottom",
+                            direction: "row",
+                            translateY: 56,
+                            itemWidth: 110,
+                            itemHeight: 16,
+                            symbolSize: 10,
+                          },
+                        ]}
+                        theme={CHART_THEME}
+                      />
+                    );
+                  })()
                 ) : (
                   <div className="flex h-full items-center justify-center text-sm">
                     Sem dados no período.

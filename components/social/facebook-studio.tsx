@@ -30,13 +30,13 @@ import { type FacebookError, useFacebook } from "@/src/hooks/use-facebook";
 import type { FacebookInsightsRange } from "@/src/schemas/facebook.schema";
 import type { FacebookPost } from "@/src/schemas/facebook.schema";
 
-const nf = new Intl.NumberFormat("pt-BR");
-
 import {
   formatAxisLabel,
   getFortnightKey,
   toNivoSeries,
 } from "./chart-utils";
+
+const nf = new Intl.NumberFormat("pt-BR");
 
 const CHART_THEME = {
   text: { fill: "currentColor", fontSize: 11 },
@@ -654,48 +654,49 @@ export function FacebookStudio({ slug }: { slug: string }) {
               </div>
               <Card className="h-72 p-2 text-muted-foreground">
                 {insights.series.length > 0 ? (
-                  <ResponsiveLine
-                    data={(() => {
-                      const gk = range === "90d" ? getFortnightKey : null;
-                      return [
-                        {
-                          id: "Impressões",
-                          data: toNivoSeries(insights.series, (p) => p.impressions, gk),
-                        },
-                        {
-                          id: "Engajamentos",
-                          data: toNivoSeries(insights.series, (p) => p.engagements, gk),
-                        },
-                      ];
-                    })()}
-                    margin={{ top: 36, right: 20, bottom: 64, left: 52 }}
-                    colors={["#2563eb", "#22c55e"]}
-                    curve="monotoneX"
-                    pointSize={range === "7d" ? 5 : range === "28d" ? 3 : 0}
-                    pointColor={{ from: "color" }}
-                    useMesh
-                    xScale={{ type: "point" }}
-                    yScale={{ type: "linear", min: 0, max: "auto" }}
-                    axisBottom={{
-                      tickSize: 0,
-                      tickPadding: 8,
-                      tickRotation: -45,
-                      tickValues: range === "7d" || range === "28d" ? 7 : undefined,
-                      format: formatAxisLabel,
-                    }}
-                    axisLeft={{ tickSize: 0, tickPadding: 8 }}
-                    legends={[
-                      {
-                        anchor: "bottom",
-                        direction: "row",
-                        translateY: 56,
-                        itemWidth: 110,
-                        itemHeight: 16,
-                        symbolSize: 10,
-                      },
-                    ]}
-                    theme={CHART_THEME}
-                  />
+                  (() => {
+                    const gk = range === "90d" ? getFortnightKey : null;
+                    const s1 = toNivoSeries(insights.series, (p) => p.impressions, gk);
+                    const s2 = toNivoSeries(insights.series, (p) => p.engagements, gk);
+                    const ticks: string[] | number = gk
+                      ? s1.map((d) => d.x)
+                      : range === "7d" ? 7 : 7;
+                    return (
+                      <ResponsiveLine
+                        data={[
+                          { id: "Impressões", data: s1 },
+                          { id: "Engajamentos", data: s2 },
+                        ]}
+                        margin={{ top: 36, right: 20, bottom: 64, left: 52 }}
+                        colors={["#2563eb", "#22c55e"]}
+                        curve="monotoneX"
+                        pointSize={range === "7d" ? 5 : range === "28d" ? 3 : 0}
+                        pointColor={{ from: "color" }}
+                        useMesh
+                        xScale={{ type: "point" }}
+                        yScale={{ type: "linear", min: 0, max: "auto" }}
+                        axisBottom={{
+                          tickSize: 0,
+                          tickPadding: 8,
+                          tickRotation: -45,
+                          tickValues: ticks,
+                          format: formatAxisLabel,
+                        }}
+                        axisLeft={{ tickSize: 0, tickPadding: 8 }}
+                        legends={[
+                          {
+                            anchor: "bottom",
+                            direction: "row",
+                            translateY: 56,
+                            itemWidth: 110,
+                            itemHeight: 16,
+                            symbolSize: 10,
+                          },
+                        ]}
+                        theme={CHART_THEME}
+                      />
+                    );
+                  })()
                 ) : (
                   <div className="flex h-full items-center justify-center text-sm">
                     Sem dados no período.
