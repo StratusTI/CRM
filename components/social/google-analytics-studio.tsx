@@ -13,7 +13,12 @@ import Link from "next/link";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import {
   type GoogleAnalyticsError,
   useGoogleAnalytics,
@@ -22,7 +27,6 @@ import type { GoogleAnalyticsInsightsRange } from "@/src/schemas/google-analytic
 
 const nf = new Intl.NumberFormat("pt-BR");
 
-/** Tema nivo que herda a cor do texto do container (claro/escuro). */
 const CHART_THEME = {
   text: { fill: "currentColor", fontSize: 11 },
   axis: {
@@ -45,7 +49,6 @@ const RANGES: { value: GoogleAnalyticsInsightsRange; label: string }[] = [
   { value: "90d", label: "90 dias" },
 ];
 
-/** Códigos que significam "precisa (re)conectar a conta nas configurações". */
 const RECONNECT_CODES = new Set([
   "SOCIAL_CONNECTION_NOT_FOUND",
   "SOCIAL_SCOPE_MISSING",
@@ -75,7 +78,6 @@ function StatCard({
   );
 }
 
-/** Estado de erro que orienta o usuário a reconectar a conta em Settings. */
 function ReconnectNotice({
   slug,
   error,
@@ -145,9 +147,8 @@ export function GoogleAnalyticsStudio({ slug }: { slug: string }) {
     !insights && error && RECONNECT_CODES.has(error.code ?? "");
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-8 px-4 py-6 sm:px-6">
-      {/* Cabeçalho da propriedade */}
-      <header className="flex items-center gap-4">
+    <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6">
+      <header className="mb-6 flex items-center gap-4">
         <div className="flex size-16 items-center justify-center rounded-2xl bg-orange-500/10 text-orange-600 dark:text-orange-400">
           <HugeiconsIcon icon={GoogleIcon} className="size-7" />
         </div>
@@ -163,119 +164,129 @@ export function GoogleAnalyticsStudio({ slug }: { slug: string }) {
         </div>
       </header>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard
-          icon={UserMultipleIcon}
-          label="Usuários ativos (28d)"
-          value={overview.totals.activeUsers}
-        />
-        <StatCard
-          icon={Pulse01Icon}
-          label="Sessões (28d)"
-          value={overview.totals.sessions}
-        />
-        <StatCard
-          icon={WebDesign01Icon}
-          label="Páginas vistas (28d)"
-          value={overview.totals.screenPageViews}
-        />
-        <StatCard
-          icon={EyeIcon}
-          label="Eventos (28d)"
-          value={overview.totals.eventCount}
-        />
-      </div>
-
-      {/* Analytics */}
-      <section className="space-y-4">
-        <div className="flex items-center justify-between gap-3">
-          <h3 className="font-heading font-semibold text-lg tracking-tight">
-            Análises
-          </h3>
-          <Tabs
-            value={range}
-            onValueChange={(v) => setRange(v as GoogleAnalyticsInsightsRange)}
-          >
-            <TabsList>
-              {RANGES.map((r) => (
-                <TabsTrigger key={r.value} value={r.value}>
-                  {r.label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
+      <Tabs defaultValue="overview">
+        <div className="mb-6 border-b border-border/60">
+          <TabsList variant="line" className="w-full justify-start">
+            <TabsTrigger value="overview">Visão Geral</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          </TabsList>
         </div>
 
-        {insightsNeedsReconnect ? (
-          <Card className="px-4 py-6 text-center text-muted-foreground text-sm">
-            {error?.message}
-          </Card>
-        ) : insights ? (
-          <>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
-              <StatCard
-                icon={UserMultipleIcon}
-                label="Usuários ativos"
-                value={insights.totals.activeUsers}
-              />
-              <StatCard
-                icon={Pulse01Icon}
-                label="Sessões"
-                value={insights.totals.sessions}
-              />
-              <StatCard
-                icon={WebDesign01Icon}
-                label="Páginas vistas"
-                value={insights.totals.screenPageViews}
-              />
-              <StatCard
-                icon={EyeIcon}
-                label="Eventos"
-                value={insights.totals.eventCount}
-              />
-            </div>
-            <Card className="h-72 p-2 text-muted-foreground">
-              {insights.series.length > 0 ? (
-                <ResponsiveLine
-                  data={[
-                    {
-                      id: "Usuários ativos",
-                      data: insights.series.map((p) => ({
-                        x: p.date,
-                        y: p.activeUsers,
-                      })),
-                    },
-                  ]}
-                  margin={{ top: 16, right: 20, bottom: 48, left: 52 }}
-                  colors={["#f97316"]}
-                  curve="monotoneX"
-                  enableArea
-                  areaOpacity={0.12}
-                  pointSize={4}
-                  pointColor={{ from: "color" }}
-                  useMesh
-                  xScale={{ type: "point" }}
-                  yScale={{ type: "linear", min: 0, max: "auto" }}
-                  axisBottom={{
-                    tickSize: 0,
-                    tickPadding: 8,
-                    tickRotation: -45,
-                    tickValues: 6,
-                  }}
-                  axisLeft={{ tickSize: 0, tickPadding: 8 }}
-                  theme={CHART_THEME}
-                />
-              ) : (
-                <div className="flex h-full items-center justify-center text-sm">
-                  Sem dados no período.
-                </div>
-              )}
+        <TabsContent value="overview" className="space-y-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <StatCard
+              icon={UserMultipleIcon}
+              label="Usuários ativos (28d)"
+              value={overview.totals.activeUsers}
+            />
+            <StatCard
+              icon={Pulse01Icon}
+              label="Sessões (28d)"
+              value={overview.totals.sessions}
+            />
+            <StatCard
+              icon={WebDesign01Icon}
+              label="Páginas vistas (28d)"
+              value={overview.totals.screenPageViews}
+            />
+            <StatCard
+              icon={EyeIcon}
+              label="Eventos (28d)"
+              value={overview.totals.eventCount}
+            />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="analytics" className="space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="font-heading font-semibold text-lg tracking-tight">
+              Análises
+            </h3>
+            <Tabs
+              value={range}
+              onValueChange={(v) => setRange(v as GoogleAnalyticsInsightsRange)}
+            >
+              <TabsList>
+                {RANGES.map((r) => (
+                  <TabsTrigger key={r.value} value={r.value}>
+                    {r.label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+          </div>
+
+          {insightsNeedsReconnect ? (
+            <Card className="px-4 py-6 text-center text-muted-foreground text-sm">
+              {error?.message}
             </Card>
-          </>
-        ) : (
-          <Skeleton className="h-72 w-full" />
-        )}
-      </section>
+          ) : insights ? (
+            <>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
+                <StatCard
+                  icon={UserMultipleIcon}
+                  label="Usuários ativos"
+                  value={insights.totals.activeUsers}
+                />
+                <StatCard
+                  icon={Pulse01Icon}
+                  label="Sessões"
+                  value={insights.totals.sessions}
+                />
+                <StatCard
+                  icon={WebDesign01Icon}
+                  label="Páginas vistas"
+                  value={insights.totals.screenPageViews}
+                />
+                <StatCard
+                  icon={EyeIcon}
+                  label="Eventos"
+                  value={insights.totals.eventCount}
+                />
+              </div>
+              <Card className="h-72 p-2 text-muted-foreground">
+                {insights.series.length > 0 ? (
+                  <ResponsiveLine
+                    data={[
+                      {
+                        id: "Usuários ativos",
+                        data: insights.series.map((p) => ({
+                          x: p.date,
+                          y: p.activeUsers,
+                        })),
+                      },
+                    ]}
+                    margin={{ top: 16, right: 20, bottom: 48, left: 52 }}
+                    colors={["#f97316"]}
+                    curve="monotoneX"
+                    enableArea
+                    areaOpacity={0.12}
+                    pointSize={4}
+                    pointColor={{ from: "color" }}
+                    useMesh
+                    xScale={{ type: "point" }}
+                    yScale={{ type: "linear", min: 0, max: "auto" }}
+                    axisBottom={{
+                      tickSize: 0,
+                      tickPadding: 8,
+                      tickRotation: -45,
+                      tickValues: 6,
+                    }}
+                    axisLeft={{ tickSize: 0, tickPadding: 8 }}
+                    theme={CHART_THEME}
+                  />
+                ) : (
+                  <div className="flex h-full items-center justify-center text-sm">
+                    Sem dados no período.
+                  </div>
+                )}
+              </Card>
+            </>
+          ) : (
+            <Skeleton className="h-72 w-full" />
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
