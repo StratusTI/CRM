@@ -1,5 +1,6 @@
 import {
   Building03Icon,
+  Calendar01Icon,
   DashboardSquare01Icon,
   DocumentValidationIcon,
   Facebook01Icon,
@@ -59,6 +60,12 @@ export const WORKSPACE_NAV: NavNode[] = [
     segment: "tasks",
     icon: TaskDone01Icon,
     color: "bg-violet-500",
+  },
+  {
+    title: "Calendário",
+    segment: "tasks/calendar",
+    icon: Calendar01Icon,
+    color: "bg-violet-400",
   },
   {
     title: "Notas",

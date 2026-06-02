@@ -3,7 +3,9 @@
 import {
   ArrowLeft01Icon,
   ArrowRight01Icon,
+  Cancel01Icon,
   Loading02Icon,
+  PlusSignIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -21,8 +23,18 @@ import {
   startOfWeek,
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { apiUrl } from "@/lib/api-url";
 import { cn } from "@/lib/utils";
 import { useResourceList } from "@/src/hooks/use-resource-list";
 import type { TaskDTO } from "@/src/schemas/task.schema";
@@ -113,11 +125,100 @@ function getHolidays(year: number): Map<string, Holiday> {
   return map;
 }
 
+// ─── Quick-add dialog ─────────────────────────────────────────────────────────
+
+function QuickAddDialog({
+  slug,
+  date,
+  open,
+  onClose,
+  onAdded,
+}: {
+  slug: string;
+  date: Date | null;
+  open: boolean;
+  onClose: () => void;
+  onAdded: () => void;
+}) {
+  const [title, setTitle] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const dateLabel = date
+    ? format(date, "EEEE, d 'de' MMMM", { locale: ptBR })
+    : "";
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!title.trim() || !date) return;
+    setSubmitting(true);
+    try {
+      const res = await fetch(apiUrl(`/api/workspaces/${slug}/tasks`), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: title.trim(),
+          status: "TODO",
+          dueDate: format(date, "yyyy-MM-dd"),
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        toast.error(json.message ?? "Erro ao criar tarefa");
+        return;
+      }
+      toast.success("Tarefa criada");
+      setTitle("");
+      onAdded();
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        if (!o) { setTitle(""); onClose(); }
+      }}
+    >
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle className="text-base">Nova tarefa</DialogTitle>
+        </DialogHeader>
+        {date && (
+          <p className="text-muted-foreground text-sm capitalize -mt-1">{dateLabel}</p>
+        )}
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+          <div className="grid gap-1.5">
+            <Label className="text-xs text-muted-foreground">Título</Label>
+            <Input
+              ref={inputRef}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Ex: Reunião de alinhamento"
+              autoComplete="off"
+            />
+          </div>
+          <div className="flex items-center justify-end gap-2 pt-1">
+            <Button type="button" variant="ghost" size="sm" onClick={onClose} disabled={submitting}>
+              Cancelar
+            </Button>
+            <Button type="submit" size="sm" disabled={!title.trim() || submitting}>
+              {submitting ? "Salvando…" : "Criar tarefa"}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 const WEEK_HEADER = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
-function TaskChip({ task, compact = false }: { task: TaskDTO; compact?: boolean }) {
+function TaskChip({ task }: { task: TaskDTO }) {
   return (
     <div
       title={`${task.title} · ${STATUS_LABEL[task.status] ?? task.status}`}
@@ -162,18 +263,20 @@ function ViewSwitcher({
   );
 }
 
-// ─── Month grid ───────────────────────────────────────────────────────────────
+// ─── Month cell ───────────────────────────────────────────────────────────────
 
 function MonthCell({
   date,
   tasks,
   holiday,
   isCurrentMonth,
+  onAdd,
 }: {
   date: Date;
   tasks: TaskDTO[];
   holiday?: Holiday;
   isCurrentMonth: boolean;
+  onAdd: (date: Date) => void;
 }) {
   const today = isToday(date);
   const maxVisible = 3;
@@ -182,11 +285,11 @@ function MonthCell({
   return (
     <div
       className={cn(
-        "flex min-h-[90px] flex-col gap-0.5 border-b border-r border-border/30 p-1.5 last:border-r-0",
+        "group relative flex min-h-[90px] flex-col gap-0.5 border-b border-r border-border/30 p-1.5 last:border-r-0",
         !isCurrentMonth && "bg-muted/10",
       )}
     >
-      <div className="mb-0.5 flex items-center gap-1">
+      <div className="mb-0.5 flex items-center justify-between">
         <span
           className={cn(
             "flex size-6 items-center justify-center rounded-full text-xs font-medium leading-none",
@@ -199,19 +302,29 @@ function MonthCell({
         >
           {format(date, "d")}
         </span>
-        {holiday && (
-          <span
-            title={holiday.label}
-            className={cn(
-              "truncate rounded-full px-1 py-px text-[9px] font-medium leading-tight",
-              holiday.type === "feriado"
-                ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
-                : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-            )}
+        <div className="flex items-center gap-1">
+          {holiday && (
+            <span
+              title={holiday.label}
+              className={cn(
+                "truncate rounded-full px-1 py-px text-[9px] font-medium leading-tight",
+                holiday.type === "feriado"
+                  ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
+                  : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+              )}
+            >
+              {holiday.label.length > 10 ? `${holiday.label.slice(0, 9)}…` : holiday.label}
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={() => onAdd(date)}
+            aria-label={`Adicionar tarefa em ${format(date, "d MMM", { locale: ptBR })}`}
+            className="flex size-5 items-center justify-center rounded-full opacity-0 transition-opacity hover:bg-muted group-hover:opacity-100"
           >
-            {holiday.label.length > 12 ? `${holiday.label.slice(0, 11)}…` : holiday.label}
-          </span>
-        )}
+            <HugeiconsIcon icon={PlusSignIcon} className="size-3 text-muted-foreground" />
+          </button>
+        </div>
       </div>
 
       {tasks.slice(0, maxVisible).map((task) => (
@@ -232,19 +345,21 @@ function WeekColumn({
   date,
   tasks,
   holiday,
+  onAdd,
 }: {
   date: Date;
   tasks: TaskDTO[];
   holiday?: Holiday;
+  onAdd: (date: Date) => void;
 }) {
   const today = isToday(date);
 
   return (
-    <div className="flex flex-1 flex-col border-r border-border/30 last:border-r-0">
+    <div className="group flex flex-1 flex-col border-r border-border/30 last:border-r-0">
       {/* Day header */}
       <div
         className={cn(
-          "flex flex-col items-center gap-1 border-b border-border/30 py-2",
+          "relative flex flex-col items-center gap-1 border-b border-border/30 py-2",
           today && "bg-primary/5",
         )}
       >
@@ -274,15 +389,20 @@ function WeekColumn({
         )}
       </div>
 
-      {/* Tasks */}
+      {/* Tasks + add button */}
       <div className="flex flex-1 flex-col gap-1 overflow-y-auto p-1.5">
-        {tasks.length === 0 ? (
-          <div className="flex flex-1 items-center justify-center">
-            <span className="text-[10px] text-muted-foreground/30">—</span>
-          </div>
-        ) : (
-          tasks.map((task) => <TaskChip key={task.id} task={task} />)
-        )}
+        {tasks.map((task) => (
+          <TaskChip key={task.id} task={task} />
+        ))}
+        <button
+          type="button"
+          onClick={() => onAdd(date)}
+          aria-label={`Adicionar tarefa em ${format(date, "d MMM", { locale: ptBR })}`}
+          className="mt-auto flex items-center justify-center gap-1 rounded-md py-1 text-xs text-muted-foreground opacity-0 transition-opacity hover:bg-muted/50 group-hover:opacity-100"
+        >
+          <HugeiconsIcon icon={PlusSignIcon} className="size-3" />
+          Adicionar
+        </button>
       </div>
     </div>
   );
@@ -291,9 +411,10 @@ function WeekColumn({
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 export function TasksCalendar({ slug }: { slug: string }) {
-  const { items: tasks, isLoading } = useResourceList<TaskDTO>(slug, "tasks");
+  const { items: tasks, isLoading, refetch } = useResourceList<TaskDTO>(slug, "tasks");
   const [view, setView] = useState<ViewMode>("month");
   const [anchor, setAnchor] = useState(() => startOfDay(new Date()));
+  const [addDate, setAddDate] = useState<Date | null>(null);
 
   const tasksByDay = new Map<string, TaskDTO[]>();
   for (const task of tasks) {
@@ -303,9 +424,9 @@ export function TasksCalendar({ slug }: { slug: string }) {
     tasksByDay.get(key)!.push(task);
   }
 
-  function goToday() {
-    setAnchor(startOfDay(new Date()));
-  }
+  function goToday() { setAnchor(startOfDay(new Date())); }
+  function openAdd(date: Date) { setAddDate(date); }
+  function closeAdd() { setAddDate(null); }
 
   // ─── Month view ─────────────────────────────────────────────────────────────
   if (view === "month") {
@@ -317,69 +438,85 @@ export function TasksCalendar({ slug }: { slug: string }) {
     const holidays = getHolidays(anchor.getFullYear());
     const title = format(anchor, "MMMM yyyy", { locale: ptBR });
 
-    function prevMonth() { setAnchor(startOfMonth(addMonths(anchor, -1))); }
-    function nextMonth() { setAnchor(startOfMonth(addMonths(anchor, 1))); }
-
     return (
-      <div className="flex h-full flex-col">
-        {/* Toolbar */}
-        <div className="flex items-center gap-3 border-b border-border/40 px-4 py-2.5">
-          <Button variant="outline" size="sm" onClick={goToday}>
-            Hoje
-          </Button>
-          <div className="flex items-center gap-0.5">
-            <Button variant="ghost" size="icon-sm" onClick={prevMonth} aria-label="Mês anterior">
-              <HugeiconsIcon icon={ArrowLeft01Icon} />
-            </Button>
-            <Button variant="ghost" size="icon-sm" onClick={nextMonth} aria-label="Próximo mês">
-              <HugeiconsIcon icon={ArrowRight01Icon} />
-            </Button>
-          </div>
-          <h2 className="font-semibold capitalize">{title}</h2>
-          <div className="ml-auto">
-            <ViewSwitcher
-              view="month"
-              onMonth={() => setView("month")}
-              onWeek={() => { setView("week"); setAnchor(startOfWeek(anchor, { weekStartsOn: 0 })); }}
-            />
-          </div>
-        </div>
-
-        {/* Day-of-week header */}
-        <div className="grid grid-cols-7 border-b border-border/30 bg-muted/20">
-          {WEEK_HEADER.map((d) => (
-            <div key={d} className="py-2 text-center text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-              {d}
+      <>
+        <div className="flex h-full flex-col">
+          {/* Toolbar */}
+          <div className="flex items-center gap-3 border-b border-border/40 px-4 py-2.5">
+            <Button variant="outline" size="sm" onClick={goToday}>Hoje</Button>
+            <div className="flex items-center gap-0.5">
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => setAnchor(startOfMonth(addMonths(anchor, -1)))}
+                aria-label="Mês anterior"
+              >
+                <HugeiconsIcon icon={ArrowLeft01Icon} />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => setAnchor(startOfMonth(addMonths(anchor, 1)))}
+                aria-label="Próximo mês"
+              >
+                <HugeiconsIcon icon={ArrowRight01Icon} />
+              </Button>
             </div>
-          ))}
+            <h2 className="font-semibold capitalize">{title}</h2>
+            <div className="ml-auto">
+              <ViewSwitcher
+                view="month"
+                onMonth={() => setView("month")}
+                onWeek={() => { setView("week"); setAnchor(startOfWeek(anchor, { weekStartsOn: 0 })); }}
+              />
+            </div>
+          </div>
+
+          {/* Day-of-week header */}
+          <div className="grid grid-cols-7 border-b border-border/30 bg-muted/20">
+            {WEEK_HEADER.map((d) => (
+              <div key={d} className="py-2 text-center text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                {d}
+              </div>
+            ))}
+          </div>
+
+          {/* Grid */}
+          {isLoading ? (
+            <div className="flex flex-1 items-center justify-center gap-2 text-muted-foreground">
+              <HugeiconsIcon icon={Loading02Icon} className="size-5 animate-spin" />
+              <span className="text-sm">Carregando tarefas…</span>
+            </div>
+          ) : (
+            <div
+              className="grid flex-1 grid-cols-7"
+              style={{ gridAutoRows: "minmax(90px, 1fr)" }}
+            >
+              {days.map((day) => {
+                const key = format(day, "yyyy-MM-dd");
+                return (
+                  <MonthCell
+                    key={key}
+                    date={day}
+                    tasks={tasksByDay.get(key) ?? []}
+                    holiday={holidays.get(key)}
+                    isCurrentMonth={isSameMonth(day, anchor)}
+                    onAdd={openAdd}
+                  />
+                );
+              })}
+            </div>
+          )}
         </div>
 
-        {/* Grid */}
-        {isLoading ? (
-          <div className="flex flex-1 items-center justify-center gap-2 text-muted-foreground">
-            <HugeiconsIcon icon={Loading02Icon} className="size-5 animate-spin" />
-            <span className="text-sm">Carregando tarefas…</span>
-          </div>
-        ) : (
-          <div
-            className="grid flex-1 grid-cols-7"
-            style={{ gridAutoRows: "minmax(90px, 1fr)" }}
-          >
-            {days.map((day) => {
-              const key = format(day, "yyyy-MM-dd");
-              return (
-                <MonthCell
-                  key={key}
-                  date={day}
-                  tasks={tasksByDay.get(key) ?? []}
-                  holiday={holidays.get(key)}
-                  isCurrentMonth={isSameMonth(day, anchor)}
-                />
-              );
-            })}
-          </div>
-        )}
-      </div>
+        <QuickAddDialog
+          slug={slug}
+          date={addDate}
+          open={addDate !== null}
+          onClose={closeAdd}
+          onAdded={() => { closeAdd(); refetch(); }}
+        />
+      </>
     );
   }
 
@@ -388,62 +525,73 @@ export function TasksCalendar({ slug }: { slug: string }) {
   const weekEnd = endOfWeek(anchor, { weekStartsOn: 0 });
   const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
   const holidays = getHolidays(anchor.getFullYear());
-
-  const weekLabel = (() => {
-    const s = format(weekStart, "d MMM", { locale: ptBR });
-    const e = format(weekEnd, "d MMM yyyy", { locale: ptBR });
-    return `${s} – ${e}`;
-  })();
-
-  function prevWeek() { setAnchor(addWeeks(anchor, -1)); }
-  function nextWeek() { setAnchor(addWeeks(anchor, 1)); }
+  const weekLabel = `${format(weekStart, "d MMM", { locale: ptBR })} – ${format(weekEnd, "d MMM yyyy", { locale: ptBR })}`;
 
   return (
-    <div className="flex h-full flex-col">
-      {/* Toolbar */}
-      <div className="flex items-center gap-3 border-b border-border/40 px-4 py-2.5">
-        <Button variant="outline" size="sm" onClick={goToday}>
-          Hoje
-        </Button>
-        <div className="flex items-center gap-0.5">
-          <Button variant="ghost" size="icon-sm" onClick={prevWeek} aria-label="Semana anterior">
-            <HugeiconsIcon icon={ArrowLeft01Icon} />
-          </Button>
-          <Button variant="ghost" size="icon-sm" onClick={nextWeek} aria-label="Próxima semana">
-            <HugeiconsIcon icon={ArrowRight01Icon} />
-          </Button>
+    <>
+      <div className="flex h-full flex-col">
+        {/* Toolbar */}
+        <div className="flex items-center gap-3 border-b border-border/40 px-4 py-2.5">
+          <Button variant="outline" size="sm" onClick={goToday}>Hoje</Button>
+          <div className="flex items-center gap-0.5">
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => setAnchor(addWeeks(anchor, -1))}
+              aria-label="Semana anterior"
+            >
+              <HugeiconsIcon icon={ArrowLeft01Icon} />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => setAnchor(addWeeks(anchor, 1))}
+              aria-label="Próxima semana"
+            >
+              <HugeiconsIcon icon={ArrowRight01Icon} />
+            </Button>
+          </div>
+          <h2 className="font-semibold">{weekLabel}</h2>
+          <div className="ml-auto">
+            <ViewSwitcher
+              view="week"
+              onMonth={() => { setView("month"); setAnchor(startOfMonth(anchor)); }}
+              onWeek={() => setView("week")}
+            />
+          </div>
         </div>
-        <h2 className="font-semibold">{weekLabel}</h2>
-        <div className="ml-auto">
-          <ViewSwitcher
-            view="week"
-            onMonth={() => { setView("month"); setAnchor(startOfMonth(anchor)); }}
-            onWeek={() => setView("week")}
-          />
-        </div>
+
+        {/* Week columns */}
+        {isLoading ? (
+          <div className="flex flex-1 items-center justify-center gap-2 text-muted-foreground">
+            <HugeiconsIcon icon={Loading02Icon} className="size-5 animate-spin" />
+            <span className="text-sm">Carregando tarefas…</span>
+          </div>
+        ) : (
+          <div className="flex min-h-0 flex-1 overflow-hidden border-b border-border/30">
+            {weekDays.map((day) => {
+              const key = format(day, "yyyy-MM-dd");
+              return (
+                <WeekColumn
+                  key={key}
+                  date={day}
+                  tasks={tasksByDay.get(key) ?? []}
+                  holiday={holidays.get(key)}
+                  onAdd={openAdd}
+                />
+              );
+            })}
+          </div>
+        )}
       </div>
 
-      {/* Week columns */}
-      {isLoading ? (
-        <div className="flex flex-1 items-center justify-center gap-2 text-muted-foreground">
-          <HugeiconsIcon icon={Loading02Icon} className="size-5 animate-spin" />
-          <span className="text-sm">Carregando tarefas…</span>
-        </div>
-      ) : (
-        <div className="flex min-h-0 flex-1 overflow-hidden border-b border-border/30">
-          {weekDays.map((day) => {
-            const key = format(day, "yyyy-MM-dd");
-            return (
-              <WeekColumn
-                key={key}
-                date={day}
-                tasks={tasksByDay.get(key) ?? []}
-                holiday={holidays.get(key)}
-              />
-            );
-          })}
-        </div>
-      )}
-    </div>
+      <QuickAddDialog
+        slug={slug}
+        date={addDate}
+        open={addDate !== null}
+        onClose={closeAdd}
+        onAdded={() => { closeAdd(); refetch(); }}
+      />
+    </>
   );
 }
