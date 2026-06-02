@@ -36,6 +36,7 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { type TiktokError, useTiktok } from "@/src/hooks/use-tiktok";
 import type { TiktokPrivacy, TiktokVideo } from "@/src/schemas/tiktok.schema";
 
@@ -215,6 +216,134 @@ function TiktokVideoPreview({
         {/* Barra de navegação */}
         <div className="flex items-center justify-around px-4 pt-2 pb-3">
           <div className="h-1 w-8 rounded-full bg-white/20" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TiktokVideoModal({
+  video,
+  displayName,
+  avatarUrl,
+  isVerified,
+}: {
+  video: TiktokVideo;
+  displayName: string;
+  avatarUrl?: string | null;
+  isVerified: boolean;
+}) {
+  const date = video.createdAt
+    ? new Date(Number(video.createdAt) * 1000).toLocaleDateString("pt-BR", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      })
+    : null;
+
+  return (
+    <div className="flex flex-col overflow-hidden rounded-xl md:flex-row">
+      {/* Cover */}
+      <div className="flex items-center justify-center bg-neutral-950 py-6 md:w-[40%] md:py-8">
+        <div className="relative w-[140px] overflow-hidden rounded-2xl border border-white/10">
+          <div className="aspect-[9/16] w-full">
+            {video.coverImageUrl ? (
+              // biome-ignore lint/performance/noImgElement: capa externa do TikTok
+              <img
+                src={video.coverImageUrl}
+                alt={video.title}
+                className="size-full object-cover"
+              />
+            ) : (
+              <div className="flex size-full items-center justify-center text-white/20">
+                <HugeiconsIcon icon={TiktokIcon} className="size-10" />
+              </div>
+            )}
+            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-2 pt-6 pb-2">
+              <div className="flex items-center gap-3 text-white/80 text-[11px] tabular-nums">
+                <span className="flex items-center gap-0.5">
+                  <HugeiconsIcon icon={EyeIcon} className="size-3" />
+                  {nf.format(video.viewCount)}
+                </span>
+                <span className="flex items-center gap-0.5">
+                  <HugeiconsIcon icon={FavouriteIcon} className="size-3" />
+                  {nf.format(video.likeCount)}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Details */}
+      <div className="flex flex-col justify-between gap-4 p-5 md:w-[60%]">
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            {avatarUrl ? (
+              // biome-ignore lint/performance/noImgElement: avatar externo do TikTok
+              <img
+                src={avatarUrl}
+                alt={displayName}
+                className="size-10 rounded-full border border-border/50 object-cover"
+              />
+            ) : (
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-neutral-900/10 dark:bg-white/10">
+                <HugeiconsIcon icon={TiktokIcon} className="size-5" />
+              </div>
+            )}
+            <div className="flex items-center gap-1">
+              <span className="font-semibold text-sm">{displayName}</span>
+              {isVerified && (
+                <HugeiconsIcon
+                  icon={CheckmarkBadge01Icon}
+                  className="size-3.5 text-sky-500"
+                />
+              )}
+            </div>
+          </div>
+
+          {video.title && (
+            <p className="text-sm leading-relaxed">{video.title}</p>
+          )}
+
+          {date && (
+            <p className="text-muted-foreground text-xs">{date}</p>
+          )}
+        </div>
+
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              { icon: EyeIcon, label: "Visualizações", value: video.viewCount },
+              { icon: FavouriteIcon, label: "Curtidas", value: video.likeCount },
+              { icon: Comment01Icon, label: "Comentários", value: video.commentCount },
+              { icon: Share08Icon, label: "Compart.", value: video.shareCount },
+            ].map(({ icon, label, value }) => (
+              <div
+                key={label}
+                className="flex flex-col rounded-lg border border-border/60 px-3 py-2"
+              >
+                <span className="flex items-center gap-1 text-muted-foreground text-xs">
+                  <HugeiconsIcon icon={icon} className="size-3" />
+                  {label}
+                </span>
+                <span className="font-semibold text-base tabular-nums">
+                  {nf.format(value)}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {video.shareUrl && (
+            <a
+              href={video.shareUrl}
+              target="_blank"
+              rel="noreferrer"
+              className={`${buttonVariants({ size: "sm" })} block w-full text-center`}
+            >
+              Abrir no TikTok
+            </a>
+          )}
         </div>
       </div>
     </div>
@@ -447,6 +576,7 @@ export function TiktokStudio({ slug }: { slug: string }) {
 
   const [caption, setCaption] = useState("");
   const [privacy, setPrivacy] = useState<TiktokPrivacy>("SELF_ONLY");
+  const [selectedVideo, setSelectedVideo] = useState<TiktokVideo | null>(null);
   const [disableComment, setDisableComment] = useState(false);
   const [disableDuet, setDisableDuet] = useState(false);
   const [disableStitch, setDisableStitch] = useState(false);
@@ -576,7 +706,14 @@ export function TiktokStudio({ slug }: { slug: string }) {
             videos.videos.length > 0 ? (
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                 {videos.videos.map((video) => (
-                  <VideoCard key={video.id} video={video} />
+                  <button
+                    key={video.id}
+                    type="button"
+                    onClick={() => setSelectedVideo(video)}
+                    className="block w-full cursor-pointer rounded-xl text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <VideoCard video={video} />
+                  </button>
                 ))}
               </div>
             ) : (
@@ -673,6 +810,24 @@ export function TiktokStudio({ slug }: { slug: string }) {
           )}
         </TabsContent>
       </Tabs>
+
+      <Dialog
+        open={selectedVideo !== null}
+        onOpenChange={(open) => {
+          if (!open) setSelectedVideo(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-2xl gap-0 p-0 overflow-hidden">
+          {selectedVideo && (
+            <TiktokVideoModal
+              video={selectedVideo}
+              displayName={overview.displayName}
+              avatarUrl={overview.avatarUrl}
+              isVerified={overview.isVerified}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

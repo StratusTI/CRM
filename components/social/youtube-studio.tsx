@@ -32,8 +32,10 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useYoutube, type YoutubeError } from "@/src/hooks/use-youtube";
 import type { YoutubeInsightsRange } from "@/src/schemas/youtube.schema";
+import type { YoutubeVideo } from "@/src/schemas/youtube.schema";
 
 const nf = new Intl.NumberFormat("pt-BR");
 
@@ -197,6 +199,84 @@ function YoutubeVideoPreview({
   );
 }
 
+function YoutubeVideoModal({
+  video,
+  channelTitle,
+  channelThumbnailUrl,
+}: {
+  video: YoutubeVideo;
+  channelTitle: string;
+  channelThumbnailUrl?: string | null;
+}) {
+  const date = video.publishedAt
+    ? new Date(video.publishedAt).toLocaleDateString("pt-BR", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      })
+    : null;
+
+  return (
+    <div className="overflow-hidden rounded-xl">
+      <div className="relative aspect-video w-full bg-neutral-950">
+        {video.thumbnailUrl ? (
+          // biome-ignore lint/performance/noImgElement: thumbnail externa do YouTube
+          <img
+            src={video.thumbnailUrl}
+            alt={video.title}
+            className="size-full object-cover"
+          />
+        ) : (
+          <div className="flex size-full items-center justify-center text-white/20">
+            <HugeiconsIcon icon={Video01Icon} className="size-14" />
+          </div>
+        )}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="flex size-16 items-center justify-center rounded-full bg-red-600 shadow-lg">
+            <HugeiconsIcon icon={Video01Icon} className="size-7 text-white" />
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-4 p-5">
+        <h3 className="font-heading font-semibold text-base leading-snug tracking-tight">
+          {video.title}
+        </h3>
+
+        <div className="flex items-center gap-3">
+          {channelThumbnailUrl ? (
+            // biome-ignore lint/performance/noImgElement: avatar externo do YouTube
+            <img
+              src={channelThumbnailUrl}
+              alt={channelTitle}
+              className="size-9 rounded-full object-cover"
+            />
+          ) : (
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-red-600/10 text-red-600">
+              <HugeiconsIcon icon={Video01Icon} className="size-4" />
+            </div>
+          )}
+          <div>
+            <p className="font-medium text-sm">{channelTitle}</p>
+            {date && (
+              <p className="text-muted-foreground text-xs">{date}</p>
+            )}
+          </div>
+        </div>
+
+        <a
+          href={video.url}
+          target="_blank"
+          rel="noreferrer"
+          className={`${buttonVariants({ size: "sm" })} block w-full text-center`}
+        >
+          Abrir no YouTube
+        </a>
+      </div>
+    </div>
+  );
+}
+
 function UploadForm({
   slug,
   publish,
@@ -340,6 +420,7 @@ export function YoutubeStudio({ slug }: { slug: string }) {
 
   const [title, setTitle] = useState("");
   const [privacyStatus, setPrivacyStatus] = useState("private");
+  const [selectedVideo, setSelectedVideo] = useState<YoutubeVideo | null>(null);
 
   if (isLoading && !overview) {
     return (
@@ -445,12 +526,11 @@ export function YoutubeStudio({ slug }: { slug: string }) {
                     })
                   : null;
                 return (
-                  <a
+                  <button
                     key={video.videoId}
-                    href={video.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="block rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    type="button"
+                    onClick={() => setSelectedVideo(video)}
+                    className="block w-full cursor-pointer rounded-xl text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <Card className="group overflow-hidden p-0">
                       <div className="relative aspect-video w-full bg-muted">
@@ -476,7 +556,7 @@ export function YoutubeStudio({ slug }: { slug: string }) {
                         )}
                       </div>
                     </Card>
-                  </a>
+                  </button>
                 );
               })}
             </div>
@@ -606,6 +686,23 @@ export function YoutubeStudio({ slug }: { slug: string }) {
           )}
         </TabsContent>
       </Tabs>
+
+      <Dialog
+        open={selectedVideo !== null}
+        onOpenChange={(open) => {
+          if (!open) setSelectedVideo(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-xl gap-0 p-0 overflow-hidden">
+          {selectedVideo && (
+            <YoutubeVideoModal
+              video={selectedVideo}
+              channelTitle={overview.title}
+              channelThumbnailUrl={overview.thumbnailUrl}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

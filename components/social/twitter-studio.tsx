@@ -23,7 +23,9 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { type TwitterError, useTwitter } from "@/src/hooks/use-twitter";
+import type { TwitterTweet } from "@/src/schemas/twitter.schema";
 
 const TWEET_MAX = 280;
 
@@ -152,6 +154,115 @@ function TweetPreview({
   );
 }
 
+function TwitterTweetModal({
+  tweet,
+  name,
+  username,
+  avatarUrl,
+}: {
+  tweet: TwitterTweet;
+  name?: string | null;
+  username: string;
+  avatarUrl?: string | null;
+}) {
+  const date = tweet.createdAt
+    ? new Date(tweet.createdAt).toLocaleDateString("pt-BR", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : null;
+
+  return (
+    <div className="space-y-4 p-5">
+      <div className="flex items-start gap-3">
+        {avatarUrl ? (
+          // biome-ignore lint/performance/noImgElement: avatar externo do X
+          <img
+            src={avatarUrl}
+            alt={username}
+            className="size-11 shrink-0 rounded-full border border-border/50 object-cover"
+          />
+        ) : (
+          <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-neutral-900/10 text-neutral-900 dark:bg-white/10 dark:text-white">
+            <HugeiconsIcon icon={NewTwitterIcon} className="size-5" />
+          </div>
+        )}
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+            <span className="font-semibold text-sm">{name ?? username}</span>
+            <span className="text-muted-foreground text-sm">@{username}</span>
+          </div>
+          {date && (
+            <p className="text-muted-foreground text-xs">{date}</p>
+          )}
+        </div>
+        <HugeiconsIcon
+          icon={NewTwitterIcon}
+          className="ml-auto size-5 shrink-0 text-muted-foreground/60"
+        />
+      </div>
+
+      <p className="whitespace-pre-wrap text-base leading-relaxed">{tweet.text}</p>
+
+      {tweet.metrics && (
+        <>
+          <div className="border-t border-border/60 pt-3">
+            <div className="flex flex-wrap items-center gap-5 text-sm">
+              <span>
+                <span className="font-semibold">{nf.format(tweet.metrics.retweetCount)}</span>{" "}
+                <span className="text-muted-foreground">Retweets</span>
+              </span>
+              <span>
+                <span className="font-semibold">{nf.format(tweet.metrics.likeCount)}</span>{" "}
+                <span className="text-muted-foreground">Curtidas</span>
+              </span>
+              {tweet.metrics.impressionCount > 0 && (
+                <span>
+                  <span className="font-semibold">{nf.format(tweet.metrics.impressionCount)}</span>{" "}
+                  <span className="text-muted-foreground">Impressões</span>
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-5 border-t border-border/60 pt-2 text-muted-foreground">
+            <button type="button" className="flex items-center gap-2 py-1 hover:text-blue-500 transition-colors">
+              <HugeiconsIcon icon={Comment01Icon} className="size-5" />
+              <span className="text-sm">{nf.format(tweet.metrics.replyCount)}</span>
+            </button>
+            <button type="button" className="flex items-center gap-2 py-1 hover:text-green-500 transition-colors">
+              <HugeiconsIcon icon={Share08Icon} className="size-5" />
+              <span className="text-sm">{nf.format(tweet.metrics.retweetCount)}</span>
+            </button>
+            <button type="button" className="flex items-center gap-2 py-1 hover:text-pink-500 transition-colors">
+              <HugeiconsIcon icon={FavouriteIcon} className="size-5" />
+              <span className="text-sm">{nf.format(tweet.metrics.likeCount)}</span>
+            </button>
+            <button type="button" className="flex items-center gap-2 py-1 hover:text-foreground transition-colors">
+              <HugeiconsIcon icon={Analytics01Icon} className="size-5" />
+              <span className="text-sm">{nf.format(tweet.metrics.impressionCount)}</span>
+            </button>
+          </div>
+        </>
+      )}
+
+      <a
+        href={tweet.url}
+        target="_blank"
+        rel="noreferrer"
+        className={`${buttonVariants({ variant: "outline", size: "sm" })} block w-full text-center`}
+      >
+        Abrir no X
+      </a>
+    </div>
+  );
+}
+
+const nf = new Intl.NumberFormat("pt-BR");
+
 function TweetComposer({
   slug,
   publish,
@@ -255,6 +366,7 @@ export function TwitterStudio({ slug }: { slug: string }) {
 
   const [text, setText] = useState("");
   const [imageFile, setImageFile] = useState<File | undefined>();
+  const [selectedTweet, setSelectedTweet] = useState<TwitterTweet | null>(null);
 
   if (isLoading && !overview) {
     return (
@@ -333,12 +445,11 @@ export function TwitterStudio({ slug }: { slug: string }) {
                   })
                 : null;
               return (
-                <a
+                <button
                   key={tweet.id}
-                  href={tweet.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="block rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  type="button"
+                  onClick={() => setSelectedTweet(tweet)}
+                  className="block w-full cursor-pointer rounded-xl text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <Card className="space-y-2 p-3 transition-colors hover:bg-muted/40">
                     <p className="whitespace-pre-wrap text-sm leading-relaxed">
@@ -368,7 +479,7 @@ export function TwitterStudio({ slug }: { slug: string }) {
                       {date && <span className="ml-auto">{date}</span>}
                     </div>
                   </Card>
-                </a>
+                </button>
               );
             })
           ) : (
@@ -431,6 +542,24 @@ export function TwitterStudio({ slug }: { slug: string }) {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <Dialog
+        open={selectedTweet !== null}
+        onOpenChange={(open) => {
+          if (!open) setSelectedTweet(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-md gap-0 p-0 overflow-hidden">
+          {selectedTweet && (
+            <TwitterTweetModal
+              tweet={selectedTweet}
+              name={overview.name}
+              username={overview.username}
+              avatarUrl={overview.profileImageUrl}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

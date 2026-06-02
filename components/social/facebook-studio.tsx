@@ -25,8 +25,10 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { type FacebookError, useFacebook } from "@/src/hooks/use-facebook";
 import type { FacebookInsightsRange } from "@/src/schemas/facebook.schema";
+import type { FacebookPost } from "@/src/schemas/facebook.schema";
 
 const nf = new Intl.NumberFormat("pt-BR");
 
@@ -204,6 +206,104 @@ function FacebookPostPreview({
   );
 }
 
+function FacebookPostModal({
+  post,
+  pageName,
+  avatarUrl,
+}: {
+  post: FacebookPost;
+  pageName: string;
+  avatarUrl?: string | null;
+}) {
+  const date = post.createdTime
+    ? new Date(post.createdTime).toLocaleDateString("pt-BR", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : null;
+  const text = post.message ?? post.story;
+
+  return (
+    <div className="overflow-hidden rounded-xl">
+      {post.fullPicture && (
+        <div className="max-h-[55vh] overflow-hidden bg-black">
+          {/* biome-ignore lint/performance/noImgElement: imagem externa do Facebook */}
+          <img
+            src={post.fullPicture}
+            alt=""
+            className="max-h-[55vh] w-full object-contain"
+          />
+        </div>
+      )}
+
+      <div className="space-y-4 p-5">
+        <div className="flex items-center gap-3">
+          {avatarUrl ? (
+            // biome-ignore lint/performance/noImgElement: avatar externo do Facebook
+            <img
+              src={avatarUrl}
+              alt={pageName}
+              className="size-10 rounded-full border border-border/50 object-cover"
+            />
+          ) : (
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-blue-600/10 text-blue-600">
+              <HugeiconsIcon icon={Facebook01Icon} className="size-5" />
+            </div>
+          )}
+          <div>
+            <p className="font-semibold text-sm leading-tight">{pageName}</p>
+            {date && (
+              <p className="text-muted-foreground text-xs">{date}</p>
+            )}
+          </div>
+        </div>
+
+        {text && (
+          <p className="text-sm leading-relaxed whitespace-pre-wrap">{text}</p>
+        )}
+
+        <div className="flex items-center gap-1 border-t border-border/60 pt-3">
+          <button
+            type="button"
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-md py-1.5 text-muted-foreground text-sm transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <HugeiconsIcon icon={FavouriteIcon} className="size-4" />
+            Curtir
+          </button>
+          <button
+            type="button"
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-md py-1.5 text-muted-foreground text-sm transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <HugeiconsIcon icon={Comment01Icon} className="size-4" />
+            Comentar
+          </button>
+          <button
+            type="button"
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-md py-1.5 text-muted-foreground text-sm transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <HugeiconsIcon icon={Share08Icon} className="size-4" />
+            Compartilhar
+          </button>
+        </div>
+
+        {post.permalinkUrl && (
+          <a
+            href={post.permalinkUrl}
+            target="_blank"
+            rel="noreferrer"
+            className={`${buttonVariants({ variant: "outline", size: "sm" })} block w-full text-center`}
+          >
+            Abrir no Facebook
+          </a>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function PostComposer({
   slug,
   publish,
@@ -323,6 +423,7 @@ export function FacebookStudio({ slug }: { slug: string }) {
 
   const [message, setMessage] = useState("");
   const [imageFile, setImageFile] = useState<File | undefined>();
+  const [selectedPost, setSelectedPost] = useState<FacebookPost | null>(null);
 
   if (isLoading && !overview) {
     return (
@@ -451,18 +552,15 @@ export function FacebookStudio({ slug }: { slug: string }) {
                     </div>
                   </Card>
                 );
-                return post.permalinkUrl ? (
-                  <a
+                return (
+                  <button
                     key={post.id}
-                    href={post.permalinkUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="block rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    type="button"
+                    onClick={() => setSelectedPost(post)}
+                    className="block w-full cursor-pointer rounded-xl text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     {card}
-                  </a>
-                ) : (
-                  card
+                  </button>
                 );
               })}
             </div>
@@ -606,6 +704,23 @@ export function FacebookStudio({ slug }: { slug: string }) {
           )}
         </TabsContent>
       </Tabs>
+
+      <Dialog
+        open={selectedPost !== null}
+        onOpenChange={(open) => {
+          if (!open) setSelectedPost(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-lg gap-0 p-0 overflow-hidden">
+          {selectedPost && (
+            <FacebookPostModal
+              post={selectedPost}
+              pageName={overview.name}
+              avatarUrl={overview.pictureUrl}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -28,8 +28,10 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { type InstagramError, useInstagram } from "@/src/hooks/use-instagram";
 import type { InstagramInsightsRange } from "@/src/schemas/instagram.schema";
+import type { InstagramMedia } from "@/src/schemas/instagram.schema";
 
 const nf = new Intl.NumberFormat("pt-BR");
 
@@ -197,6 +199,106 @@ function InstagramPostPreview({
   );
 }
 
+function InstagramMediaModal({
+  item,
+  username,
+  avatarUrl,
+}: {
+  item: InstagramMedia;
+  username: string;
+  avatarUrl?: string | null;
+}) {
+  const imgSrc = item.mediaType === "VIDEO" ? item.thumbnailUrl : item.mediaUrl;
+  const date = item.timestamp
+    ? new Date(item.timestamp).toLocaleDateString("pt-BR", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      })
+    : null;
+
+  return (
+    <div className="flex flex-col overflow-hidden rounded-xl md:flex-row">
+      <div className="relative flex min-h-[260px] items-center justify-center bg-black md:min-h-0 md:w-[58%]">
+        {imgSrc ? (
+          // biome-ignore lint/performance/noImgElement: mídia externa do Instagram
+          <img
+            src={imgSrc}
+            alt={item.caption ?? ""}
+            className="max-h-[65vh] w-full object-contain"
+          />
+        ) : (
+          <div className="flex flex-col items-center justify-center gap-2 text-white/20">
+            <HugeiconsIcon icon={InstagramIcon} className="size-14" />
+          </div>
+        )}
+        {item.mediaType === "VIDEO" && (
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+            <div className="flex size-14 items-center justify-center rounded-full bg-black/50">
+              <HugeiconsIcon icon={PlayIcon} className="size-7 text-white" />
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="flex flex-col md:w-[42%]">
+        <div className="flex shrink-0 items-center gap-2.5 border-b border-border/60 px-4 py-3">
+          <div className="rounded-full bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 p-0.5">
+            {avatarUrl ? (
+              // biome-ignore lint/performance/noImgElement: avatar externo do Instagram
+              <img
+                src={avatarUrl}
+                alt={username}
+                className="size-9 rounded-full border-2 border-background object-cover"
+              />
+            ) : (
+              <div className="flex size-9 items-center justify-center rounded-full bg-background">
+                <HugeiconsIcon
+                  icon={InstagramIcon}
+                  className="size-4 text-pink-500"
+                />
+              </div>
+            )}
+          </div>
+          <span className="font-semibold text-sm">{username}</span>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto p-4">
+          {item.caption ? (
+            <p className="text-sm leading-relaxed">
+              <span className="font-semibold">{username}</span> {item.caption}
+            </p>
+          ) : null}
+          {date && (
+            <p className="mt-3 text-muted-foreground text-xs uppercase tracking-wide">
+              {date}
+            </p>
+          )}
+        </div>
+
+        <div className="shrink-0 space-y-3 border-t border-border/60 px-4 py-3">
+          <div className="flex items-center gap-4">
+            <HugeiconsIcon icon={FavouriteIcon} className="size-6" />
+            <HugeiconsIcon icon={Comment01Icon} className="size-6" />
+            <HugeiconsIcon icon={Share08Icon} className="size-6" />
+            <HugeiconsIcon icon={BookmarkIcon} className="ml-auto size-6" />
+          </div>
+          {item.permalink && (
+            <a
+              href={item.permalink}
+              target="_blank"
+              rel="noreferrer"
+              className={`${buttonVariants({ variant: "outline", size: "sm" })} block w-full text-center`}
+            >
+              Abrir no Instagram
+            </a>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function PostComposer({
   slug,
   publish,
@@ -302,6 +404,7 @@ export function InstagramStudio({ slug }: { slug: string }) {
 
   const [caption, setCaption] = useState("");
   const [imageFile, setImageFile] = useState<File | undefined>();
+  const [selectedMedia, setSelectedMedia] = useState<InstagramMedia | null>(null);
 
   if (isLoading && !overview) {
     return (
@@ -443,18 +546,15 @@ export function InstagramStudio({ slug }: { slug: string }) {
                     </div>
                   </Card>
                 );
-                return item.permalink ? (
-                  <a
+                return (
+                  <button
                     key={item.id}
-                    href={item.permalink}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="block rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    type="button"
+                    onClick={() => setSelectedMedia(item)}
+                    className="block w-full cursor-pointer rounded-xl text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     {card}
-                  </a>
-                ) : (
-                  card
+                  </button>
                 );
               })}
             </div>
@@ -605,6 +705,23 @@ export function InstagramStudio({ slug }: { slug: string }) {
           )}
         </TabsContent>
       </Tabs>
+
+      <Dialog
+        open={selectedMedia !== null}
+        onOpenChange={(open) => {
+          if (!open) setSelectedMedia(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-3xl gap-0 p-0 overflow-hidden">
+          {selectedMedia && (
+            <InstagramMediaModal
+              item={selectedMedia}
+              username={overview.username}
+              avatarUrl={overview.profilePictureUrl}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
