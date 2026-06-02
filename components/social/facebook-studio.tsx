@@ -311,6 +311,7 @@ function PostComposer({
 export function FacebookStudio({ slug }: { slug: string }) {
   const {
     overview,
+    posts,
     insights,
     range,
     setRange,
@@ -414,6 +415,66 @@ export function FacebookStudio({ slug }: { slug: string }) {
               value={overview.followersCount}
             />
           </div>
+
+          {posts && posts.posts.length > 0 ? (
+            <div className="space-y-3">
+              {posts.posts.map((post) => {
+                const text = post.message ?? post.story;
+                const date = post.createdTime
+                  ? new Date(post.createdTime).toLocaleDateString("pt-BR", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })
+                  : null;
+                const card = (
+                  <Card key={post.id} className="overflow-hidden p-0">
+                    {post.fullPicture && (
+                      <div className="aspect-video w-full bg-muted">
+                        {/* biome-ignore lint/performance/noImgElement: imagem externa do Facebook */}
+                        <img
+                          src={post.fullPicture}
+                          alt=""
+                          className="size-full object-cover"
+                        />
+                      </div>
+                    )}
+                    <div className="space-y-2 p-3">
+                      {text && (
+                        <p className="line-clamp-3 text-sm leading-relaxed">
+                          {text}
+                        </p>
+                      )}
+                      {date && (
+                        <p className="text-muted-foreground text-xs">{date}</p>
+                      )}
+                    </div>
+                  </Card>
+                );
+                return post.permalinkUrl ? (
+                  <a
+                    key={post.id}
+                    href={post.permalinkUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    {card}
+                  </a>
+                ) : (
+                  card
+                );
+              })}
+            </div>
+          ) : posts && posts.posts.length === 0 ? (
+            <Card className="px-4 py-10 text-center text-muted-foreground text-sm">
+              <HugeiconsIcon
+                icon={Facebook01Icon}
+                className="mx-auto mb-2 size-6 opacity-60"
+              />
+              Nenhuma publicação recente.
+            </Card>
+          ) : null}
         </TabsContent>
 
         <TabsContent value="post">

@@ -4,12 +4,14 @@ import { err, type Result } from "@/src/lib/result";
 import {
   fetchInsights,
   fetchPageOverview,
+  fetchRecentPosts,
   publishPost,
 } from "@/src/lib/social/facebook/client";
 import {
   type FacebookInsights,
   type FacebookInsightsRange,
   type FacebookPageOverview,
+  type FacebookPosts,
   FB_INSIGHTS_RANGE_DAYS,
   type PublishPostInput,
   type PublishPostResult,
@@ -70,6 +72,22 @@ export const FacebookService = {
         startDate: isoDate(-FB_INSIGHTS_RANGE_DAYS[range]),
         endDate: isoDate(0),
       },
+    );
+  },
+
+  /** Posts recentes da Página (feed público). */
+  async getRecentPosts(
+    userId: string,
+    slug: string,
+  ): Promise<Result<FacebookPosts>> {
+    const fresh = await getFreshAccessToken(userId, slug, "FACEBOOK");
+    if (!fresh.ok) return fresh;
+    if (!hasScope(fresh.value.connection, REQUIRED_SCOPES.read)) {
+      return err(socialScopeMissing());
+    }
+    return fetchRecentPosts(
+      fresh.value.accessToken,
+      fresh.value.connection.externalAccountId,
     );
   },
 

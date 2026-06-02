@@ -84,3 +84,22 @@ export const PublishPostResultSchema = z.object({
 });
 
 export type PublishPostResult = z.infer<typeof PublishPostResultSchema>;
+
+/** Um post recente da Página. */
+export const FacebookPostSchema = z.object({
+  id: z.string(),
+  message: z.string().nullable(),
+  story: z.string().nullable(),
+  fullPicture: z.string().nullable(),
+  permalinkUrl: z.string().nullable(),
+  createdTime: z.string(),
+});
+
+export type FacebookPost = z.infer<typeof FacebookPostSchema>;
+
+/** Lista de posts recentes da Página. */
+export const FacebookPostsSchema = z.object({
+  posts: z.array(FacebookPostSchema),
+});
+
+export type FacebookPosts = z.infer<typeof FacebookPostsSchema>;

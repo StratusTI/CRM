@@ -6,6 +6,7 @@ import type {
   FacebookInsights,
   FacebookInsightsRange,
   FacebookPageOverview,
+  FacebookPosts,
   PublishPostResult,
 } from "@/src/schemas/facebook.schema";
 
@@ -44,11 +45,12 @@ async function getJson<T>(
 }
 
 /**
- * Dados do Facebook para o workspace: overview da Página + insights (janela
- * selecionável) + publicar. Mesmo padrão fetch/useState do [[use-youtube]].
+ * Dados do Facebook para o workspace: overview da Página + posts recentes +
+ * insights (janela selecionável) + publicar.
  */
 export function useFacebook(slug: string) {
   const [overview, setOverview] = useState<FacebookPageOverview | null>(null);
+  const [posts, setPosts] = useState<FacebookPosts | null>(null);
   const [insights, setInsights] = useState<FacebookInsights | null>(null);
   const [range, setRange] = useState<FacebookInsightsRange>("28d");
   const [isLoading, setIsLoading] = useState(true);
@@ -58,8 +60,9 @@ export function useFacebook(slug: string) {
     async (selectedRange: FacebookInsightsRange) => {
       setIsLoading(true);
       setError(null);
-      const [ov, ins] = await Promise.all([
+      const [ov, pst, ins] = await Promise.all([
         getJson<FacebookPageOverview>(`${BASE(slug)}/overview`),
+        getJson<FacebookPosts>(`${BASE(slug)}/videos`),
         getJson<FacebookInsights>(
           `${BASE(slug)}/insights?range=${selectedRange}`,
         ),
@@ -68,11 +71,13 @@ export function useFacebook(slug: string) {
       if (!ov.ok) {
         setError(ov.error);
         setOverview(null);
+        setPosts(null);
         setInsights(null);
         setIsLoading(false);
         return;
       }
       setOverview(ov.data);
+      setPosts(pst.ok ? pst.data : null);
       if (ins.ok) setInsights(ins.data);
       else {
         setInsights(null);
@@ -122,6 +127,7 @@ export function useFacebook(slug: string) {
 
   return {
     overview,
+    posts,
     insights,
     range,
     setRange,

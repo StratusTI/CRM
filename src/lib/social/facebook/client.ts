@@ -233,3 +233,37 @@ export async function publishPost(
     return err(socialOauthFailed());
   }
 }
+
+/** Posts recentes da Página (feed público). */
+export async function fetchRecentPosts(
+  pageToken: string,
+  pageId: string,
+): Promise<Result<import("@/src/schemas/facebook.schema").FacebookPosts>> {
+  const params = new URLSearchParams({
+    fields: "id,message,story,full_picture,permalink_url,created_time",
+    limit: "20",
+    access_token: pageToken,
+  });
+  const result = await graphGet<{
+    data?: {
+      id?: string;
+      message?: string;
+      story?: string;
+      full_picture?: string;
+      permalink_url?: string;
+      created_time?: string;
+    }[];
+  }>("posts", `${GRAPH}/${pageId}/posts?${params.toString()}`);
+  if (!result.ok) return result;
+
+  const posts = (result.value.data ?? []).map((item) => ({
+    id: item.id ?? "",
+    message: item.message ?? null,
+    story: item.story ?? null,
+    fullPicture: item.full_picture ?? null,
+    permalinkUrl: item.permalink_url ?? null,
+    createdTime: item.created_time ?? "",
+  }));
+
+  return ok({ posts });
+}
