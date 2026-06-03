@@ -12,6 +12,8 @@ import {
   buildCreateSystemPrompt,
   buildEditSystemPrompt,
   extractHtml,
+  parseRenderArgs,
+  RENDER_LANDING_PAGE_TOOL,
 } from "@/src/lib/ai/landing-page-prompt";
 import { err, ok, type Result } from "@/src/lib/result";
 import {
@@ -50,6 +52,19 @@ function slugify(input: string): string {
     .replace(/^-+|-+$/g, "")
     .slice(0, 120);
   return base || "pagina";
+}
+
+/**
+ * Diz se o slug atual ainda é o derivado automaticamente do título (incluindo
+ * sufixo numérico de desambiguação, ex.: "promo-2"). Quando verdadeiro, o slug
+ * pode acompanhar uma renomeação; se o usuário tiver definido um slug próprio,
+ * não o sobrescrevemos.
+ */
+function isAutoSlug(slug: string, title: string): boolean {
+  const base = slugify(title);
+  if (slug === base) return true;
+  if (!slug.startsWith(`${base}-`)) return false;
+  return /^\d+$/.test(slug.slice(base.length + 1));
 }
 
 /**
@@ -161,6 +176,20 @@ export const LandingPageService = {
     if (!existing.ok) return existing;
 
     const data: UpdateLandingPageData = { updatedById: userId, ...input };
+
+    // Renomeou o título sem mexer no slug: o slug acompanha o novo título,
+    // desde que ainda seja o derivado automaticamente (nunca sobrescreve um
+    // slug customizado). Garante unicidade no workspace.
+    if (
+      input.slug === undefined &&
+      input.title !== undefined &&
+      input.title !== existing.value.title &&
+      isAutoSlug(existing.value.slug, existing.value.title)
+    ) {
+      const fresh = await uniqueSlug(ws.value, slugify(input.title), id);
+      if (!fresh.ok) return fresh;
+      data.slug = fresh.value;
+    }
 
     // Slug editado: garante unicidade (rejeita colisão explícita).
     if (input.slug !== undefined && input.slug !== existing.value.slug) {
@@ -331,9 +360,17 @@ export const LandingPageService = {
   },
 };
 
+/** Orçamento de saída amplo: uma landing page inteira não cabe nos 4k padrão. */
+const LANDING_PAGE_MAX_TOKENS = 16_000;
+/** Um pouco mais de criatividade que o chat (0.3) rende layouts mais ricos. */
+const LANDING_PAGE_TEMPERATURE = 0.5;
+const DEFAULT_DONE_MESSAGE = "Pronto! Atualizei a página com sua solicitação.";
+
 /**
- * Loop de geração: chama o modelo (sem tools), transmite o texto, extrai o HTML
- * final, salva-o na página e persiste a mensagem do assistente.
+ * Loop de geração: chama o modelo forçando a tool `render_landing_page`, que
+ * devolve o documento final num campo estruturado (html) + um resumo. Salva o
+ * HTML na página e persiste o resumo como mensagem do assistente. Cai para o
+ * parsing de texto livre caso o modelo não use a tool.
  */
 async function* runGenerate(ctx: {
   userId: string;
@@ -347,25 +384,41 @@ async function* runGenerate(ctx: {
     ? buildEditSystemPrompt(page.html)
     : buildCreateSystemPrompt();
 
-  let raw = "";
+  let html = "";
+  let summary = "";
+  let rawContent = "";
   for await (const ev of streamChat(
     [
       { role: "system", content: system },
       { role: "user", content: message },
     ],
-    [],
-    "none",
+    [RENDER_LANDING_PAGE_TOOL],
+    "required",
+    {
+      maxTokens: LANDING_PAGE_MAX_TOKENS,
+      temperature: LANDING_PAGE_TEMPERATURE,
+    },
   )) {
     if (ev.type === "text") {
-      raw += ev.delta;
-      yield { type: "text", delta: ev.delta };
+      // Com tool forçada quase não há texto livre; acumulamos só p/ fallback.
+      rawContent += ev.delta;
     } else if (ev.type === "error") {
       yield { type: "error", message: ev.message };
       return;
+    } else if (ev.type === "finish") {
+      const call = ev.toolCalls.find(
+        (t) => t.name === RENDER_LANDING_PAGE_TOOL.function.name,
+      );
+      if (call) {
+        const parsed = parseRenderArgs(call.args);
+        html = parsed.html;
+        summary = parsed.summary;
+      }
     }
   }
 
-  const html = extractHtml(raw);
+  // Fallback: modelo respondeu em texto livre em vez de chamar a tool.
+  if (!html) html = extractHtml(rawContent);
   if (!html) {
     yield { type: "error", message: "A IA não retornou um documento válido." };
     return;
@@ -374,12 +427,13 @@ async function* runGenerate(ctx: {
   // Salva o HTML gerado na página.
   await LandingPageRepository.update(pageId, { updatedById: userId, html });
 
-  // Persiste uma confirmação curta como mensagem do assistente (não o HTML
-  // inteiro — o histórico do chat é conversacional, o HTML vive na página).
+  // Persiste o resumo como mensagem do assistente (não o HTML inteiro — o
+  // histórico do chat é conversacional, o HTML vive na página).
+  const content = summary || DEFAULT_DONE_MESSAGE;
   const saved = await LandingPageRepository.appendMessage({
     landingPageId: pageId,
     role: "ASSISTANT",
-    content: "Pronto! Atualizei a página com sua solicitação.",
+    content,
   });
 
   const dto: LandingPageMessageDTO = saved.ok
@@ -387,7 +441,7 @@ async function* runGenerate(ctx: {
     : {
         id: "",
         role: "assistant",
-        content: "Pronto! Atualizei a página com sua solicitação.",
+        content,
         createdAt: new Date().toISOString(),
       };
 

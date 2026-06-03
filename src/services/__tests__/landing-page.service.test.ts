@@ -131,6 +131,31 @@ describe("LandingPageService.update", () => {
     if (!result.ok) expect(result.error.code).toBe("LANDING_PAGE_SLUG_TAKEN");
     expect(pageRepo.update).not.toHaveBeenCalled();
   });
+
+  it("re-deriva o slug ao renomear o título (slug auto-derivado)", async () => {
+    asMember();
+    // slug "promo" === slugify("Promo") ⇒ auto-derivado.
+    pageRepo.findById.mockResolvedValue(ok(page()));
+    pageRepo.slugExists.mockResolvedValue(ok(false));
+    pageRepo.update.mockResolvedValue(ok(page()));
+    await LandingPageService.update("user_1", "acme", "lp_1", {
+      title: "Nova Campanha",
+    });
+    const data = pageRepo.update.mock.calls[0][1];
+    expect(data.slug).toBe("nova-campanha");
+  });
+
+  it("preserva slug customizado ao renomear o título", async () => {
+    asMember();
+    pageRepo.findById.mockResolvedValue(ok(page({ slug: "url-feita-a-mao" })));
+    pageRepo.update.mockResolvedValue(ok(page()));
+    await LandingPageService.update("user_1", "acme", "lp_1", {
+      title: "Nova Campanha",
+    });
+    const data = pageRepo.update.mock.calls[0][1];
+    expect(data.slug).toBeUndefined();
+    expect(pageRepo.slugExists).not.toHaveBeenCalled();
+  });
 });
 
 describe("LandingPageService.getPublicBySlug", () => {

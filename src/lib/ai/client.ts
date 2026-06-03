@@ -45,6 +45,10 @@ export type AiStreamEvent =
 const TEMPERATURE = 0.3;
 const MAX_TOKENS = 4096;
 
+/** Overrides por chamada — alguns fluxos (ex.: gerar HTML inteiro) precisam de
+ *  um orçamento de saída maior e/ou mais criatividade que o padrão do chat. */
+export type StreamOptions = { maxTokens?: number; temperature?: number };
+
 /**
  * Faz uma chamada streaming ao endpoint Chat Completions e emite eventos:
  * deltas de texto conforme chegam, e um evento `finish` com o conteúdo
@@ -52,11 +56,13 @@ const MAX_TOKENS = 4096;
  *
  * @param toolChoice "required" força pelo menos uma tool_call (round 0 do agente);
  *                   "auto" deixa o modelo decidir; "none" proíbe tool calls.
+ * @param options sobrescreve `max_tokens`/`temperature` para esta chamada.
  */
 export async function* streamChat(
   messages: ChatMessage[],
   tools: ToolDef[],
   toolChoice: "auto" | "required" | "none" = "auto",
+  options: StreamOptions = {},
 ): AsyncGenerator<AiStreamEvent, void, unknown> {
   let response: Response;
   try {
@@ -72,8 +78,8 @@ export async function* streamChat(
         ...(tools.length > 0 && { tools, tool_choice: toolChoice }),
         stream: true,
         stream_options: { include_usage: true },
-        temperature: TEMPERATURE,
-        max_tokens: MAX_TOKENS,
+        temperature: options.temperature ?? TEMPERATURE,
+        max_tokens: options.maxTokens ?? MAX_TOKENS,
       }),
     });
   } catch (error) {

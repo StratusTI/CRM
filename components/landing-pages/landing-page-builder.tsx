@@ -73,12 +73,15 @@ function LandingPageBuilderInner({
   const [publishing, setPublishing] = React.useState(false);
   const [metricsOpen, setMetricsOpen] = React.useState(false);
   const [publicUrl, setPublicUrl] = React.useState("");
+  // Slug em estado: renomear a página re-deriva o slug no servidor; refletimos
+  // a URL pública nova assim que o PATCH responde.
+  const [pageSlug, setPageSlug] = React.useState(initial.slug);
 
   React.useEffect(() => {
     setPublicUrl(
-      `${window.location.origin}${withBasePath(`/${slug}/pages/${initial.slug}`)}`,
+      `${window.location.origin}${withBasePath(`/${slug}/pages/${pageSlug}`)}`,
     );
-  }, [slug, initial.slug]);
+  }, [slug, pageSlug]);
 
   /* ----------------------------- autosave título ---------------------- */
   const timer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -96,7 +99,12 @@ function LandingPageBuilderInner({
       const saved = await saveLandingPage(slug, initial.id, {
         title: next.trim(),
       });
-      if (!saved) toast.error("Não foi possível salvar o título.");
+      if (!saved) {
+        toast.error("Não foi possível salvar o título.");
+        return;
+      }
+      // O slug pode ter acompanhado o novo título: atualiza a URL pública.
+      if (saved.slug !== pageSlug) setPageSlug(saved.slug);
     }, 600);
   };
 
