@@ -97,16 +97,18 @@ export const InstagramService = {
   },
 
   /**
-   * Publica imagem + legenda no feed. O Graph IG não aceita upload direto —
-   * exige `image_url` público. Aqui hospedamos os bytes no [[blob-store]],
-   * geramos uma URL pública sob `${BETTER_AUTH_URL}${BASE_PATH}/api/social/blob/<token>`
-   * e a passamos ao client; após o publish, o blob é removido.
+   * Publica no Instagram conforme o `postType` (feed, reels ou stories). O Graph
+   * IG não aceita upload direto — exige uma URL pública (`image_url`/`video_url`).
+   * Aqui hospedamos os bytes no [[blob-store]], geramos uma URL pública sob
+   * `${BETTER_AUTH_URL}${BASE_PATH}/api/social/blob/<token>` e a passamos ao
+   * client; após o publish, o blob é removido. Reels exige vídeo; feed exige
+   * imagem; stories aceita os dois.
    */
   async publishPost(
     userId: string,
     slug: string,
     input: PublishInstagramPostInput,
-    image: { bytes: ArrayBuffer; contentType: string },
+    media: { bytes: ArrayBuffer; contentType: string; kind: "IMAGE" | "VIDEO" },
   ): Promise<Result<PublishInstagramPostResult>> {
     const fresh = await getFreshAccessToken(userId, slug, "INSTAGRAM");
     if (!fresh.ok) return fresh;
@@ -114,13 +116,18 @@ export const InstagramService = {
       return err(socialScopeMissing());
     }
 
-    const token = putBlob(image.bytes, image.contentType);
-    const imageUrl = `${BETTER_AUTH_URL}${BASE_PATH}/api/social/blob/${token}`;
+    const token = putBlob(media.bytes, media.contentType);
+    const url = `${BETTER_AUTH_URL}${BASE_PATH}/api/social/blob/${token}`;
     try {
       return await publishPost(
         fresh.value.accessToken,
         fresh.value.connection.externalAccountId,
-        { caption: input.caption, imageUrl },
+        {
+          caption: input.caption,
+          postType: input.postType,
+          imageUrl: media.kind === "IMAGE" ? url : null,
+          videoUrl: media.kind === "VIDEO" ? url : null,
+        },
       );
     } finally {
       removeBlob(token);

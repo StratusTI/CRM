@@ -46,7 +46,10 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     const parsed = LinkedInPublishInputSchema.safeParse(body);
     if (!parsed.success) {
       return handleError(
-        validationError("Dados da publicação inválidos", z.flattenError(parsed.error)),
+        validationError(
+          "Dados da publicação inválidos",
+          z.flattenError(parsed.error),
+        ),
       );
     }
     const result = await LinkedInService.publish(userId, slug, parsed.data);
@@ -164,20 +167,9 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
 
   /* -------------------------------- Instagram ------------------------------- */
   if (platform === "INSTAGRAM") {
-    const imageField = form.get("image");
-    if (!(imageField instanceof File) || imageField.size === 0) {
-      return handleError(
-        badRequest(
-          "Imagem obrigatória — o Instagram exige mídia para publicar",
-        ),
-      );
-    }
-    if (imageField.size > MAX_IMAGE_BYTES) {
-      return handleError(badRequest("Imagem excede o tamanho máximo (10 MB)"));
-    }
-
     const parsedIg = PublishInstagramPostSchema.safeParse({
       caption: form.get("caption") ?? undefined,
+      postType: form.get("postType") ?? undefined,
     });
     if (!parsedIg.success) {
       return handleError(
@@ -188,14 +180,57 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       );
     }
 
+    // Reels exige vídeo; feed exige imagem; stories aceita os dois. A mídia chega
+    // no campo `image` (imagem) ou `video` (vídeo).
+    const imageField = form.get("image");
+    const videoField = form.get("video");
+    let media: {
+      bytes: ArrayBuffer;
+      contentType: string;
+      kind: "IMAGE" | "VIDEO";
+    } | null = null;
+
+    if (videoField instanceof File && videoField.size > 0) {
+      if (videoField.size > MAX_VIDEO_BYTES) {
+        return handleError(
+          badRequest("Vídeo excede o tamanho máximo (256 MB)"),
+        );
+      }
+      media = {
+        bytes: await videoField.arrayBuffer(),
+        contentType: videoField.type || "video/mp4",
+        kind: "VIDEO",
+      };
+    } else if (imageField instanceof File && imageField.size > 0) {
+      if (imageField.size > MAX_IMAGE_BYTES) {
+        return handleError(
+          badRequest("Imagem excede o tamanho máximo (10 MB)"),
+        );
+      }
+      media = {
+        bytes: await imageField.arrayBuffer(),
+        contentType: imageField.type || "image/jpeg",
+        kind: "IMAGE",
+      };
+    }
+
+    if (!media) {
+      return handleError(
+        badRequest("Mídia obrigatória — o Instagram exige mídia para publicar"),
+      );
+    }
+    if (parsedIg.data.postType === "REELS" && media.kind !== "VIDEO") {
+      return handleError(badRequest("Reels exige um arquivo de vídeo"));
+    }
+    if (parsedIg.data.postType === "FEED" && media.kind !== "IMAGE") {
+      return handleError(badRequest("Publicação no feed exige uma imagem"));
+    }
+
     const result = await InstagramService.publishPost(
       userId,
       slug,
       parsedIg.data,
-      {
-        bytes: await imageField.arrayBuffer(),
-        contentType: imageField.type || "image/jpeg",
-      },
+      media,
     );
     if (!result.ok) return handleError(result.error);
     return successResponse(result.value, 201);

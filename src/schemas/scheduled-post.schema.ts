@@ -1,5 +1,9 @@
 import { z } from "zod";
 import {
+  type InstagramPostType,
+  InstagramPostTypeSchema,
+} from "@/src/schemas/instagram.schema";
+import {
   type SocialPlatform,
   SocialPlatformSchema,
 } from "@/src/schemas/social-connection.schema";
@@ -40,6 +44,20 @@ export const PLATFORM_MEDIA_REQUIREMENT: Record<
   YOUTUBE: "video",
 };
 
+/**
+ * Requisito de mídia do Instagram por modelo de post — sobrepõe
+ * `PLATFORM_MEDIA_REQUIREMENT.INSTAGRAM` (que cobre só o feed). `either` aceita
+ * imagem ou vídeo (stories). Usado na validação e na UI.
+ */
+export const INSTAGRAM_POST_TYPE_MEDIA: Record<
+  InstagramPostType,
+  "image" | "video" | "either"
+> = {
+  FEED: "image",
+  REELS: "video",
+  STORIES: "either",
+};
+
 /** Limite de caracteres do texto por plataforma (o menor vira o teto da UI). */
 export const PLATFORM_TEXT_LIMIT: Record<PublishablePlatform, number> = {
   INSTAGRAM: 2200,
@@ -53,6 +71,11 @@ export const PLATFORM_TEXT_LIMIT: Record<PublishablePlatform, number> = {
 /** Opções específicas por plataforma — persistidas em `ScheduledPost.options`. */
 export const ScheduledPostOptionsSchema = z
   .object({
+    instagram: z
+      .object({
+        postType: InstagramPostTypeSchema.default("FEED"),
+      })
+      .optional(),
     youtube: z
       .object({
         privacy: YoutubePrivacySchema.default("public"),
