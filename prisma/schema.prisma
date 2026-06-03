@@ -64,6 +64,8 @@ model User {
   proposalsCreated Proposal[] @relation("ProposalCreatedBy")
   proposalsUpdated Proposal[] @relation("ProposalUpdatedBy")
 
+  documentTemplatesCreated DocumentTemplate[] @relation("DocumentTemplateCreatedBy")
+
   landingPagesCreated LandingPage[] @relation("LandingPageCreatedBy")
   landingPagesUpdated LandingPage[] @relation("LandingPageUpdatedBy")
 
@@ -141,6 +143,7 @@ model Workspace {
   mailingLists       MailingList[]
   workflows          Workflow[]
   proposals          Proposal[]
+  documentTemplates  DocumentTemplate[]
   landingPages       LandingPage[]
   forms              Form[]
   aiConversations    AiConversation[]
@@ -939,14 +942,24 @@ enum ProposalStatus {
   PUBLISHED
 }
 
-/// Documento de proposta rico (HTML do TipTap), escopado por workspace.
-/// `status` PUBLISHED = online: o `shareToken` opaco serve a página pública
-/// (`/p/<token>`) sem auth. Soft-delete via `deletedAt`. As métricas de
-/// leitura ficam em ProposalView.
+/// Classificação do documento. Apenas organiza/filtra e escopa os templates —
+/// todos os tipos têm as mesmas capacidades (editor rico, publicação, métricas).
+enum DocumentType {
+  PREMISES
+  PORTFOLIO
+  PROPOSAL
+  CONTRACT
+}
+
+/// Documento rico (HTML do TipTap), escopado por workspace. `status` PUBLISHED
+/// = online: o `shareToken` opaco serve a página pública (`/p/<token>`) sem
+/// auth. `type` classifica o documento. Soft-delete via `deletedAt`. As
+/// métricas de leitura ficam em ProposalView.
 model Proposal {
   id          String         @id @default(cuid())
   title       String
   content     String         @default("") @db.Text
+  type        DocumentType   @default(PROPOSAL)
   status      ProposalStatus @default(DRAFT)
   shareToken  String         @unique @map("share_token")
   publishedAt DateTime?      @map("published_at")
@@ -968,7 +981,31 @@ model Proposal {
   @@index([status])
   @@index([deletedAt])
   @@index([workspaceId, position])
+  @@index([workspaceId, type])
   @@map("proposals")
+}
+
+/// Template de documento: snapshot reutilizável (título + conteúdo) escopado
+/// por workspace e por `type`. Criado a partir de um documento no editor
+/// ("Salvar como template") e consumido ao criar um novo documento do mesmo
+/// tipo. Soft-delete via `deletedAt`.
+model DocumentTemplate {
+  id          String       @id @default(cuid())
+  title       String
+  content     String       @default("") @db.Text
+  type        DocumentType
+  workspaceId String       @map("workspace_id")
+  createdById String       @map("created_by_id")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+  deletedAt   DateTime?    @map("deleted_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy User      @relation("DocumentTemplateCreatedBy", fields: [createdById], references: [id])
+
+  @@index([workspaceId, type])
+  @@index([deletedAt])
+  @@map("document_templates")
 }
 
 /// Uma sessão de visita à proposta pública. Upsertada por `viewId` (id de
