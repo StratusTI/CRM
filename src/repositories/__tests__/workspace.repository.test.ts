@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createUser } from "@/src/__tests__/factories/user.factory";
+import { prisma } from "@/src/lib/prisma";
 import { MembershipRepository } from "@/src/repositories/membership.repository";
 import { WorkspaceRepository } from "@/src/repositories/workspace.repository";
 
@@ -21,6 +22,39 @@ describe("WorkspaceRepository (integração)", () => {
     if (membership.ok && membership.value) {
       expect(membership.value.role).toBe("OWNER");
     }
+  });
+
+  it("createWithOwner semeia 2 documentos e 2 dashboards de exemplo", async () => {
+    const user = await createUser();
+
+    const result = await WorkspaceRepository.createWithOwner(
+      { name: "Seed WS", slug: "seed-ws" },
+      user.id,
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const workspaceId = result.value.id;
+
+    const proposals = await prisma.proposal.findMany({
+      where: { workspaceId },
+    });
+    expect(proposals).toHaveLength(2);
+    expect(proposals.every((p) => p.createdById === user.id)).toBe(true);
+    expect(proposals.every((p) => p.shareToken.length > 0)).toBe(true);
+    expect(new Set(proposals.map((p) => p.shareToken)).size).toBe(2);
+    expect(proposals.map((p) => p.type).sort()).toEqual([
+      "PORTFOLIO",
+      "PROPOSAL",
+    ]);
+
+    const dashboards = await prisma.dashboard.findMany({
+      where: { workspaceId },
+      include: { widgets: true },
+    });
+    expect(dashboards).toHaveLength(2);
+    expect(dashboards.every((d) => d.widgets.length > 0)).toBe(true);
+    expect(dashboards.every((d) => d.createdById === user.id)).toBe(true);
   });
 
   it("findBySlug e existsBySlug refletem o estado do banco", async () => {

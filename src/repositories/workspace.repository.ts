@@ -1,7 +1,12 @@
-import type { Workspace } from "@prisma/client";
+import type { Prisma, Workspace } from "@prisma/client";
 import { databaseError } from "@/src/errors/app-error";
 import { prisma } from "@/src/lib/prisma";
 import { err, ok, type Result } from "@/src/lib/result";
+import {
+  makeShareToken,
+  SEED_DASHBOARDS,
+  SEED_DOCUMENTS,
+} from "@/src/services/workspace-seed-data";
 
 type CreateWorkspaceData = {
   name: string;
@@ -10,7 +15,11 @@ type CreateWorkspaceData = {
 
 /** Acesso a dados de workspace. */
 export const WorkspaceRepository = {
-  /** Cria a workspace e a membership OWNER do criador numa única transação. */
+  /**
+   * Cria a workspace e a membership OWNER do criador numa única transação,
+   * já semeando 2 documentos e 2 dashboards de exemplo (ver
+   * `workspace-seed-data`) para o usuário ver as funcionalidades em uso.
+   */
   async createWithOwner(
     data: CreateWorkspaceData,
     ownerId: string,
@@ -22,6 +31,32 @@ export const WorkspaceRepository = {
           slug: data.slug,
           memberships: {
             create: { userId: ownerId, role: "OWNER" },
+          },
+          proposals: {
+            create: SEED_DOCUMENTS.map((doc) => ({
+              title: doc.title,
+              content: doc.content,
+              type: doc.type,
+              shareToken: makeShareToken(),
+              createdBy: { connect: { id: ownerId } },
+            })),
+          },
+          dashboards: {
+            create: SEED_DASHBOARDS.map((dashboard, index) => ({
+              title: dashboard.title,
+              position: index + 1,
+              createdBy: { connect: { id: ownerId } },
+              widgets: {
+                create: dashboard.widgets.map((widget) => ({
+                  type: widget.type,
+                  x: widget.x,
+                  y: widget.y,
+                  w: widget.w,
+                  h: widget.h,
+                  config: widget.config as Prisma.InputJsonValue,
+                })),
+              },
+            })),
           },
         },
       });
