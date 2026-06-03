@@ -65,6 +65,7 @@
     "@tiptap/react": "^3.23.6",
     "@tiptap/starter-kit": "^3.23.6",
     "@tiptap/suggestion": "^3.23.6",
+    "@vitest/coverage-v8": "^4.1.8",
     "@xyflow/react": "^12.10.2",
     "better-auth": "^1.6.11",
     "class-variance-authority": "^0.7.1",
