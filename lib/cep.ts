@@ -1,7 +1,9 @@
 /**
  * Consulta de CEP (client-side). Usa o ViaCEP para o endereço e, como
- * enriquecimento opcional e best-effort, a BrasilAPI (v2) para coordenadas
- * geográficas — que o ViaCEP não fornece.
+ * enriquecimento opcional e best-effort, busca coordenadas geográficas (que o
+ * ViaCEP não fornece): primeiro na BrasilAPI (v2), que só tem cobertura para
+ * uma minoria de CEPs, e em seguida no Nominatim (via rota interna
+ * `/api/geocode`) quando a BrasilAPI vem sem coordenadas.
  */
 
 export type CepLookup = {
@@ -73,6 +75,36 @@ async function fetchCoordinates(
   }
 }
 
+type Coordinates = { latitude?: number; longitude?: number };
+
+/** `true` quando o par de coordenadas está completo. */
+function hasCoordinates(coords: Coordinates): boolean {
+  return coords.latitude != null && coords.longitude != null;
+}
+
+/**
+ * Fallback de geocodificação via rota interna (Nominatim). Best-effort: nunca
+ * lança e devolve `{}` em qualquer falha.
+ */
+async function geocodeAddress(
+  parts: { cep: string; street?: string; city?: string; state?: string },
+  signal?: AbortSignal,
+): Promise<Coordinates> {
+  try {
+    const query = new URLSearchParams({ cep: parts.cep });
+    if (parts.street) query.set("street", parts.street);
+    if (parts.city) query.set("city", parts.city);
+    if (parts.state) query.set("state", parts.state);
+
+    const res = await fetch(`/api/geocode?${query.toString()}`, { signal });
+    if (!res.ok) return {};
+    const body = (await res.json()) as { data?: Coordinates };
+    return body.data ?? {};
+  } catch {
+    return {};
+  }
+}
+
 export class CepNotFoundError extends Error {
   constructor() {
     super("CEP não encontrado");
@@ -97,14 +129,22 @@ export async function lookupCep(
   const data = (await res.json()) as ViaCepResponse;
   if (data.erro) throw new CepNotFoundError();
 
-  const coords = await fetchCoordinates(cep, signal);
+  const street = data.logradouro || undefined;
+  const city = data.localidade || undefined;
+  const state = data.uf || undefined;
+
+  // BrasilAPI primeiro (preciso quando tem); Nominatim como fallback.
+  let coords = await fetchCoordinates(cep, signal);
+  if (!hasCoordinates(coords)) {
+    coords = await geocodeAddress({ cep, street, city, state }, signal);
+  }
 
   return {
     cep: formatCep(cep),
-    street: data.logradouro || undefined,
+    street,
     neighborhood: data.bairro || undefined,
-    city: data.localidade || undefined,
-    state: data.uf || undefined,
+    city,
+    state,
     ...coords,
   };
 }
