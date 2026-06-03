@@ -40,8 +40,8 @@ const COLUMNS: GridColumn[] = [
     placeholder: "linkedin.com/company/acme",
   },
   { key: "address", header: "Endereço (CEP)", kind: "address" },
-  { key: "arr", header: "ARR", kind: "money", placeholder: "250000" },
-  { key: "icp", header: "ICP", kind: "boolean" },
+  { key: "arr", header: "RRA", kind: "money", placeholder: "250000" },
+  { key: "icp", header: "PCI", kind: "boolean" },
   {
     key: "accountOwnerId",
     header: "Responsável pela conta",
