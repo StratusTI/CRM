@@ -29,6 +29,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { useScheduledPosts } from "@/src/hooks/use-scheduled-posts";
 import { useSocialConnections } from "@/src/hooks/use-social-connections";
 import {
+  INSTAGRAM_POST_TYPE_LABELS,
+  type InstagramPostType,
+} from "@/src/schemas/instagram.schema";
+import {
+  INSTAGRAM_POST_TYPE_MEDIA,
   PLATFORM_MEDIA_REQUIREMENT,
   PLATFORM_TEXT_LIMIT,
   PUBLISHABLE_PLATFORMS,
@@ -96,6 +101,7 @@ function Composer({
   const [scheduledFor, setScheduledFor] = useState("");
   const [youtubePrivacy, setYoutubePrivacy] = useState("public");
   const [tiktokPrivacy, setTiktokPrivacy] = useState("SELF_ONLY");
+  const [igPostType, setIgPostType] = useState<InstagramPostType>("FEED");
   const [submitting, setSubmitting] = useState(false);
 
   const platforms = useMemo(() => [...selected], [selected]);
@@ -103,6 +109,7 @@ function Composer({
   const hasVideo = files.some((f) => f.type.startsWith("video/"));
   const needsYoutube = selected.has("YOUTUBE");
   const needsTiktok = selected.has("TIKTOK");
+  const needsInstagram = selected.has("INSTAGRAM");
 
   // Limite de texto = o menor entre as plataformas selecionadas.
   const textLimit = platforms.length
@@ -123,6 +130,16 @@ function Composer({
     if (content.length > textLimit)
       return `O texto excede o limite de ${textLimit} caracteres.`;
     for (const p of platforms) {
+      if (p === "INSTAGRAM") {
+        const igReq = INSTAGRAM_POST_TYPE_MEDIA[igPostType];
+        if (igReq === "image" && !hasImage)
+          return `${INSTAGRAM_POST_TYPE_LABELS[igPostType]} no Instagram exige uma imagem.`;
+        if (igReq === "video" && !hasVideo)
+          return `${INSTAGRAM_POST_TYPE_LABELS[igPostType]} no Instagram exige um vídeo.`;
+        if (igReq === "either" && !hasImage && !hasVideo)
+          return `${INSTAGRAM_POST_TYPE_LABELS[igPostType]} no Instagram exige uma imagem ou vídeo.`;
+        continue;
+      }
       const req = PLATFORM_MEDIA_REQUIREMENT[p];
       if (req === "image" && !hasImage)
         return `${SOCIAL_PLATFORM_LABELS[p]} exige uma imagem.`;
@@ -158,6 +175,7 @@ function Composer({
       scheduledFor:
         mode === "schedule" ? new Date(scheduledFor).toISOString() : undefined,
       options: {
+        instagram: needsInstagram ? { postType: igPostType } : undefined,
         youtube: needsYoutube
           ? {
               privacy: youtubePrivacy as "private" | "unlisted" | "public",
@@ -193,6 +211,7 @@ function Composer({
     setTitle("");
     setFiles([]);
     setScheduledFor("");
+    setIgPostType("FEED");
     if (fileRef.current) fileRef.current.value = "";
     onCreated();
   }
@@ -252,6 +271,39 @@ function Composer({
             </p>
           )}
         </div>
+
+        {/* Modelo de post (Instagram) */}
+        {needsInstagram && (
+          <div className="space-y-2">
+            <Label>Modelo de post (Instagram)</Label>
+            <Select
+              value={igPostType}
+              onValueChange={(v) => v && setIgPostType(v as InstagramPostType)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="FEED">
+                  {INSTAGRAM_POST_TYPE_LABELS.FEED}
+                </SelectItem>
+                <SelectItem value="REELS">
+                  {INSTAGRAM_POST_TYPE_LABELS.REELS}
+                </SelectItem>
+                <SelectItem value="STORIES">
+                  {INSTAGRAM_POST_TYPE_LABELS.STORIES}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-muted-foreground text-xs">
+              {igPostType === "FEED" &&
+                "Publicação no feed — exige uma imagem."}
+              {igPostType === "REELS" && "Reels — exige um arquivo de vídeo."}
+              {igPostType === "STORIES" &&
+                "Stories (24h) — aceita imagem ou vídeo; a legenda é ignorada."}
+            </p>
+          </div>
+        )}
 
         {/* Título (YouTube) */}
         {needsYoutube && (

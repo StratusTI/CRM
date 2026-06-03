@@ -69,12 +69,31 @@ export const InstagramInsightsSchema = z.object({
 export type InstagramInsights = z.infer<typeof InstagramInsightsSchema>;
 
 /**
- * Conteúdo da publicação. A imagem (obrigatória — o IG não publica sem mídia)
+ * Modelo de publicação no Instagram. O Graph API distingue três formatos, cada
+ * um exigindo uma mídia diferente:
+ * - `FEED`: foto no feed (imagem).
+ * - `REELS`: vídeo curto (`media_type=REELS`, exige vídeo).
+ * - `STORIES`: story de 24h (`media_type=STORIES`, aceita imagem ou vídeo).
+ */
+export const InstagramPostTypeSchema = z.enum(["FEED", "REELS", "STORIES"]);
+export type InstagramPostType = z.infer<typeof InstagramPostTypeSchema>;
+
+/** Rótulos em PT-BR para a UI. */
+export const INSTAGRAM_POST_TYPE_LABELS: Record<InstagramPostType, string> = {
+  FEED: "Publicação (feed)",
+  REELS: "Reels",
+  STORIES: "Stories",
+};
+
+/**
+ * Conteúdo da publicação. A mídia (obrigatória — o IG não publica sem mídia)
  * NÃO entra aqui — vem como `File` no `multipart/form-data` e é validada na
- * rota; este schema valida só a legenda. Limite de 2200 chars na API.
+ * rota; este schema valida a legenda e o modelo de post. Limite de 2200 chars
+ * na API (legenda é ignorada em `STORIES`).
  */
 export const PublishInstagramPostSchema = z.object({
   caption: z.string().trim().max(2200).default(""),
+  postType: InstagramPostTypeSchema.default("FEED"),
 });
 
 export type PublishInstagramPostInput = z.infer<

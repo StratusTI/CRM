@@ -15,8 +15,10 @@ import {
   type MediaSeed,
   ScheduledPostRepository,
 } from "@/src/repositories/scheduled-post.repository";
+import type { InstagramPostType } from "@/src/schemas/instagram.schema";
 import {
   type CreateScheduledPostInput,
+  INSTAGRAM_POST_TYPE_MEDIA,
   PLATFORM_MEDIA_REQUIREMENT,
   PLATFORM_TEXT_LIMIT,
   type PublishablePlatform,
@@ -47,11 +49,48 @@ function validateRequirements(
   content: string,
   title: string | null,
   media: { kind: "IMAGE" | "VIDEO" }[],
+  igPostType: InstagramPostType,
 ): Result<true> {
   const hasImage = media.some((m) => m.kind === "IMAGE");
   const hasVideo = media.some((m) => m.kind === "VIDEO");
 
   for (const platform of platforms) {
+    // Instagram: o requisito de mídia varia conforme o modelo de post.
+    if (platform === "INSTAGRAM") {
+      const igReq = INSTAGRAM_POST_TYPE_MEDIA[igPostType];
+      if (igReq === "image" && !hasImage) {
+        return err(
+          scheduledPostInvalid("Publicação no Instagram exige uma imagem.", {
+            platform,
+          }),
+        );
+      }
+      if (igReq === "video" && !hasVideo) {
+        return err(
+          scheduledPostInvalid("Reels do Instagram exige um vídeo.", {
+            platform,
+          }),
+        );
+      }
+      if (igReq === "either" && !hasImage && !hasVideo) {
+        return err(
+          scheduledPostInvalid(
+            "Stories do Instagram exige uma imagem ou vídeo.",
+            { platform },
+          ),
+        );
+      }
+      if (content.length > PLATFORM_TEXT_LIMIT.INSTAGRAM) {
+        return err(
+          scheduledPostInvalid(
+            `O texto excede o limite de ${PLATFORM_TEXT_LIMIT.INSTAGRAM} caracteres do INSTAGRAM.`,
+            { platform },
+          ),
+        );
+      }
+      continue;
+    }
+
     const requirement = PLATFORM_MEDIA_REQUIREMENT[platform];
     if (requirement === "image" && !hasImage) {
       return err(
@@ -118,12 +157,37 @@ async function publishTarget(
 
   switch (platform) {
     case "INSTAGRAM": {
-      if (!ctx.image) return err(scheduledPostInvalid("Imagem ausente."));
+      const postType = options?.instagram?.postType ?? "FEED";
+      // Escolhe a mídia conforme o modelo: reels → vídeo; feed → imagem;
+      // stories → imagem se houver, senão vídeo.
+      let media: {
+        bytes: ArrayBuffer;
+        contentType: string;
+        kind: "IMAGE" | "VIDEO";
+      } | null = null;
+      if (postType === "REELS") {
+        media = ctx.video ? { ...ctx.video, kind: "VIDEO" } : null;
+      } else if (postType === "STORIES") {
+        media = ctx.image
+          ? { ...ctx.image, kind: "IMAGE" }
+          : ctx.video
+            ? { ...ctx.video, kind: "VIDEO" }
+            : null;
+      } else {
+        media = ctx.image ? { ...ctx.image, kind: "IMAGE" } : null;
+      }
+      if (!media) {
+        return err(
+          scheduledPostInvalid(
+            "Mídia ausente para o modelo de post do Instagram.",
+          ),
+        );
+      }
       const r = await InstagramService.publishPost(
         ctx.userId,
         ctx.slug,
-        { caption: ctx.content },
-        ctx.image,
+        { caption: ctx.content, postType },
+        media,
       );
       return r.ok ? ok({ externalId: r.value.postId }) : r;
     }
@@ -322,6 +386,7 @@ export const ScheduledPostService = {
       input.content,
       title,
       media,
+      input.options.instagram?.postType ?? "FEED",
     );
     if (!valid.ok) return valid;
 
