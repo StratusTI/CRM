@@ -130,6 +130,9 @@ export function RecordPanel<T extends WithId>({
                     col={col}
                     value={values[col.key]}
                     commit={(v) => setValue(col.key, v)}
+                    autofill={(fields) =>
+                      setValues((cur) => ({ ...cur, ...fields }))
+                    }
                     slug={slug}
                     lookups={lookups}
                   />

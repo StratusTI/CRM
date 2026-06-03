@@ -80,6 +80,10 @@ export const companyDomainTaken = (
   message = "Já existe uma empresa com este domínio nesta workspace",
 ): AppError => appError("COMPANY_DOMAIN_TAKEN", message);
 
+export const companyCnpjTaken = (
+  message = "Já existe uma empresa com este CNPJ nesta workspace",
+): AppError => appError("COMPANY_CNPJ_TAKEN", message);
+
 export const personNotFound = (message = "Pessoa não encontrada"): AppError =>
   appError("PERSON_NOT_FOUND", message);
 
@@ -228,6 +232,30 @@ export const proposalForbidden = (
 export const proposalNotPublished = (
   message = "Esta proposta não está disponível",
 ): AppError => appError("PROPOSAL_NOT_PUBLISHED", message);
+
+export const landingPageNotFound = (
+  message = "Página não encontrada",
+): AppError => appError("LANDING_PAGE_NOT_FOUND", message);
+
+export const landingPageNotPublished = (
+  message = "Esta página não está disponível",
+): AppError => appError("LANDING_PAGE_NOT_PUBLISHED", message);
+
+export const landingPageSlugTaken = (
+  message = "Já existe uma página com este slug nesta workspace",
+): AppError => appError("LANDING_PAGE_SLUG_TAKEN", message);
+
+export const formNotFound = (message = "Formulário não encontrado"): AppError =>
+  appError("FORM_NOT_FOUND", message);
+
+export const formNotPublished = (
+  message = "Este formulário não está disponível",
+): AppError => appError("FORM_NOT_PUBLISHED", message);
+
+export const formFieldInvalid = (
+  message = "Configuração de campo inválida",
+  details?: unknown,
+): AppError => appError("FORM_FIELD_INVALID", message, details);
 
 export const aiNotConfigured = (
   message = "Assistente de IA não configurado. Falta a OPENAI_API_KEY no servidor.",

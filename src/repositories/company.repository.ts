@@ -1,16 +1,19 @@
 import type { Company } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { databaseError } from "@/src/errors/app-error";
 import { prisma } from "@/src/lib/prisma";
 import { err, ok, type Result } from "@/src/lib/result";
+import type { CompanyAddress } from "@/src/schemas/company.schema";
 
 export type CreateCompanyData = {
   workspaceId: string;
   createdById: string;
   name: string;
+  cnpj: string | null;
   domain: string | null;
   employees: number | null;
   linkedin: string | null;
-  address: string | null;
+  address: CompanyAddress | null;
   arr: number | null;
   icp: boolean;
   accountOwnerId: string | null;
@@ -19,14 +22,27 @@ export type CreateCompanyData = {
 export type UpdateCompanyData = {
   updatedById: string;
   name?: string;
+  cnpj?: string | null;
   domain?: string | null;
   employees?: number | null;
   linkedin?: string | null;
-  address?: string | null;
+  address?: CompanyAddress | null;
   arr?: number | null;
   icp?: boolean;
   accountOwnerId?: string | null;
 };
+
+/**
+ * Traduz o endereço para o input de coluna JSON do Prisma: `undefined` mantém
+ * o valor atual (omitido), `null` grava NULL no banco (`Prisma.DbNull`).
+ */
+function toAddressInput(
+  address: CompanyAddress | null | undefined,
+): Prisma.InputJsonValue | typeof Prisma.DbNull | undefined {
+  if (address === undefined) return undefined;
+  if (address === null) return Prisma.DbNull;
+  return address as Prisma.InputJsonValue;
+}
 
 /** Acesso a dados de empresa. Sem regra de negócio — só Prisma. */
 export const CompanyRepository = {
@@ -35,10 +51,11 @@ export const CompanyRepository = {
       const company = await prisma.company.create({
         data: {
           name: data.name,
+          cnpj: data.cnpj,
           domain: data.domain,
           employees: data.employees,
           linkedin: data.linkedin,
-          address: data.address,
+          address: toAddressInput(data.address),
           arr: data.arr,
           icp: data.icp,
           workspaceId: data.workspaceId,
@@ -127,12 +144,69 @@ export const CompanyRepository = {
     }
   },
 
+  /** Empresa não-deletada com este domínio na workspace (ou `null`). */
+  async findByDomain(
+    workspaceId: string,
+    domain: string,
+  ): Promise<Result<Company | null>> {
+    try {
+      const company = await prisma.company.findFirst({
+        where: { workspaceId, domain, deletedAt: null },
+        orderBy: { createdAt: "desc" },
+      });
+      return ok(company);
+    } catch {
+      return err(databaseError());
+    }
+  },
+
+  /** Empresa não-deletada com este CNPJ na workspace (ou `null`). */
+  async findByCnpj(
+    workspaceId: string,
+    cnpj: string,
+  ): Promise<Result<Company | null>> {
+    try {
+      const company = await prisma.company.findFirst({
+        where: { workspaceId, cnpj, deletedAt: null },
+        orderBy: { createdAt: "desc" },
+      });
+      return ok(company);
+    } catch {
+      return err(databaseError());
+    }
+  },
+
+  /** Existe empresa não-deletada com este CNPJ na workspace? (`excludeId` ignora a própria). */
+  async existsByCnpj(
+    workspaceId: string,
+    cnpj: string,
+    excludeId?: string,
+  ): Promise<Result<boolean>> {
+    try {
+      const count = await prisma.company.count({
+        where: {
+          workspaceId,
+          cnpj,
+          deletedAt: null,
+          ...(excludeId && { id: { not: excludeId } }),
+        },
+      });
+      return ok(count > 0);
+    } catch {
+      return err(databaseError());
+    }
+  },
+
   async update(id: string, data: UpdateCompanyData): Promise<Result<Company>> {
     try {
-      const { updatedById, ...fields } = data;
+      const { updatedById, address, ...fields } = data;
       const company = await prisma.company.update({
         where: { id },
-        data: { ...fields, updatedById },
+        data: {
+          ...fields,
+          ...("address" in data ? { address: toAddressInput(address) } : {}),
+          updatedById,
+        },
       });
       return ok(company);
     } catch {

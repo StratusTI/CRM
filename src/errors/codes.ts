@@ -31,6 +31,7 @@ export const ERROR_CODES = {
   // Company domain
   COMPANY_NOT_FOUND: { code: "COMPANY_NOT_FOUND", status: 404 },
   COMPANY_DOMAIN_TAKEN: { code: "COMPANY_DOMAIN_TAKEN", status: 409 },
+  COMPANY_CNPJ_TAKEN: { code: "COMPANY_CNPJ_TAKEN", status: 409 },
 
   // Person / Opportunity / Task / Note domain
   PERSON_NOT_FOUND: { code: "PERSON_NOT_FOUND", status: 404 },
@@ -106,6 +107,19 @@ export const ERROR_CODES = {
   PROPOSAL_NOT_FOUND: { code: "PROPOSAL_NOT_FOUND", status: 404 },
   PROPOSAL_FORBIDDEN: { code: "PROPOSAL_FORBIDDEN", status: 403 },
   PROPOSAL_NOT_PUBLISHED: { code: "PROPOSAL_NOT_PUBLISHED", status: 404 },
+
+  // Landing page domain
+  LANDING_PAGE_NOT_FOUND: { code: "LANDING_PAGE_NOT_FOUND", status: 404 },
+  LANDING_PAGE_NOT_PUBLISHED: {
+    code: "LANDING_PAGE_NOT_PUBLISHED",
+    status: 404,
+  },
+  LANDING_PAGE_SLUG_TAKEN: { code: "LANDING_PAGE_SLUG_TAKEN", status: 409 },
+
+  // Form domain
+  FORM_NOT_FOUND: { code: "FORM_NOT_FOUND", status: 404 },
+  FORM_NOT_PUBLISHED: { code: "FORM_NOT_PUBLISHED", status: 404 },
+  FORM_FIELD_INVALID: { code: "FORM_FIELD_INVALID", status: 422 },
 
   // AI assistant domain
   AI_NOT_CONFIGURED: { code: "AI_NOT_CONFIGURED", status: 503 },

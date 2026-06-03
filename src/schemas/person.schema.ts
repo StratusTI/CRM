@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { normalizedUrl } from "@/src/schemas/shared";
+import { normalizeBrazilPhone, normalizedUrl } from "@/src/schemas/shared";
 
 /** Contrato da feature Person (create / update / list / get / soft-delete). */
 
@@ -14,7 +14,14 @@ const EmailsSchema = z
   .max(20, "No máximo 20 e-mails");
 
 const PhonesSchema = z
-  .array(z.string().trim().min(1, "Telefone inválido").max(40))
+  .array(
+    z
+      .string()
+      .trim()
+      .min(1, "Telefone inválido")
+      .max(40)
+      .transform(normalizeBrazilPhone),
+  )
   .max(20, "No máximo 20 telefones");
 
 const CitySchema = z.string().trim().max(120, "Cidade muito longa");

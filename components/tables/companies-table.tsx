@@ -14,11 +14,16 @@ const LOOKUP_KINDS: LookupKind[] = ["users"];
 
 const COLUMNS: GridColumn[] = [
   {
+    key: "cnpj",
+    header: "CNPJ",
+    kind: "cnpj",
+    primary: true,
+    placeholder: "00.000.000/0000-00",
+  },
+  {
     key: "name",
     header: "Nome",
     kind: "text",
-    required: true,
-    primary: true,
     placeholder: "Acme Inc",
   },
   { key: "domain", header: "Domínio", kind: "link", placeholder: "acme.com" },
@@ -34,7 +39,7 @@ const COLUMNS: GridColumn[] = [
     kind: "link",
     placeholder: "linkedin.com/company/acme",
   },
-  { key: "address", header: "Endereço", kind: "text" },
+  { key: "address", header: "Endereço (CEP)", kind: "address" },
   { key: "arr", header: "ARR", kind: "money", placeholder: "250000" },
   { key: "icp", header: "ICP", kind: "boolean" },
   {

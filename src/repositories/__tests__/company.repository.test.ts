@@ -18,10 +18,11 @@ describe("CompanyRepository (integração)", () => {
       workspaceId: workspace.id,
       createdById: owner.id,
       name: "Acme",
+      cnpj: "11222333000181",
       domain: "acme.com",
       employees: 50,
       linkedin: "https://linkedin.com/company/acme",
-      address: "Rua 1",
+      address: { cep: "01310-100", street: "Av. Paulista", city: "São Paulo" },
       arr: 120000,
       icp: true,
       accountOwnerId: owner.id,
@@ -30,9 +31,15 @@ describe("CompanyRepository (integração)", () => {
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.value.name).toBe("Acme");
+      expect(result.value.cnpj).toBe("11222333000181");
       expect(result.value.workspaceId).toBe(workspace.id);
       expect(result.value.arr?.toString()).toBe("120000");
       expect(result.value.icp).toBe(true);
+      expect(result.value.address).toEqual({
+        cep: "01310-100",
+        street: "Av. Paulista",
+        city: "São Paulo",
+      });
     }
   });
 
@@ -76,6 +83,33 @@ describe("CompanyRepository (integração)", () => {
     const afterDelete = await CompanyRepository.existsByDomain(
       workspace.id,
       "dup.com",
+    );
+    expect(afterDelete.ok && afterDelete.value).toBe(false);
+  });
+
+  it("existsByCnpj respeita workspace, soft-delete e excludeId", async () => {
+    const { owner, workspace } = await workspaceAndOwner();
+    const company = await createCompany(workspace.id, owner.id, {
+      cnpj: "11222333000181",
+    });
+
+    const exists = await CompanyRepository.existsByCnpj(
+      workspace.id,
+      "11222333000181",
+    );
+    expect(exists.ok && exists.value).toBe(true);
+
+    const excludingSelf = await CompanyRepository.existsByCnpj(
+      workspace.id,
+      "11222333000181",
+      company.id,
+    );
+    expect(excludingSelf.ok && excludingSelf.value).toBe(false);
+
+    await CompanyRepository.softDelete(company.id, owner.id);
+    const afterDelete = await CompanyRepository.existsByCnpj(
+      workspace.id,
+      "11222333000181",
     );
     expect(afterDelete.ok && afterDelete.value).toBe(false);
   });

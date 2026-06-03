@@ -63,6 +63,56 @@ describe("CreateCompanySchema", () => {
       CreateCompanySchema.safeParse({ name: "Acme", linkedin: "acme" }).success,
     ).toBe(false);
   });
+
+  it("aceita endereço estruturado e normaliza UF/coordenadas", () => {
+    const result = CreateCompanySchema.safeParse({
+      name: "Acme",
+      address: {
+        cep: "01310-100",
+        street: "Av. Paulista",
+        city: "São Paulo",
+        state: "sp",
+        latitude: "-23.5615",
+        longitude: -46.6562,
+      },
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.address?.state).toBe("SP");
+      expect(result.data.address?.latitude).toBe(-23.5615);
+      expect(result.data.address?.longitude).toBe(-46.6562);
+    }
+  });
+
+  it("descarta campos de endereço vazios", () => {
+    const result = CreateCompanySchema.safeParse({
+      name: "Acme",
+      address: { cep: "01310-100", street: "", state: "" },
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.address?.cep).toBe("01310-100");
+      expect(result.data.address?.street).toBeUndefined();
+      expect(result.data.address?.state).toBeUndefined();
+    }
+  });
+
+  it("aceita criação só com CNPJ (nome opcional) e armazena só dígitos", () => {
+    const result = CreateCompanySchema.safeParse({
+      cnpj: "11.222.333/0001-81",
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.cnpj).toBe("11222333000181");
+      expect(result.data.name).toBeUndefined();
+    }
+  });
+
+  it("rejeita CNPJ inválido", () => {
+    expect(
+      CreateCompanySchema.safeParse({ cnpj: "11.222.333/0001-80" }).success,
+    ).toBe(false);
+  });
 });
 
 describe("UpdateCompanySchema", () => {

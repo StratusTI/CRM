@@ -1,5 +1,6 @@
 import type { Company } from "@prisma/client";
 import {
+  companyCnpjTaken,
   companyDomainTaken,
   companyNotFound,
   workspaceNotFound,
@@ -62,10 +63,17 @@ export const CompanyService = {
       if (exists.value) return err(companyDomainTaken());
     }
 
+    if (input.cnpj) {
+      const exists = await CompanyRepository.existsByCnpj(ws.value, input.cnpj);
+      if (!exists.ok) return exists;
+      if (exists.value) return err(companyCnpjTaken());
+    }
+
     const created = await CompanyRepository.create({
       workspaceId: ws.value,
       createdById: userId,
-      name: input.name,
+      name: input.name ?? "",
+      cnpj: input.cnpj ?? null,
       domain: input.domain ?? null,
       employees: input.employees ?? null,
       linkedin: input.linkedin ?? null,
@@ -132,6 +140,17 @@ export const CompanyService = {
       );
       if (!taken.ok) return taken;
       if (taken.value) return err(companyDomainTaken());
+    }
+
+    // CNPJ idem: só checa unicidade quando muda para um valor não-nulo.
+    if (input.cnpj && input.cnpj !== existing.value.cnpj) {
+      const taken = await CompanyRepository.existsByCnpj(
+        ws.value,
+        input.cnpj,
+        companyId,
+      );
+      if (!taken.ok) return taken;
+      if (taken.value) return err(companyCnpjTaken());
     }
 
     const updated = await CompanyRepository.update(companyId, {
