@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { DataTable } from "@/components/data-table";
+import { FormStatsPanel } from "@/components/forms/form-stats-panel";
 import { PageShell } from "@/components/page-shell";
 import type { GridColumn } from "@/components/tables/grid";
 import { Button } from "@/components/ui/button";
@@ -83,6 +84,8 @@ export function FormsTable({ slug }: { slug: string }) {
   const { items, isLoading, refetch } = useResourceList<FormDTO>(slug, "forms");
   const { lookups } = useWorkspaceLookups(slug, LOOKUP_KINDS);
   const [creating, setCreating] = useState(false);
+  // Formulário cujo painel de respostas está aberto (botão de menu lateral da linha).
+  const [statsForm, setStatsForm] = useState<FormDTO | null>(null);
 
   const onCreate = async () => {
     setCreating(true);
@@ -116,8 +119,20 @@ export function FormsTable({ slug }: { slug: string }) {
             Novo formulário
           </Button>
         }
-        onOpenRecord={(record) => router.push(`/${slug}/forms/${record.id}`)}
+        onOpenRecord={(record) => setStatsForm(record)}
       />
+      {statsForm ? (
+        <FormStatsPanel
+          open
+          onOpenChange={(next) => {
+            if (!next) setStatsForm(null);
+          }}
+          slug={slug}
+          formId={statsForm.id}
+          formName={statsForm.name}
+          fields={statsForm.fields}
+        />
+      ) : null}
     </PageShell>
   );
 }

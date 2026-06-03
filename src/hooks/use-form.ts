@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { apiUrl } from "@/lib/api-url";
+import type { FormSubmissionDTO } from "@/src/mappers/form.mapper";
 import type { FormDTO, UpdateFormInput } from "@/src/schemas/form.schema";
 
 type ApiResponse<T> = { success: boolean; data?: T; message?: string };
@@ -39,6 +40,37 @@ export function useForm(slug: string, id: string) {
   }, [refetch]);
 
   return { form, setForm, isLoading, error, refetch };
+}
+
+/** Carrega as submissões de um formulário (para o painel de estatísticas). */
+export function useFormSubmissions(slug: string, id: string, enabled = true) {
+  const [submissions, setSubmissions] = useState<FormSubmissionDTO[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const refetch = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`${baseUrl(slug, id)}/submissions`);
+      const json = (await res.json()) as ApiResponse<FormSubmissionDTO[]>;
+      if (!res.ok || !json.success || !json.data) {
+        setError(json?.message ?? "Não foi possível carregar as respostas.");
+        return;
+      }
+      setSubmissions(json.data);
+    } catch {
+      setError("Erro de rede. Tente novamente.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [slug, id]);
+
+  useEffect(() => {
+    if (enabled) refetch();
+  }, [enabled, refetch]);
+
+  return { submissions, isLoading, error, refetch };
 }
 
 export type SaveFormResult = { ok: boolean; data?: FormDTO; message?: string };

@@ -8,8 +8,10 @@ import {
 import { err, ok, type Result } from "@/src/lib/result";
 import {
   type FormSubmissionDTO,
+  type FormSubmissionRow,
   toFormDTO,
   toFormSubmissionDTO,
+  toFormSubmissionRow,
   toPublicFormDTO,
 } from "@/src/mappers/form.mapper";
 import {
@@ -179,6 +181,19 @@ export const FormService = {
     const submissions = await FormRepository.listSubmissions(id);
     if (!submissions.ok) return submissions;
     return ok(submissions.value.map(toFormSubmissionDTO));
+  },
+
+  /** Linhas planas de todas as submissões do workspace (fonte de dashboard). */
+  async listWorkspaceSubmissions(
+    userId: string,
+    slug: string,
+  ): Promise<Result<FormSubmissionRow[]>> {
+    const ws = await resolveWorkspaceId(userId, slug);
+    if (!ws.ok) return ws;
+
+    const rows = await FormRepository.listSubmissionsByWorkspace(ws.value);
+    if (!rows.ok) return rows;
+    return ok(rows.value.map(toFormSubmissionRow));
   },
 
   /* --------------------------- público (sem auth) ------------------------ */

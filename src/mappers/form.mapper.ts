@@ -1,5 +1,6 @@
 import type { Form, FormSubmission } from "@prisma/client";
 import { NEXT_PUBLIC_URL } from "@/lib/env/env";
+import type { WorkspaceSubmission } from "@/src/repositories/form.repository";
 import type {
   ActionConfig,
   FormDTO,
@@ -79,6 +80,33 @@ export type FormSubmissionDTO = {
   referrer: string | null;
   createdAt: string;
 };
+
+/**
+ * Linha plana de submissão para os dashboards (1 por resposta), com o nome do
+ * formulário desnormalizado para agrupar gráficos. `createdAt` em ISO permite o
+ * motor de chart bucketizar por dia.
+ */
+export type FormSubmissionRow = {
+  id: string;
+  form: string;
+  action: FormSubmission["action"];
+  personReused: boolean;
+  referrer: string | null;
+  createdAt: string;
+};
+
+export function toFormSubmissionRow(
+  submission: WorkspaceSubmission,
+): FormSubmissionRow {
+  return {
+    id: submission.id,
+    form: submission.form.name,
+    action: submission.action,
+    personReused: submission.personReused,
+    referrer: submission.referrer,
+    createdAt: submission.createdAt.toISOString(),
+  };
+}
 
 export function toFormSubmissionDTO(
   submission: FormSubmission,

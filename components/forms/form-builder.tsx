@@ -2,6 +2,7 @@
 
 import {
   Add01Icon,
+  Analytics01Icon,
   ArrowDown01Icon,
   ArrowLeft02Icon,
   ArrowUp01Icon,
@@ -13,6 +14,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 import { toast } from "sonner";
+import { FormStatsPanel } from "@/components/forms/form-stats-panel";
 import { PublicFormRenderer } from "@/components/forms/public-form-renderer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -206,6 +208,7 @@ function FormBuilderInner({
   const [status, setStatus] = React.useState(initial.status);
   const [saving, setSaving] = React.useState(false);
   const [publishing, setPublishing] = React.useState(false);
+  const [statsOpen, setStatsOpen] = React.useState(false);
 
   const online = status === "PUBLISHED";
   const mappingOptions = React.useMemo(
@@ -334,10 +337,33 @@ function FormBuilderInner({
             }
           />
         ) : null}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setStatsOpen(true)}
+          aria-label="Ver respostas"
+        >
+          <HugeiconsIcon icon={Analytics01Icon} strokeWidth={2} />
+          Respostas
+          {initial.submissionCount > 0 ? (
+            <span className="rounded-full bg-primary/10 px-1.5 py-0.5 font-medium text-[10px] text-primary tabular-nums">
+              {initial.submissionCount}
+            </span>
+          ) : null}
+        </Button>
         <Button size="sm" onClick={onSave} disabled={saving}>
           {saving ? "Salvando…" : "Salvar"}
         </Button>
       </header>
+
+      <FormStatsPanel
+        open={statsOpen}
+        onOpenChange={setStatsOpen}
+        slug={slug}
+        formId={initial.id}
+        formName={name}
+        fields={fields}
+      />
 
       <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
         {/* editor */}

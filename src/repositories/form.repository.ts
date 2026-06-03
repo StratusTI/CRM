@@ -204,4 +204,27 @@ export const FormRepository = {
       return err(databaseError());
     }
   },
+
+  /** Submissões de todos os formulários do workspace, com o nome do formulário. */
+  async listSubmissionsByWorkspace(
+    workspaceId: string,
+    limit = 1000,
+  ): Promise<Result<WorkspaceSubmission[]>> {
+    try {
+      const submissions = await prisma.formSubmission.findMany({
+        where: { form: { workspaceId, deletedAt: null } },
+        orderBy: { createdAt: "desc" },
+        take: limit,
+        include: { form: { select: { name: true } } },
+      });
+      return ok(submissions);
+    } catch {
+      return err(databaseError());
+    }
+  },
 };
+
+/** Submissão com o nome do formulário — base das linhas do dashboard. */
+export type WorkspaceSubmission = Prisma.FormSubmissionGetPayload<{
+  include: { form: { select: { name: true } } };
+}>;
