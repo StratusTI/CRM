@@ -9,7 +9,6 @@ import type {
   AddMailingListMembersInput,
   CreateMailingListInput,
   MailingListDTO,
-  MailingListMemberDTO,
   MailingListWithMembersDTO,
   UpdateMailingListInput,
 } from "@/src/schemas/mailing-list.schema";
