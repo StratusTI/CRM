@@ -2,6 +2,7 @@ import type { LandingPage, LandingPageMessage } from "@prisma/client";
 import type {
   LandingPageMetricsRaw,
   LandingPageWithCount,
+  WorkspaceLandingView,
 } from "@/src/repositories/landing-page.repository";
 import type {
   LandingPageDTO,
@@ -41,6 +42,32 @@ export function toPublicLandingPageDTO(
   page: LandingPage,
 ): PublicLandingPageDTO {
   return { id: page.id, title: page.title, html: page.html };
+}
+
+/**
+ * Linha plana de visita para os dashboards (1 por acesso), com o título da
+ * página desnormalizado. `createdAt` em ISO permite bucketizar por dia.
+ */
+export type LandingPageViewRow = {
+  id: string;
+  page: string;
+  ctaClicks: number;
+  durationMs: number;
+  referrer: string | null;
+  createdAt: string;
+};
+
+export function toLandingPageViewRow(
+  view: WorkspaceLandingView,
+): LandingPageViewRow {
+  return {
+    id: view.id,
+    page: view.landingPage.title,
+    ctaClicks: view.ctaClicks,
+    durationMs: view.durationMs,
+    referrer: view.referrer,
+    createdAt: view.createdAt.toISOString(),
+  };
 }
 
 /** Agregados crus → DTO de métricas. */

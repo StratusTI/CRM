@@ -3,6 +3,7 @@ import type {
   LandingPage,
   LandingPageMessage,
   LandingPageStatus,
+  Prisma,
 } from "@prisma/client";
 import { databaseError } from "@/src/errors/app-error";
 import { prisma } from "@/src/lib/prisma";
@@ -10,6 +11,11 @@ import { err, ok, type Result } from "@/src/lib/result";
 
 /** Página com o total de acessos (do `_count`), usado nas listagens. */
 export type LandingPageWithCount = LandingPage & { _count: { views: number } };
+
+/** Visita com o título da página — base das linhas do dashboard. */
+export type WorkspaceLandingView = Prisma.LandingPageViewGetPayload<{
+  include: { landingPage: { select: { title: true } } };
+}>;
 
 /** Agregados crus de acesso; o mapper compõe o DTO de métricas. */
 export type LandingPageMetricsRaw = {
@@ -115,6 +121,24 @@ export const LandingPageRepository = {
         include: { _count: { select: { views: true } } },
       });
       return ok(pages);
+    } catch {
+      return err(databaseError());
+    }
+  },
+
+  /** Visitas de todas as páginas do workspace, com o título da página. */
+  async listViewsByWorkspace(
+    workspaceId: string,
+    limit = 2000,
+  ): Promise<Result<WorkspaceLandingView[]>> {
+    try {
+      const views = await prisma.landingPageView.findMany({
+        where: { landingPage: { workspaceId, deletedAt: null } },
+        orderBy: { createdAt: "desc" },
+        take: limit,
+        include: { landingPage: { select: { title: true } } },
+      });
+      return ok(views);
     } catch {
       return err(databaseError());
     }

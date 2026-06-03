@@ -17,10 +17,12 @@ import {
 } from "@/src/lib/ai/landing-page-prompt";
 import { err, ok, type Result } from "@/src/lib/result";
 import {
+  type LandingPageViewRow,
   toLandingPageDTO,
   toLandingPageListItemDTO,
   toLandingPageMessageDTO,
   toLandingPageMetricsDTO,
+  toLandingPageViewRow,
   toPublicLandingPageDTO,
 } from "@/src/mappers/landing-page.mapper";
 import {
@@ -148,6 +150,19 @@ export const LandingPageService = {
     const result = await LandingPageRepository.listByWorkspace(ws.value);
     if (!result.ok) return result;
     return ok(result.value.map(toLandingPageListItemDTO));
+  },
+
+  /** Linhas planas de todas as visitas do workspace (fonte de dashboard). */
+  async listWorkspaceViews(
+    userId: string,
+    slug: string,
+  ): Promise<Result<LandingPageViewRow[]>> {
+    const ws = await resolveWorkspaceId(userId, slug);
+    if (!ws.ok) return ws;
+
+    const result = await LandingPageRepository.listViewsByWorkspace(ws.value);
+    if (!result.ok) return result;
+    return ok(result.value.map(toLandingPageViewRow));
   },
 
   async getById(
