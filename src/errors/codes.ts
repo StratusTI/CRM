@@ -108,6 +108,12 @@ export const ERROR_CODES = {
   PROPOSAL_FORBIDDEN: { code: "PROPOSAL_FORBIDDEN", status: 403 },
   PROPOSAL_NOT_PUBLISHED: { code: "PROPOSAL_NOT_PUBLISHED", status: 404 },
 
+  // Document template domain
+  DOCUMENT_TEMPLATE_NOT_FOUND: {
+    code: "DOCUMENT_TEMPLATE_NOT_FOUND",
+    status: 404,
+  },
+
   // Landing page domain
   LANDING_PAGE_NOT_FOUND: { code: "LANDING_PAGE_NOT_FOUND", status: 404 },
   LANDING_PAGE_NOT_PUBLISHED: {

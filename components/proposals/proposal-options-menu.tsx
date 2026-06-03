@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  BookmarkAdd02Icon,
   Copy01Icon,
   DownloadIcon,
   FilePlusIcon,
@@ -33,6 +34,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { apiUrl } from "@/lib/api-url";
+import { createDocumentTemplate } from "@/src/hooks/use-document-templates";
+import type { DocumentType } from "@/src/schemas/proposal.schema";
 
 /* ────────────────────────────── types ─────────────────────────────── */
 
@@ -40,7 +43,14 @@ type ExportFormat = "pdf" | "markdown";
 type ExportContent = "everything" | "no-images";
 type PaperSize = "A4" | "A3" | "A2" | "Letter" | "Legal" | "Tabloid";
 
-const PAPER_SIZES: PaperSize[] = ["A4", "A3", "A2", "Letter", "Legal", "Tabloid"];
+const PAPER_SIZES: PaperSize[] = [
+  "A4",
+  "A3",
+  "A2",
+  "Letter",
+  "Legal",
+  "Tabloid",
+];
 
 /* ─────────────────── HTML → Markdown converter ─────────────────────── */
 
@@ -53,28 +63,61 @@ function nodeToMd(node: Node): string {
   const inner = () => Array.from(el.childNodes).map(nodeToMd).join("");
 
   switch (tag) {
-    case "h1": return `\n# ${inner()}\n`;
-    case "h2": return `\n## ${inner()}\n`;
-    case "h3": return `\n### ${inner()}\n`;
-    case "h4": return `\n#### ${inner()}\n`;
-    case "h5": return `\n##### ${inner()}\n`;
-    case "h6": return `\n###### ${inner()}\n`;
-    case "p":  return `\n${inner()}\n`;
-    case "br": return "  \n";
-    case "strong": case "b": return `**${inner()}**`;
-    case "em": case "i": return `_${inner()}_`;
-    case "s":  return `~~${inner()}~~`;
-    case "code": return el.closest("pre") ? inner() : `\`${inner()}\``;
-    case "pre":  return `\n\`\`\`\n${inner()}\n\`\`\`\n`;
-    case "blockquote": return inner().split("\n").map((l) => `> ${l}`).join("\n") + "\n";
-    case "hr":  return "\n---\n";
-    case "a":   return `[${inner()}](${el.getAttribute("href") ?? ""})`;
-    case "img": return `![${el.getAttribute("alt") ?? ""}](${el.getAttribute("src") ?? ""})`;
-    case "ul":  return `\n${Array.from(el.children).map((li) => `- ${nodeToMd(li).trim()}`).join("\n")}\n`;
-    case "ol":  return `\n${Array.from(el.children).map((li, i) => `${i + 1}. ${nodeToMd(li).trim()}`).join("\n")}\n`;
-    case "li":  return `${inner()}\n`;
-    case "table": return tableToMd(el);
-    default:    return inner();
+    case "h1":
+      return `\n# ${inner()}\n`;
+    case "h2":
+      return `\n## ${inner()}\n`;
+    case "h3":
+      return `\n### ${inner()}\n`;
+    case "h4":
+      return `\n#### ${inner()}\n`;
+    case "h5":
+      return `\n##### ${inner()}\n`;
+    case "h6":
+      return `\n###### ${inner()}\n`;
+    case "p":
+      return `\n${inner()}\n`;
+    case "br":
+      return "  \n";
+    case "strong":
+    case "b":
+      return `**${inner()}**`;
+    case "em":
+    case "i":
+      return `_${inner()}_`;
+    case "s":
+      return `~~${inner()}~~`;
+    case "code":
+      return el.closest("pre") ? inner() : `\`${inner()}\``;
+    case "pre":
+      return `\n\`\`\`\n${inner()}\n\`\`\`\n`;
+    case "blockquote":
+      return (
+        inner()
+          .split("\n")
+          .map((l) => `> ${l}`)
+          .join("\n") + "\n"
+      );
+    case "hr":
+      return "\n---\n";
+    case "a":
+      return `[${inner()}](${el.getAttribute("href") ?? ""})`;
+    case "img":
+      return `![${el.getAttribute("alt") ?? ""}](${el.getAttribute("src") ?? ""})`;
+    case "ul":
+      return `\n${Array.from(el.children)
+        .map((li) => `- ${nodeToMd(li).trim()}`)
+        .join("\n")}\n`;
+    case "ol":
+      return `\n${Array.from(el.children)
+        .map((li, i) => `${i + 1}. ${nodeToMd(li).trim()}`)
+        .join("\n")}\n`;
+    case "li":
+      return `${inner()}\n`;
+    case "table":
+      return tableToMd(el);
+    default:
+      return inner();
   }
 }
 
@@ -82,7 +125,9 @@ function tableToMd(table: Element): string {
   const rows = Array.from(table.querySelectorAll("tr"));
   if (!rows.length) return "";
   const toRow = (row: Element) =>
-    `| ${Array.from(row.querySelectorAll("th,td")).map((c) => c.textContent?.trim() ?? "").join(" | ")} |`;
+    `| ${Array.from(row.querySelectorAll("th,td"))
+      .map((c) => c.textContent?.trim() ?? "")
+      .join(" | ")} |`;
   const [head, ...body] = rows;
   const headerLine = toRow(head);
   const cols = head.querySelectorAll("th,td").length;
@@ -104,7 +149,9 @@ function htmlToMarkdown(html: string): string {
 function stripMedia(html: string): string {
   const div = document.createElement("div");
   div.innerHTML = html;
-  div.querySelectorAll("img, video, audio, figure").forEach((el) => el.remove());
+  div
+    .querySelectorAll("img, video, audio, figure")
+    .forEach((el) => el.remove());
   return div.innerHTML;
 }
 
@@ -217,7 +264,7 @@ function ExportModal({
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>Exportar proposta</DialogTitle>
+          <DialogTitle>Exportar documento</DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-col gap-4">
@@ -267,7 +314,10 @@ function ExportModal({
           {format === "pdf" && (
             <div className="flex flex-col gap-1.5">
               <label className="font-medium text-sm">Tamanho do papel</label>
-              <Select value={size} onValueChange={(v) => setSize(v as PaperSize)}>
+              <Select
+                value={size}
+                onValueChange={(v) => setSize(v as PaperSize)}
+              >
                 <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
@@ -303,12 +353,27 @@ export function ProposalOptionsMenu({
   editor,
   slug,
   title,
+  type,
 }: {
   editor: Editor;
   slug: string;
   title: string;
+  type: DocumentType;
 }) {
   const [exportOpen, setExportOpen] = React.useState(false);
+
+  const saveAsTemplate = async () => {
+    const created = await createDocumentTemplate(slug, {
+      title,
+      content: editor.getHTML(),
+      type,
+    });
+    if (created) {
+      toast.success("Template salvo. Disponível ao criar novos documentos.");
+    } else {
+      toast.error("Não foi possível salvar o template.");
+    }
+  };
 
   const copyMarkdown = async () => {
     try {
@@ -357,16 +422,36 @@ export function ProposalOptionsMenu({
         />
         <DropdownMenuContent align="end" className="w-48">
           <DropdownMenuItem onClick={copyMarkdown}>
-            <HugeiconsIcon icon={Copy01Icon} strokeWidth={2} className="size-4 shrink-0" />
+            <HugeiconsIcon
+              icon={Copy01Icon}
+              strokeWidth={2}
+              className="size-4 shrink-0"
+            />
             Copiar Markdown
           </DropdownMenuItem>
           <DropdownMenuItem onClick={makeCopy}>
-            <HugeiconsIcon icon={FilePlusIcon} strokeWidth={2} className="size-4 shrink-0" />
+            <HugeiconsIcon
+              icon={FilePlusIcon}
+              strokeWidth={2}
+              className="size-4 shrink-0"
+            />
             Fazer uma cópia
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={saveAsTemplate}>
+            <HugeiconsIcon
+              icon={BookmarkAdd02Icon}
+              strokeWidth={2}
+              className="size-4 shrink-0"
+            />
+            Salvar como template
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => setExportOpen(true)}>
-            <HugeiconsIcon icon={DownloadIcon} strokeWidth={2} className="size-4 shrink-0" />
+            <HugeiconsIcon
+              icon={DownloadIcon}
+              strokeWidth={2}
+              className="size-4 shrink-0"
+            />
             Exportar
           </DropdownMenuItem>
         </DropdownMenuContent>

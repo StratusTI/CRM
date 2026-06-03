@@ -76,7 +76,7 @@ export const WORKSPACE_NAV: NavNode[] = [
     color: "bg-rose-500",
   },
   {
-    title: "Propostas",
+    title: "Documentos",
     segment: "proposals",
     icon: DocumentValidationIcon,
     color: "bg-teal-500",

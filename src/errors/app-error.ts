@@ -233,6 +233,10 @@ export const proposalNotPublished = (
   message = "Esta proposta não está disponível",
 ): AppError => appError("PROPOSAL_NOT_PUBLISHED", message);
 
+export const documentTemplateNotFound = (
+  message = "Template não encontrado",
+): AppError => appError("DOCUMENT_TEMPLATE_NOT_FOUND", message);
+
 export const landingPageNotFound = (
   message = "Página não encontrada",
 ): AppError => appError("LANDING_PAGE_NOT_FOUND", message);

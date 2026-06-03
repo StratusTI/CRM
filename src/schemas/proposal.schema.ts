@@ -14,6 +14,26 @@ import { z } from "zod";
 export const PROPOSAL_STATUSES = ["DRAFT", "PUBLISHED"] as const;
 export type ProposalStatus = (typeof PROPOSAL_STATUSES)[number];
 
+/**
+ * Tipo do documento. Apenas classificação — todos os tipos têm as mesmas
+ * capacidades; o tipo organiza/filtra e escopa os templates.
+ */
+export const DOCUMENT_TYPES = [
+  "PREMISES",
+  "PORTFOLIO",
+  "PROPOSAL",
+  "CONTRACT",
+] as const;
+export type DocumentType = (typeof DOCUMENT_TYPES)[number];
+
+/** Rótulos em PT-BR para a UI (coluna, dropdown de criação). */
+export const DOCUMENT_TYPE_LABELS: Record<DocumentType, string> = {
+  PREMISES: "Premissas",
+  PORTFOLIO: "Portfólio",
+  PROPOSAL: "Propostas",
+  CONTRACT: "Contratos",
+};
+
 const TitleSchema = z
   .string()
   .trim()
@@ -24,8 +44,12 @@ const TitleSchema = z
 const ContentSchema = z.string().max(500_000, "Documento muito grande");
 
 export const CreateProposalSchema = z.object({
-  title: TitleSchema,
+  /** Opcional: o service aplica um título padrão (ou o do template). */
+  title: TitleSchema.optional(),
   content: ContentSchema.optional(),
+  type: z.enum(DOCUMENT_TYPES).optional(),
+  /** Quando presente, o service copia o conteúdo do template (mesmo tipo). */
+  templateId: z.string().optional(),
 });
 
 /**
@@ -37,6 +61,7 @@ export const UpdateProposalSchema = z
     title: TitleSchema,
     content: ContentSchema,
     status: z.enum(PROPOSAL_STATUSES),
+    type: z.enum(DOCUMENT_TYPES),
   })
   .partial()
   .refine((data) => Object.keys(data).length > 0, {
@@ -60,6 +85,7 @@ export const ProposalOutputSchema = z.object({
   id: z.string(),
   title: z.string(),
   content: z.string(),
+  type: z.enum(DOCUMENT_TYPES),
   status: z.enum(PROPOSAL_STATUSES),
   shareToken: z.string(),
   publishedAt: z.string().nullable(),

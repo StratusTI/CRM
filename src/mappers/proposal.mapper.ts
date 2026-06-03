@@ -16,6 +16,7 @@ export function toProposalDTO(proposal: Proposal): ProposalDTO {
     id: proposal.id,
     title: proposal.title,
     content: proposal.content,
+    type: proposal.type,
     status: proposal.status,
     shareToken: proposal.shareToken,
     publishedAt:

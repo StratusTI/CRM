@@ -60,11 +60,13 @@ describe("/api/workspaces/[slug]/proposals (e2e)", () => {
     expect(json.data.shareToken.length).toBeGreaterThan(0);
   });
 
-  it("422 quando título está ausente", async () => {
+  it("cria com título padrão quando ausente (documento em branco)", async () => {
     const { user, workspace } = await memberWorkspace();
     asUser(user.id);
     const res = await POST(postRequest({}), ctx(workspace.slug));
-    expect(res.status).toBe(422);
+    expect(res.status).toBe(201);
+    const json = await res.json();
+    expect(json.data.title).toBe("Documento sem título");
   });
 
   it("GET lista as propostas com viewsCount", async () => {

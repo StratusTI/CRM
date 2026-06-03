@@ -11,6 +11,7 @@ const baseProposal: Proposal = {
   id: "p1",
   title: "Proposta",
   content: "<p>oi</p>",
+  type: "PROPOSAL",
   status: "PUBLISHED",
   shareToken: "tok-1",
   publishedAt: new Date("2026-01-02T00:00:00.000Z"),
@@ -26,6 +27,7 @@ const baseProposal: Proposal = {
 describe("toProposalDTO", () => {
   it("serializa datas em ISO e preserva nulos", () => {
     const dto = toProposalDTO(baseProposal);
+    expect(dto.type).toBe("PROPOSAL");
     expect(dto.publishedAt).toBe("2026-01-02T00:00:00.000Z");
     expect(dto.createdAt).toBe("2026-01-01T00:00:00.000Z");
     expect(dto.deletedAt).toBeNull();

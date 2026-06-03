@@ -20,6 +20,25 @@ describe("CreateProposalSchema", () => {
       false,
     );
   });
+
+  it("aceita criação sem título (default no service) com tipo e templateId", () => {
+    const parsed = CreateProposalSchema.safeParse({
+      type: "CONTRACT",
+      templateId: "tpl_1",
+    });
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data.type).toBe("CONTRACT");
+      expect(parsed.data.templateId).toBe("tpl_1");
+      expect(parsed.data.title).toBeUndefined();
+    }
+  });
+
+  it("rejeita tipo inválido", () => {
+    expect(
+      CreateProposalSchema.safeParse({ title: "X", type: "OUTRO" }).success,
+    ).toBe(false);
+  });
 });
 
 describe("UpdateProposalSchema", () => {

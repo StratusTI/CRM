@@ -18,12 +18,14 @@ describe("ProposalRepository (integração)", () => {
       createdById: owner.id,
       title: "Proposta X",
       content: "<p>oi</p>",
+      type: "PROPOSAL",
       shareToken: "tok-create-1",
     });
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.value.title).toBe("Proposta X");
       expect(result.value.workspaceId).toBe(workspace.id);
+      expect(result.value.type).toBe("PROPOSAL");
       expect(result.value.status).toBe("DRAFT");
       expect(result.value.shareToken).toBe("tok-create-1");
     }

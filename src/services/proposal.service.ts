@@ -1,6 +1,10 @@
 import { createHash, randomBytes } from "node:crypto";
-import type { Proposal } from "@prisma/client";
-import { proposalNotFound, proposalNotPublished } from "@/src/errors/app-error";
+import type { DocumentType, Proposal } from "@prisma/client";
+import {
+  documentTemplateNotFound,
+  proposalNotFound,
+  proposalNotPublished,
+} from "@/src/errors/app-error";
 import { err, ok, type Result } from "@/src/lib/result";
 import {
   toProposalDTO,
@@ -8,6 +12,7 @@ import {
   toProposalMetricsDTO,
   toPublicProposalDTO,
 } from "@/src/mappers/proposal.mapper";
+import { DocumentTemplateRepository } from "@/src/repositories/document-template.repository";
 import {
   ProposalRepository,
   type UpdateProposalData,
@@ -61,11 +66,34 @@ export const ProposalService = {
     const ws = await resolveWorkspaceId(userId, slug);
     if (!ws.ok) return ws;
 
+    const type: DocumentType = input.type ?? "PROPOSAL";
+    let title = input.title ?? "Documento sem título";
+    let content = input.content ?? "";
+
+    // Criação a partir de um template: copia o conteúdo (e o título, se o
+    // cliente não enviou um). O template precisa ser do mesmo workspace e tipo.
+    if (input.templateId) {
+      const found = await DocumentTemplateRepository.findById(input.templateId);
+      if (!found.ok) return found;
+      const template = found.value;
+      if (
+        !template ||
+        template.workspaceId !== ws.value ||
+        template.type !== type ||
+        template.deletedAt
+      ) {
+        return err(documentTemplateNotFound());
+      }
+      content = template.content;
+      if (!input.title) title = template.title;
+    }
+
     const created = await ProposalRepository.create({
       workspaceId: ws.value,
       createdById: userId,
-      title: input.title,
-      content: input.content ?? "",
+      title,
+      content,
+      type,
       shareToken: makeShareToken(),
     });
     if (!created.ok) return created;

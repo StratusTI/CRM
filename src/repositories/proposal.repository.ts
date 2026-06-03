@@ -1,4 +1,9 @@
-import type { Proposal, ProposalStatus, ProposalView } from "@prisma/client";
+import type {
+  DocumentType,
+  Proposal,
+  ProposalStatus,
+  ProposalView,
+} from "@prisma/client";
 import { databaseError } from "@/src/errors/app-error";
 import { prisma } from "@/src/lib/prisma";
 import { err, ok, type Result } from "@/src/lib/result";
@@ -20,6 +25,7 @@ export type CreateProposalData = {
   createdById: string;
   title: string;
   content: string;
+  type: DocumentType;
   shareToken: string;
 };
 
@@ -27,6 +33,7 @@ export type UpdateProposalData = {
   updatedById: string;
   title?: string;
   content?: string;
+  type?: DocumentType;
   status?: ProposalStatus;
   publishedAt?: Date | null;
 };

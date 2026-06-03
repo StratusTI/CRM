@@ -20,8 +20,8 @@ import { analyzeDoc, type DocStats } from "@/components/rich-text/analyze";
 import { RICH_TEXT_EXTENSIONS } from "@/components/rich-text/tiptap-extensions";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
 import { withBasePath } from "@/lib/api-url";
+import { cn } from "@/lib/utils";
 import { saveProposal, useProposal } from "@/src/hooks/use-proposal";
 import type {
   ProposalDTO,
@@ -63,7 +63,7 @@ export function ProposalEditor({
   if (error || !proposal) {
     return (
       <div className="flex h-full items-center justify-center text-muted-foreground text-sm">
-        {error ?? "Proposta não encontrada."}
+        {error ?? "Documento não encontrado."}
       </div>
     );
   }
@@ -106,7 +106,7 @@ function ProposalEditorInner({
         const toSave = pending.current;
         pending.current = {};
         const saved = await saveProposal(slug, initial.id, toSave);
-        if (!saved) toast.error("Não foi possível salvar a proposta.");
+        if (!saved) toast.error("Não foi possível salvar o documento.");
       }, 600);
     },
     [slug, initial.id],
@@ -154,7 +154,7 @@ function ProposalEditorInner({
     const saved = await saveProposal(slug, initial.id, { status: next });
     setPublishing(false);
     if (saved) {
-      toast.success(online ? "Proposta publicada" : "Proposta despublicada");
+      toast.success(online ? "Documento publicado" : "Documento despublicado");
     } else {
       setStatus(online ? "DRAFT" : "PUBLISHED"); // reverte otimismo
       toast.error("Não foi possível alterar a publicação.");
@@ -183,8 +183,8 @@ function ProposalEditorInner({
         <input
           value={title}
           onChange={(e) => onTitleChange(e.target.value)}
-          placeholder="Proposta sem título"
-          aria-label="Título da proposta"
+          placeholder="Documento sem título"
+          aria-label="Título do documento"
           className="min-w-0 flex-1 bg-transparent font-semibold text-sm outline-none placeholder:text-muted-foreground/60"
         />
         <span
@@ -223,7 +223,12 @@ function ProposalEditorInner({
           />
         ) : null}
         {editor ? (
-          <ProposalOptionsMenu editor={editor} slug={slug} title={title} />
+          <ProposalOptionsMenu
+            editor={editor}
+            slug={slug}
+            title={title}
+            type={initial.type}
+          />
         ) : null}
       </header>
 
