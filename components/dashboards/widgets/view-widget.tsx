@@ -7,7 +7,10 @@ import {
   type Row,
   sortRows,
 } from "@/components/dashboards/widget-data";
-import { VIEW_SOURCE_FIELDS } from "@/components/dashboards/widget-meta";
+import {
+  sourceResource,
+  VIEW_SOURCE_FIELDS,
+} from "@/components/dashboards/widget-meta";
 import {
   Table,
   TableBody,
@@ -26,7 +29,10 @@ export function ViewWidget({
   slug: string;
   config: ViewConfig;
 }) {
-  const { items, isLoading } = useResourceList<Row>(slug, config.source);
+  const { items, isLoading } = useResourceList<Row>(
+    slug,
+    sourceResource(config.source),
+  );
 
   const fields = React.useMemo(() => {
     const all = VIEW_SOURCE_FIELDS[config.source] ?? [];

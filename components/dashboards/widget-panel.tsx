@@ -74,6 +74,10 @@ type ViewFilter = ViewConfig["filters"][number];
 const PLATFORMS_BY_METRIC: Record<SocialMetric, SocialPlatform[]> = {
   views: ["YOUTUBE", "INSTAGRAM", "FACEBOOK", "GOOGLE_ANALYTICS"],
   followers: ["YOUTUBE", "FACEBOOK"],
+  impressions: ["GOOGLE_ADS"],
+  clicks: ["GOOGLE_ADS"],
+  conversions: ["GOOGLE_ADS"],
+  cost: ["GOOGLE_ADS"],
 };
 
 /** Eixos/agrupamento automáticos do chart quando source = "socials". */

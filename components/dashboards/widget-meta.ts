@@ -110,6 +110,36 @@ export const VIEW_SOURCE_FIELDS: Record<ViewSource, ViewField[]> = {
     { key: "body", label: "Conteúdo" },
     { key: "createdAt", label: "Criado em" },
   ],
+  forms: [
+    { key: "name", label: "Nome" },
+    { key: "action", label: "Ação" },
+    { key: "status", label: "Status" },
+    { key: "submissionCount", label: "Submissões" },
+    { key: "publishedAt", label: "Publicado em" },
+    { key: "createdAt", label: "Criado em" },
+  ],
+  pages: [
+    { key: "title", label: "Título" },
+    { key: "slug", label: "Slug" },
+    { key: "status", label: "Status" },
+    { key: "viewsCount", label: "Acessos" },
+    { key: "publishedAt", label: "Publicado em" },
+    { key: "createdAt", label: "Criado em" },
+  ],
+  "form-submissions": [
+    { key: "form", label: "Formulário" },
+    { key: "action", label: "Ação" },
+    { key: "personReused", label: "Pessoa reaproveitada" },
+    { key: "referrer", label: "Origem" },
+    { key: "createdAt", label: "Recebida em" },
+  ],
+  "page-views": [
+    { key: "page", label: "Página" },
+    { key: "ctaClicks", label: "Cliques no CTA" },
+    { key: "durationMs", label: "Duração (ms)" },
+    { key: "referrer", label: "Origem" },
+    { key: "createdAt", label: "Acessada em" },
+  ],
 };
 
 export const VIEW_SOURCE_LABELS: Record<ViewSource, string> = {
@@ -118,6 +148,10 @@ export const VIEW_SOURCE_LABELS: Record<ViewSource, string> = {
   opportunities: "Oportunidades",
   tasks: "Tarefas",
   notes: "Notas",
+  forms: "Formulários",
+  pages: "Landing pages",
+  "form-submissions": "Respostas de formulários",
+  "page-views": "Acessos de páginas",
 };
 
 /** Labels do chart: view sources + "socials". */
@@ -126,8 +160,21 @@ export const CHART_SOURCE_LABELS: Record<ChartSource, string> = {
   socials: "Redes sociais",
 };
 
+/**
+ * Traduz a fonte (valor do enum) para o caminho do recurso na API. Quase todas
+ * batem 1:1 com `/api/workspaces/<slug>/<source>`; só `pages` mora sob marketing.
+ */
+export function sourceResource(source: ChartSource): string {
+  if (source === "pages") return "marketing/pages";
+  return source;
+}
+
 /** Rótulo PT-BR da métrica de socials usada no painel/legenda. */
 export const SOCIAL_METRIC_LABELS: Record<SocialMetric, string> = {
   views: "Visualizações",
   followers: "Seguidores ganhos",
+  impressions: "Impressões (Ads)",
+  clicks: "Cliques (Ads)",
+  conversions: "Conversões (Ads)",
+  cost: "Investimento (Ads)",
 };

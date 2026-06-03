@@ -17,13 +17,23 @@ export const CHART_TYPES = [
 ] as const;
 export type ChartType = (typeof CHART_TYPES)[number];
 
-/** Fontes de dados disponíveis para o widget "view" (sempre layout tabela). */
+/**
+ * Fontes de dados disponíveis para o widget "view" (sempre layout tabela).
+ * Além das entidades do CRM, expõe as features de captação/marketing:
+ *  - forms / pages: o registro em si (1 linha por formulário/página).
+ *  - form-submissions / page-views: o evento (1 linha por resposta/visita),
+ *    permitindo gráficos de evolução temporal por `createdAt`.
+ */
 export const VIEW_SOURCES = [
   "companies",
   "people",
   "opportunities",
   "tasks",
   "notes",
+  "forms",
+  "pages",
+  "form-submissions",
+  "page-views",
 ] as const;
 export type ViewSource = (typeof VIEW_SOURCES)[number];
 
@@ -31,8 +41,19 @@ export type ViewSource = (typeof VIEW_SOURCES)[number];
 export const CHART_SOURCES = [...VIEW_SOURCES, "socials"] as const;
 export type ChartSource = (typeof CHART_SOURCES)[number];
 
-/** Métricas comparáveis entre redes (yField quando source = "socials"). */
-export const SOCIAL_METRICS = ["views", "followers"] as const;
+/**
+ * Métricas comparáveis entre redes/contas (yField quando source = "socials").
+ * `views`/`followers` vêm das redes orgânicas; `impressions`/`clicks`/
+ * `conversions`/`cost` vêm do Google Ads.
+ */
+export const SOCIAL_METRICS = [
+  "views",
+  "followers",
+  "impressions",
+  "clicks",
+  "conversions",
+  "cost",
+] as const;
 export type SocialMetric = (typeof SOCIAL_METRICS)[number];
 
 export const FILTER_OPERATORS = [

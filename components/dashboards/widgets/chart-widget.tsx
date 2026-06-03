@@ -9,6 +9,7 @@ import {
   aggregateTotal,
   type Row,
 } from "@/components/dashboards/widget-data";
+import { sourceResource } from "@/components/dashboards/widget-meta";
 import { useResourceList } from "@/src/hooks/use-resource-list";
 import type { ChartConfig } from "@/src/schemas/dashboard-widget.schema";
 
@@ -64,7 +65,11 @@ export function ChartWidget({
     return params.toString();
   }, [config.source, config.platforms, config.yField]);
 
-  const { items, isLoading } = useResourceList<Row>(slug, config.source, query);
+  const { items, isLoading } = useResourceList<Row>(
+    slug,
+    sourceResource(config.source),
+    query,
+  );
 
   const data = React.useMemo(
     () => aggregateChart(items, config),

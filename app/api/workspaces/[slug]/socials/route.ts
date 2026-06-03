@@ -2,12 +2,14 @@ import type { NextRequest } from "next/server";
 import { z } from "zod";
 import { validationError } from "@/src/errors/app-error";
 import { getAuthSession } from "@/src/lib/auth-session";
+import type { GoogleAdsInsightsRange } from "@/src/schemas/google-ads.schema";
 import {
   SOCIAL_PLATFORM_LABELS,
   type SocialPlatform,
   SocialPlatformSchema,
 } from "@/src/schemas/social-connection.schema";
 import { FacebookService } from "@/src/services/facebook.service";
+import { GoogleAdsService } from "@/src/services/google-ads.service";
 import { GoogleAnalyticsService } from "@/src/services/google-analytics.service";
 import { InstagramService } from "@/src/services/instagram.service";
 import { YoutubeService } from "@/src/services/youtube.service";
@@ -18,15 +20,23 @@ import { handleError, successResponse } from "@/utils/http-response";
  * source = "socials". Cada linha é `{ date, platform, value }`; o chart pivota
  * por `platform` (groupBy automático) gerando uma linha por rede.
  *
- * Mapeamento por métrica (o que cada rede chama de "views" / "followers"):
+ * Mapeamento por métrica:
  *  - views:     YT = views · IG = profileViews · FB = impressions · GA = screenPageViews
  *  - followers: YT = subscribersGained · FB = fanAdds  (delta diário, não estoque)
+ *  - ads (impressions/clicks/conversions/cost): só Google Ads (série de campanhas)
  * Plataformas que não suportam a métrica são puladas silenciosamente — a UI
  * só deixa selecionar as compatíveis. TikTok não tem série diária pronta.
  */
 
 const RangeSchema = z.enum(["7d", "28d", "90d"]).default("28d");
-const MetricSchema = z.enum(["views", "followers"]);
+const MetricSchema = z.enum([
+  "views",
+  "followers",
+  "impressions",
+  "clicks",
+  "conversions",
+  "cost",
+]);
 
 type SeriesRange = z.infer<typeof RangeSchema>;
 type SocialMetric = z.infer<typeof MetricSchema>;
@@ -34,6 +44,17 @@ type SeriesRow = { date: string; platform: string } & Record<
   string,
   number | string
 >;
+
+/** Métricas pagas — exclusivas do Google Ads. */
+const ADS_METRICS = ["impressions", "clicks", "conversions", "cost"] as const;
+function isAdsMetric(metric: SocialMetric): boolean {
+  return (ADS_METRICS as readonly string[]).includes(metric);
+}
+
+/** Janela do socials → janela aceita pelo Google Ads (não tem 28d). */
+function adsRange(range: SeriesRange): GoogleAdsInsightsRange {
+  return range === "7d" ? "7d" : range === "90d" ? "90d" : "30d";
+}
 
 async function platformSeries(
   userId: string,
@@ -43,6 +64,27 @@ async function platformSeries(
   range: SeriesRange,
 ): Promise<SeriesRow[]> {
   const label = SOCIAL_PLATFORM_LABELS[platform];
+
+  // Google Ads é a única fonte das métricas pagas; e só responde a elas.
+  if (platform === "GOOGLE_ADS") {
+    if (!isAdsMetric(metric)) return [];
+    const r = await GoogleAdsService.getInsights(userId, slug, adsRange(range));
+    if (!r.ok) return [];
+    return r.value.series.map((p) => {
+      const value =
+        metric === "impressions"
+          ? p.impressions
+          : metric === "clicks"
+            ? p.clicks
+            : metric === "conversions"
+              ? p.conversions
+              : p.costMicros / 1_000_000; // cost
+      return { date: p.date, platform: label, [metric]: value };
+    });
+  }
+
+  // As redes orgânicas abaixo não têm métricas pagas.
+  if (isAdsMetric(metric)) return [];
 
   if (platform === "YOUTUBE") {
     const r = await YoutubeService.getInsights(userId, slug, range);
