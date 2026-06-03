@@ -1,6 +1,8 @@
 import {
+  BrowserIcon,
   Building03Icon,
   Calendar01Icon,
+  CheckListIcon,
   DashboardSquare01Icon,
   DocumentValidationIcon,
   Facebook01Icon,
@@ -80,6 +82,12 @@ export const WORKSPACE_NAV: NavNode[] = [
     color: "bg-teal-500",
   },
   {
+    title: "Formulários",
+    segment: "forms",
+    icon: CheckListIcon,
+    color: "bg-fuchsia-500",
+  },
+  {
     title: "Painéis",
     segment: "dashboards",
     icon: DashboardSquare01Icon,
@@ -114,6 +122,12 @@ export const WORKSPACE_NAV: NavNode[] = [
         segment: "marketing/mailing-lists",
         icon: UserGroup02Icon,
         color: "bg-rose-500",
+      },
+      {
+        title: "Páginas",
+        segment: "marketing/pages",
+        icon: BrowserIcon,
+        color: "bg-orange-400",
       },
     ],
   },
