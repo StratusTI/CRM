@@ -64,6 +64,12 @@ model User {
   proposalsCreated Proposal[] @relation("ProposalCreatedBy")
   proposalsUpdated Proposal[] @relation("ProposalUpdatedBy")
 
+  landingPagesCreated LandingPage[] @relation("LandingPageCreatedBy")
+  landingPagesUpdated LandingPage[] @relation("LandingPageUpdatedBy")
+
+  formsCreated Form[] @relation("FormCreatedBy")
+  formsUpdated Form[] @relation("FormUpdatedBy")
+
   aiConversations AiConversation[] @relation("AiConversationUser")
 
   @@index([deletionScheduledAt])
@@ -135,6 +141,8 @@ model Workspace {
   mailingLists       MailingList[]
   workflows          Workflow[]
   proposals          Proposal[]
+  landingPages       LandingPage[]
+  forms              Form[]
   aiConversations    AiConversation[]
   aiUsage            AiUsage[]
   invite             WorkspaceInvite?
@@ -147,11 +155,12 @@ model Workspace {
 /// para Company (FK + relação reversa adicionadas quando cada uma for criada).
 model Company {
   id             String    @id @default(cuid())
-  name           String
+  name           String    @default("")
+  cnpj           String?
   domain         String?
   employees      Int?
   linkedin       String?
-  address        String?
+  address        Json?
   arr            Decimal?  @db.Decimal(14, 2)
   icp            Boolean   @default(false)
   workspaceId    String    @map("workspace_id")
@@ -174,6 +183,7 @@ model Company {
   notes         Note[]
 
   @@unique([workspaceId, domain])
+  @@unique([workspaceId, cnpj])
   @@index([workspaceId])
   @@index([accountOwnerId])
   @@index([deletedAt])
@@ -1003,4 +1013,161 @@ model AiUsage {
   @@index([conversationId])
   @@index([createdAt])
   @@map("ai_usage")
+}
+
+enum LandingPageStatus {
+  DRAFT
+  PUBLISHED
+}
+
+/// Landing page gerada por IA (documento HTML autocontido), escopada por
+/// workspace. `status` PUBLISHED = online: o `slug` legível serve a página
+/// pública (`/<workspace>/pages/<slug>`) sem auth. `slug` é único por workspace.
+/// Soft-delete via `deletedAt`. As métricas de acesso ficam em LandingPageView
+/// e o histórico do chat de geração em LandingPageMessage.
+model LandingPage {
+  id          String            @id @default(cuid())
+  title       String
+  slug        String
+  html        String            @default("") @db.Text
+  status      LandingPageStatus @default(DRAFT)
+  publishedAt DateTime?         @map("published_at")
+  workspaceId String            @map("workspace_id")
+  createdById String            @map("created_by_id")
+  updatedById String?           @map("updated_by_id")
+  position    Int               @default(0)
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
+  deletedAt   DateTime?         @map("deleted_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy User      @relation("LandingPageCreatedBy", fields: [createdById], references: [id])
+  updatedBy User?     @relation("LandingPageUpdatedBy", fields: [updatedById], references: [id])
+
+  views    LandingPageView[]
+  messages LandingPageMessage[]
+
+  @@unique([workspaceId, slug])
+  @@index([workspaceId])
+  @@index([status])
+  @@index([deletedAt])
+  @@index([workspaceId, position])
+  @@map("landing_pages")
+}
+
+/// Uma sessão de visita à landing page pública. Upsertada por `viewId` (id de
+/// sessão gerado no cliente), de modo que beacons sucessivos da mesma visita
+/// atualizam a mesma linha. `ipHash` é um hash salgado do IP — nunca o IP cru
+/// (LGPD); serve só para contar visitantes únicos. `ctaClicks` acumula cliques
+/// em botões de conversão; `referrer` registra a origem do tráfego.
+model LandingPageView {
+  id            String   @id @default(cuid())
+  landingPageId String   @map("landing_page_id")
+  viewId        String   @map("view_id")
+  ipHash        String   @map("ip_hash")
+  durationMs    Int      @default(0) @map("duration_ms")
+  ctaClicks     Int      @default(0) @map("cta_clicks")
+  referrer      String?
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  landingPage LandingPage @relation(fields: [landingPageId], references: [id], onDelete: Cascade)
+
+  @@unique([landingPageId, viewId])
+  @@index([landingPageId])
+  @@index([landingPageId, ipHash])
+  @@map("landing_page_views")
+}
+
+/// Mensagem do chat de geração de uma landing page (estilo Lovable/v0).
+/// Reusa o enum AiMessageRole. O histórico alimenta o contexto da próxima
+/// iteração de edição do HTML.
+model LandingPageMessage {
+  id            String        @id @default(cuid())
+  landingPageId String        @map("landing_page_id")
+  role          AiMessageRole
+  content       String        @db.Text
+  createdAt     DateTime      @default(now()) @map("created_at")
+
+  landingPage LandingPage @relation(fields: [landingPageId], references: [id], onDelete: Cascade)
+
+  @@index([landingPageId])
+  @@map("landing_page_messages")
+}
+
+enum FormStatus {
+  DRAFT
+  PUBLISHED
+}
+
+/// Ação executada quando o formulário é enviado. Define que entidade(s) o
+/// envio cria no CRM (a oportunidade só existe no caso LEAD).
+enum FormAction {
+  COMPANY
+  PERSON
+  LEAD
+}
+
+/// Formulário customizável de captação, escopado por workspace. O usuário
+/// escolhe os campos (`fields`, JSON validado por Zod) e a `action` executada
+/// no envio. `status` PUBLISHED = online: o `publicToken` opaco serve a página
+/// pública (`/f/<token>`) sem auth. Soft-delete via `deletedAt`. As submissões
+/// ficam em FormSubmission.
+model Form {
+  id              String     @id @default(cuid())
+  name            String
+  description     String?    @db.Text
+  status          FormStatus @default(DRAFT)
+  publicToken     String     @unique @map("public_token")
+  action          FormAction @default(LEAD)
+  /// Array de FieldDefinition (validado por Zod na camada de serviço).
+  fields          Json       @default("[]")
+  /// Config extra da ação (defaults de oportunidade no LEAD, icp no COMPANY).
+  actionConfig    Json       @default("{}") @map("action_config")
+  successMessage  String?    @map("success_message")
+  redirectUrl     String?    @map("redirect_url")
+  submissionCount Int        @default(0) @map("submission_count")
+  workspaceId     String     @map("workspace_id")
+  createdById     String     @map("created_by_id")
+  updatedById     String?    @map("updated_by_id")
+  position        Int        @default(0)
+  publishedAt     DateTime?  @map("published_at")
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+  deletedAt       DateTime?  @map("deleted_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy User      @relation("FormCreatedBy", fields: [createdById], references: [id])
+  updatedBy User?     @relation("FormUpdatedBy", fields: [updatedById], references: [id])
+
+  submissions FormSubmission[]
+
+  @@index([workspaceId])
+  @@index([status])
+  @@index([deletedAt])
+  @@index([workspaceId, position])
+  @@map("forms")
+}
+
+/// Uma submissão de um formulário público. Guarda o snapshot dos valores
+/// enviados (após validação) e os ids dos registros criados/reutilizados pela
+/// ação. O IP nunca é guardado cru (LGPD) — só um hash salgado.
+model FormSubmission {
+  id                   String     @id @default(cuid())
+  formId               String     @map("form_id")
+  values               Json
+  action               FormAction
+  createdPersonId      String?    @map("created_person_id")
+  createdCompanyId     String?    @map("created_company_id")
+  createdOpportunityId String?    @map("created_opportunity_id")
+  personReused         Boolean    @default(false) @map("person_reused")
+  ipHash               String?    @map("ip_hash")
+  referrer             String?
+  createdAt            DateTime   @default(now()) @map("created_at")
+
+  form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  @@index([formId])
+  @@index([createdAt])
+  @@map("form_submissions")
 }
