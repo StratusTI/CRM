@@ -3,6 +3,8 @@
 import {
   Cancel01Icon,
   LinkSquare02Icon,
+  Loading02Icon,
+  MapsLocation01Icon,
   PencilEdit02Icon,
   SidebarRightIcon,
 } from "@hugeicons/core-free-icons";
@@ -11,6 +13,8 @@ import type { ColumnDef, Row, Table } from "@tanstack/react-table";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import * as React from "react";
+import { toast } from "sonner";
+import { AddressPanel } from "@/components/tables/address-panel";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
@@ -27,8 +31,18 @@ import {
   SelectTrigger,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { formatCep } from "@/lib/cep";
+import {
+  CnpjNotFoundError,
+  formatCnpj,
+  isCompleteCnpj,
+  isValidCnpj,
+  lookupCnpj,
+  normalizeCnpj,
+} from "@/lib/cnpj";
 import { cn } from "@/lib/utils";
 import type { Lookups, Option } from "@/src/hooks/use-workspace-lookups";
+import type { CompanyAddress } from "@/src/schemas/company.schema";
 
 export type WithId = { id: string };
 
@@ -42,6 +56,7 @@ export type GridColumn = {
   header: string;
   kind:
     | "text"
+    | "cnpj"
     | "number"
     | "money"
     | "tags"
@@ -52,6 +67,7 @@ export type GridColumn = {
     | "richtext"
     | "emailhtml"
     | "link"
+    | "address"
     | "readonly-date";
   /** Campo obrigatório (não pode ser limpo; usado para criar a linha vazia). */
   required?: boolean;
@@ -661,11 +677,207 @@ function HtmlPanelCell({
   );
 }
 
+/** Coerção segura do valor JSON da célula em `CompanyAddress`. */
+function asAddress(value: unknown): CompanyAddress | null {
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    return value as CompanyAddress;
+  }
+  return null;
+}
+
+/**
+ * Célula de endereço: exibe apenas o CEP e um botão que abre o painel com os
+ * campos completos (preenchidos via ViaCEP). O painel comita o objeto inteiro.
+ */
+function AddressCell({
+  col,
+  value,
+  commit,
+}: {
+  col: GridColumn;
+  value: unknown;
+  commit: (next: unknown) => void;
+}) {
+  const [open, setOpen] = React.useState(false);
+  const address = asAddress(value);
+  const cep = address?.cep ? formatCep(address.cep) : "";
+
+  return (
+    <div className="flex w-full items-center gap-0.5">
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="flex h-7 min-w-0 flex-1 items-center rounded px-1.5 text-left hover:bg-muted/50"
+      >
+        {cep ? (
+          <span className="truncate tabular-nums">{cep}</span>
+        ) : (
+          <span className="text-muted-foreground/60">
+            {col.placeholder ?? "Adicionar endereço"}
+          </span>
+        )}
+      </button>
+      <Button
+        variant="ghost"
+        size="icon-xs"
+        className="shrink-0 text-muted-foreground hover:text-foreground"
+        onClick={() => setOpen(true)}
+        aria-label="Abrir endereço"
+      >
+        <HugeiconsIcon icon={MapsLocation01Icon} strokeWidth={2} />
+      </Button>
+      {open ? (
+        <AddressPanel
+          open={open}
+          onOpenChange={setOpen}
+          value={address}
+          onSave={(next) => commit(next)}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * Editor de CNPJ: formata enquanto digita e, ao confirmar um CNPJ válido,
+ * consulta a BrasilAPI e preenche os demais campos da empresa (razão
+ * social/nome fantasia e endereço) via `autofill`.
+ */
+function CnpjEditor({
+  col,
+  value,
+  commit,
+  autofill,
+  startEditing,
+  onPrimaryEnter,
+}: {
+  col: GridColumn;
+  value: unknown;
+  commit: (next: unknown) => void;
+  /** Preenche campos irmãos (name, address) com o retorno da BrasilAPI. */
+  autofill?: (fields: Record<string, unknown>) => void;
+  startEditing: boolean;
+  onPrimaryEnter?: () => void;
+}) {
+  const stored = value == null ? "" : String(value);
+  const [editing, setEditing] = React.useState(startEditing);
+  const [draft, setDraft] = React.useState(() => formatCnpj(stored));
+  const [loading, setLoading] = React.useState(false);
+  /** Último CNPJ consultado, para não repetir a chamada à BrasilAPI. */
+  const lastLookup = React.useRef(normalizeCnpj(stored));
+
+  React.useEffect(() => {
+    if (!editing) setDraft(formatCnpj(stored));
+  }, [editing, stored]);
+
+  const runLookup = React.useCallback(
+    async (cnpj: string) => {
+      if (!autofill || cnpj === lastLookup.current) return;
+      lastLookup.current = cnpj;
+      setLoading(true);
+      try {
+        const result = await lookupCnpj(cnpj);
+        const fields: Record<string, unknown> = {};
+        if (result.name) fields.name = result.name;
+        if (result.address) fields.address = result.address;
+        if (Object.keys(fields).length > 0) {
+          autofill(fields);
+          toast.success("Empresa preenchida pelo CNPJ");
+        } else {
+          toast.success("CNPJ encontrado", {
+            description: "Sem dados adicionais para preencher.",
+          });
+        }
+      } catch (error) {
+        lastLookup.current = "";
+        toast.error(
+          error instanceof CnpjNotFoundError
+            ? "CNPJ não encontrado na Receita"
+            : "Não foi possível consultar o CNPJ",
+        );
+      } finally {
+        setLoading(false);
+      }
+    },
+    [autofill],
+  );
+
+  function save() {
+    setEditing(false);
+    const digits = normalizeCnpj(draft);
+    if (digits === "") {
+      lastLookup.current = "";
+      if (stored !== "") commit(null);
+      return;
+    }
+    if (!isValidCnpj(digits)) {
+      // CNPJ inválido: descarta a edição e mantém o valor anterior.
+      setDraft(formatCnpj(stored));
+      toast.error("CNPJ inválido");
+      return;
+    }
+    if (digits !== stored) commit(digits);
+    if (isCompleteCnpj(digits)) void runLookup(digits);
+  }
+
+  if (editing) {
+    return (
+      <Input
+        autoFocus
+        value={draft}
+        placeholder={col.placeholder ?? "00.000.000/0000-00"}
+        inputMode="numeric"
+        onChange={(e) => setDraft(formatCnpj(e.target.value))}
+        onBlur={save}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            save();
+            onPrimaryEnter?.();
+          } else if (e.key === "Escape") {
+            setDraft(formatCnpj(stored));
+            setEditing(false);
+          }
+        }}
+        className="h-7 border-transparent bg-transparent px-1.5 shadow-none focus-visible:border-ring focus-visible:bg-background"
+      />
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => setEditing(true)}
+      className="flex h-7 w-full items-center gap-1.5 rounded px-1.5 text-left hover:bg-muted/50"
+    >
+      {loading ? (
+        <HugeiconsIcon
+          icon={Loading02Icon}
+          strokeWidth={2}
+          className="size-3.5 shrink-0 animate-spin text-muted-foreground"
+        />
+      ) : null}
+      {stored ? (
+        <span
+          className={cn("truncate tabular-nums", col.primary && "font-medium")}
+        >
+          {formatCnpj(stored)}
+        </span>
+      ) : (
+        <span className="text-muted-foreground/60">
+          {col.placeholder ?? "00.000.000/0000-00"}
+        </span>
+      )}
+    </button>
+  );
+}
+
 /** Renderiza o editor correto para uma célula (linha existente ou rascunho). */
 export function CellEditor({
   col,
   value,
   commit,
+  autofill,
   slug,
   lookups,
   startEditing = false,
@@ -674,6 +886,8 @@ export function CellEditor({
   col: GridColumn;
   value: unknown;
   commit: (next: unknown) => void;
+  /** Preenche campos irmãos a partir de uma consulta externa (ex.: CNPJ). */
+  autofill?: (fields: Record<string, unknown>) => void;
   slug: string;
   lookups: Lookups;
   startEditing?: boolean;
@@ -707,6 +921,19 @@ export function CellEditor({
       );
     case "link":
       return <LinkEditor col={col} value={value} commit={commit} />;
+    case "address":
+      return <AddressCell col={col} value={value} commit={commit} />;
+    case "cnpj":
+      return (
+        <CnpjEditor
+          col={col}
+          value={value}
+          commit={commit}
+          autofill={autofill}
+          startEditing={startEditing}
+          onPrimaryEnter={onPrimaryEnter}
+        />
+      );
     case "relation":
       return (
         <RelationEditor
@@ -745,12 +972,15 @@ function EditableCell<T extends WithId>({
   const value = (row.original as Record<string, unknown>)[col.key];
   const commit = (next: unknown) =>
     grid.patch(row.original.id, { [col.key]: next });
+  const autofill = (fields: Record<string, unknown>) =>
+    grid.patch(row.original.id, fields);
 
   const editor = (
     <CellEditor
       col={col}
       value={value}
       commit={commit}
+      autofill={autofill}
       slug={grid.slug}
       lookups={grid.lookups}
       startEditing={Boolean(col.primary) && grid.newRowId === row.original.id}
@@ -820,6 +1050,25 @@ export function buildGridColumns<T extends WithId>(
         },
       };
     }
+    if (col.kind === "address") {
+      // String pesquisável (CEP, cidade, UF, logradouro, bairro) para o filtro global.
+      return {
+        ...shared,
+        accessorFn: (r: T) => {
+          const addr = asAddress((r as Record<string, unknown>)[col.key]);
+          if (!addr) return "";
+          return [
+            addr.cep,
+            addr.city,
+            addr.state,
+            addr.street,
+            addr.neighborhood,
+          ]
+            .filter(Boolean)
+            .join(" ");
+        },
+      };
+    }
     return { ...shared, accessorKey: col.key as keyof T & string };
   });
 }
@@ -853,6 +1102,11 @@ export function draftPayload(
     if (col.kind === "tags") {
       const tags = Array.isArray(raw) ? (raw as string[]) : [];
       if (tags.length) payload[col.key] = tags;
+      continue;
+    }
+    if (col.kind === "address") {
+      const addr = asAddress(raw);
+      if (addr) payload[col.key] = addr;
       continue;
     }
     if (raw == null || raw === "") continue;

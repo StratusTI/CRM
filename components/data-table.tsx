@@ -739,7 +739,9 @@ export function DataTable<TData extends WithId>({
   const addRow = React.useCallback(() => {
     const payload = draftPayload(columns, draftInitialValues(columns));
     const primary = columns.find((c) => c.primary);
-    if (primary && !payload[primary.key]) {
+    // Primário textual exige um valor para passar na validação; o usuário
+    // renomeia inline em seguida. Outros tipos (ex.: CNPJ) nascem vazios.
+    if (primary && primary.kind === "text" && !payload[primary.key]) {
       payload[primary.key] = "Sem título";
     }
     void createResource<TData>(slug, resource, payload).then((res) => {
