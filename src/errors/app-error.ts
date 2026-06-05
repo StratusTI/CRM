@@ -134,6 +134,10 @@ export const leadAlreadyConverted = (
 export const leadRuleNotFound = (message = "Regra não encontrada"): AppError =>
   appError("LEAD_RULE_NOT_FOUND", message);
 
+export const reportNotFound = (
+  message = "Relatório não encontrado",
+): AppError => appError("REPORT_NOT_FOUND", message);
+
 export const customFieldNotFound = (
   message = "Campo customizado não encontrado",
 ): AppError => appError("CUSTOM_FIELD_NOT_FOUND", message);

@@ -30,6 +30,7 @@ export const PERMISSION_RESOURCES = [
   "settings",
   "audit-logs",
   "leads",
+  "reports",
 ] as const;
 export type PermissionResource = (typeof PERMISSION_RESOURCES)[number];
 
@@ -55,6 +56,7 @@ const MEMBER_ENTITIES = new Set<PermissionResource>([
   "workflows",
   "social",
   "leads",
+  "reports",
 ]);
 
 /** Recursos de configuração que o Membro só pode visualizar. */

@@ -54,6 +54,9 @@ model User {
   leadsUpdated     Lead[]            @relation("LeadUpdatedBy")
   leadRoutingOwned LeadRoutingRule[] @relation("LeadRoutingOwner")
 
+  reportsCreated Report[] @relation("ReportCreatedBy")
+  reportsUpdated Report[] @relation("ReportUpdatedBy")
+
   tasksCreated  Task[] @relation("TaskCreatedBy")
   tasksUpdated  Task[] @relation("TaskUpdatedBy")
   tasksAssigned Task[] @relation("TaskAssignee")
@@ -161,6 +164,7 @@ model Workspace {
   leads              Lead[]
   leadScoringRules   LeadScoringRule[]
   leadRoutingRules   LeadRoutingRule[]
+  reports            Report[]
   opportunities      Opportunity[]
   tasks              Task[]
   notes              Note[]
@@ -614,6 +618,33 @@ model LeadRoutingRule {
 
   @@index([workspaceId, position])
   @@map("lead_routing_rules")
+}
+
+/// Relatório tabular salvo: fonte + colunas/filtros/agrupamento/ordenação (Json).
+model Report {
+  id          String    @id @default(cuid())
+  workspaceId String    @map("workspace_id")
+  name        String
+  source      String
+  columns     Json
+  filters     Json
+  groupBy     String?   @map("group_by")
+  sort        Json?
+  position    Int       @default(0)
+  createdById String    @map("created_by_id")
+  updatedById String?   @map("updated_by_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy User      @relation("ReportCreatedBy", fields: [createdById], references: [id])
+  updatedBy User?     @relation("ReportUpdatedBy", fields: [updatedById], references: [id])
+
+  @@index([workspaceId])
+  @@index([workspaceId, position])
+  @@index([deletedAt])
+  @@map("reports")
 }
 
 /// Meta de receita de um responsável num período (mês "2026-06" ou trimestre

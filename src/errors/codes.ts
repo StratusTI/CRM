@@ -65,6 +65,9 @@ export const ERROR_CODES = {
   LEAD_ALREADY_CONVERTED: { code: "LEAD_ALREADY_CONVERTED", status: 409 },
   LEAD_RULE_NOT_FOUND: { code: "LEAD_RULE_NOT_FOUND", status: 404 },
 
+  // Report domain
+  REPORT_NOT_FOUND: { code: "REPORT_NOT_FOUND", status: 404 },
+
   // Profile / RBAC domain
   PROFILE_NOT_FOUND: { code: "PROFILE_NOT_FOUND", status: 404 },
   PROFILE_NAME_TAKEN: { code: "PROFILE_NAME_TAKEN", status: 409 },

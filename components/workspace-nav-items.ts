@@ -3,6 +3,7 @@ import {
   BrowserIcon,
   Building03Icon,
   Calendar01Icon,
+  ChartHistogramIcon,
   CheckListIcon,
   DashboardSquare01Icon,
   DocumentValidationIcon,
@@ -113,6 +114,12 @@ export const WORKSPACE_NAV: NavNode[] = [
     segment: "dashboards",
     icon: DashboardSquare01Icon,
     color: "bg-cyan-500",
+  },
+  {
+    title: "Relatórios",
+    segment: "reports",
+    icon: ChartHistogramIcon,
+    color: "bg-teal-600",
   },
   {
     title: "Workflows",
