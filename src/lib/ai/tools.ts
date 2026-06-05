@@ -1,14 +1,19 @@
 import { CompanyService } from "@/src/services/company.service";
 import { DashboardService } from "@/src/services/dashboard.service";
+import { DocumentTemplateService } from "@/src/services/document-template.service";
 import { EmailCampaignService } from "@/src/services/email-campaign.service";
 import { FacebookService } from "@/src/services/facebook.service";
+import { ForecastService } from "@/src/services/forecast.service";
 import { GoogleAnalyticsService } from "@/src/services/google-analytics.service";
 import { InstagramService } from "@/src/services/instagram.service";
+import { LeadService } from "@/src/services/lead.service";
 import { NoteService } from "@/src/services/note.service";
 import { OpportunityService } from "@/src/services/opportunity.service";
 import { PersonService } from "@/src/services/person.service";
 import { PipelineService } from "@/src/services/pipeline.service";
+import { ProductService } from "@/src/services/product.service";
 import { ProposalService } from "@/src/services/proposal.service";
+import { ReportService } from "@/src/services/report.service";
 import { TaskService } from "@/src/services/task.service";
 import { TiktokService } from "@/src/services/tiktok.service";
 import { TwitterService } from "@/src/services/twitter.service";
@@ -52,6 +57,32 @@ const youtubeRangeParam = {
       type: "string",
       enum: ["7d", "28d", "90d", "365d"],
       description: "Janela de tempo: 7d, 28d, 90d ou 365d. Default: 28d.",
+    },
+  },
+  additionalProperties: false,
+} as const;
+
+const forecastPeriodParam = {
+  type: "object",
+  properties: {
+    period: {
+      type: "string",
+      enum: ["MONTH", "QUARTER"],
+      description:
+        "Granularidade do período: MONTH (mês) ou QUARTER (trimestre). Default: MONTH.",
+    },
+  },
+  additionalProperties: false,
+} as const;
+
+const documentTypeParam = {
+  type: "object",
+  properties: {
+    type: {
+      type: "string",
+      enum: ["PREMISES", "PORTFOLIO", "PROPOSAL", "CONTRACT"],
+      description:
+        "Filtra por tipo de documento: PREMISES (premissas), PORTFOLIO (portfólio), PROPOSAL (proposta) ou CONTRACT (contrato). Omita para listar todos.",
     },
   },
   additionalProperties: false,
@@ -126,15 +157,53 @@ export const AI_TOOLS: ToolDef[] = [
       parameters: limitParam,
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "list_leads",
+      description:
+        "Lista os leads do workspace (topo do funil, antes de virarem pessoa/oportunidade) com nome, empresa, cargo, origem, status (NEW/WORKING/QUALIFIED/UNQUALIFIED/CONVERTED), pontuação (score) e responsável. Leads convertidos trazem os IDs da pessoa/oportunidade gerada. Use para analisar qualificação, priorização e roteamento.",
+      parameters: limitParam,
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "list_products",
+      description:
+        "Lista o catálogo de produtos/serviços do workspace: nome, SKU, preço unitário, moeda, tipo de cobrança (ONE_TIME/MONTHLY/YEARLY) e se está ativo. Use para perguntas sobre preços, mix de produtos ou o que é vendido.",
+      parameters: limitParam,
+    },
+  },
 
-  // ── Propostas ─────────────────────────────────────────────────────────
+  // ── Forecast / Previsão ───────────────────────────────────────────────
+  {
+    type: "function",
+    function: {
+      name: "get_forecast",
+      description:
+        "Previsão de receita por responsável e período. Para cada vendedor traz: receita já ganha (wonAmount), pipeline aberto ponderado pela probabilidade (weightedOpenAmount), previsão total (forecastAmount), contagem de oportunidades abertas/ganhas, meta do período (quotaAmount) e atingimento (%). Use para analisar pipeline futuro, metas e desempenho da equipe de vendas.",
+      parameters: forecastPeriodParam,
+    },
+  },
+
+  // ── Documentos (Propostas) ────────────────────────────────────────────
   {
     type: "function",
     function: {
       name: "list_proposals",
       description:
-        "Lista as propostas comerciais do workspace com título, status (DRAFT/PUBLISHED/ARCHIVED), total de visualizações, data de publicação e criação. Use para ter o portfólio completo de propostas antes de aprofundar métricas de uma específica.",
+        "Lista os documentos comerciais do workspace (a vertical 'Documentos' da UI): título, tipo (PREMISES/PORTFOLIO/PROPOSAL/CONTRACT), status (DRAFT/PUBLISHED/ARCHIVED), total de visualizações, data de publicação e criação. Use para ter o portfólio completo antes de aprofundar métricas de um documento específico.",
       parameters: limitParam,
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "list_document_templates",
+      description:
+        "Lista os templates de documento reutilizáveis do workspace, opcionalmente filtrados por tipo (PREMISES/PORTFOLIO/PROPOSAL/CONTRACT). Cada template tem título e tipo. Use para saber quais modelos estão disponíveis para gerar novos documentos.",
+      parameters: documentTypeParam,
     },
   },
   {
@@ -152,6 +221,36 @@ export const AI_TOOLS: ToolDef[] = [
           },
         },
         required: ["proposalId"],
+        additionalProperties: false,
+      },
+    },
+  },
+
+  // ── Relatórios ────────────────────────────────────────────────────────
+  {
+    type: "function",
+    function: {
+      name: "list_reports",
+      description:
+        "Lista os relatórios salvos do workspace: nome, fonte de dados (companies/people/opportunities/leads/tasks/notes/products), colunas, filtros, agrupamento e ordenação. Use para descobrir quais relatórios existem antes de executar um com get_report_data.",
+      parameters: limitParam,
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_report_data",
+      description:
+        "Executa um relatório salvo e retorna as linhas processadas (já filtradas, agrupadas e ordenadas conforme a definição). Quando agrupado, traz a contagem por grupo. Chame após list_reports para obter o ID.",
+      parameters: {
+        type: "object",
+        properties: {
+          reportId: {
+            type: "string",
+            description: "ID do relatório (obtido via list_reports).",
+          },
+        },
+        required: ["reportId"],
         additionalProperties: false,
       },
     },
@@ -376,6 +475,41 @@ function parseYoutubeRange(rawArgs: string): YoutubeRange {
   }
 }
 
+const FORECAST_PERIODS = ["MONTH", "QUARTER"] as const;
+type ForecastPeriod = (typeof FORECAST_PERIODS)[number];
+
+function parseForecastPeriod(rawArgs: string): ForecastPeriod {
+  try {
+    const parsed = JSON.parse(rawArgs || "{}") as { period?: unknown };
+    const p = parsed.period;
+    return FORECAST_PERIODS.includes(p as ForecastPeriod)
+      ? (p as ForecastPeriod)
+      : "MONTH";
+  } catch {
+    return "MONTH";
+  }
+}
+
+const DOCUMENT_TYPE_VALUES = [
+  "PREMISES",
+  "PORTFOLIO",
+  "PROPOSAL",
+  "CONTRACT",
+] as const;
+type DocumentTypeValue = (typeof DOCUMENT_TYPE_VALUES)[number];
+
+function parseDocumentType(rawArgs: string): DocumentTypeValue | undefined {
+  try {
+    const parsed = JSON.parse(rawArgs || "{}") as { type?: unknown };
+    const t = parsed.type;
+    return DOCUMENT_TYPE_VALUES.includes(t as DocumentTypeValue)
+      ? (t as DocumentTypeValue)
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /**
  * Executa uma tool e devolve o resultado como string JSON (pronta para virar
  * a mensagem `role: "tool"`). Tudo escopado por (userId, slug) via os services
@@ -474,7 +608,50 @@ export async function executeTool(
       );
     }
 
-    // ── Propostas ─────────────────────────────────────────────────────────
+    case "list_leads": {
+      const r = await LeadService.list(userId, slug);
+      if (!r.ok) return toolError(r.error.message);
+      return JSON.stringify(
+        r.value.slice(0, limit).map((l) => ({
+          id: l.id,
+          name: l.name,
+          company: l.company,
+          jobTitle: l.jobTitle,
+          source: l.source,
+          status: l.status,
+          score: l.score,
+          ownerId: l.ownerId,
+          convertedPersonId: l.convertedPersonId,
+          convertedOpportunityId: l.convertedOpportunityId,
+        })),
+      );
+    }
+
+    case "list_products": {
+      const r = await ProductService.list(userId, slug);
+      if (!r.ok) return toolError(r.error.message);
+      return JSON.stringify(
+        r.value.slice(0, limit).map((p) => ({
+          id: p.id,
+          name: p.name,
+          sku: p.sku,
+          unitPrice: p.unitPrice,
+          currency: p.currency,
+          billingType: p.billingType,
+          active: p.active,
+        })),
+      );
+    }
+
+    // ── Forecast / Previsão ───────────────────────────────────────────────
+    case "get_forecast": {
+      const period = parseForecastPeriod(rawArgs);
+      const r = await ForecastService.getForecast(userId, slug, period);
+      if (!r.ok) return toolError(r.error.message);
+      return JSON.stringify(r.value);
+    }
+
+    // ── Documentos (Propostas) ────────────────────────────────────────────
     case "list_proposals": {
       const r = await ProposalService.list(userId, slug);
       if (!r.ok) return toolError(r.error.message);
@@ -482,10 +659,24 @@ export async function executeTool(
         r.value.slice(0, limit).map((p) => ({
           id: p.id,
           title: p.title,
+          type: (p as Record<string, unknown>).type ?? null,
           status: p.status,
           viewsCount: (p as Record<string, unknown>).viewsCount ?? 0,
           publishedAt: p.publishedAt,
           createdAt: p.createdAt,
+        })),
+      );
+    }
+
+    case "list_document_templates": {
+      const type = parseDocumentType(rawArgs);
+      const r = await DocumentTemplateService.list(userId, slug, type);
+      if (!r.ok) return toolError(r.error.message);
+      return JSON.stringify(
+        r.value.slice(0, limit).map((t) => ({
+          id: t.id,
+          title: t.title,
+          type: t.type,
         })),
       );
     }
@@ -509,6 +700,37 @@ export async function executeTool(
           referrer: v.referrer,
           visitedAt: v.createdAt,
         })),
+      });
+    }
+
+    // ── Relatórios ────────────────────────────────────────────────────────
+    case "list_reports": {
+      const r = await ReportService.list(userId, slug);
+      if (!r.ok) return toolError(r.error.message);
+      return JSON.stringify(
+        r.value.slice(0, limit).map((rep) => ({
+          id: rep.id,
+          name: rep.name,
+          source: rep.source,
+          columns: rep.columns,
+          filters: rep.filters,
+          groupBy: rep.groupBy,
+          sort: rep.sort,
+        })),
+      );
+    }
+
+    case "get_report_data": {
+      const reportId = parseStringArg(rawArgs, "reportId");
+      if (!reportId) return toolError("reportId é obrigatório.");
+      const r = await ReportService.getData(userId, slug, reportId);
+      if (!r.ok) return toolError(r.error.message);
+      const d = r.value;
+      return JSON.stringify({
+        columns: d.columns,
+        grouped: d.grouped,
+        total: d.total,
+        rows: d.rows.slice(0, limit),
       });
     }
 
@@ -652,6 +874,8 @@ async function buildOverview(ctx: ToolContext): Promise<unknown> {
   const [
     companies,
     people,
+    leads,
+    products,
     opportunities,
     tasks,
     notes,
@@ -661,6 +885,8 @@ async function buildOverview(ctx: ToolContext): Promise<unknown> {
   ] = await Promise.all([
     CompanyService.list(userId, slug),
     PersonService.list(userId, slug),
+    LeadService.list(userId, slug),
+    ProductService.list(userId, slug),
     OpportunityService.list(userId, slug),
     TaskService.list(userId, slug),
     NoteService.list(userId, slug),
@@ -696,6 +922,17 @@ async function buildOverview(ctx: ToolContext): Promise<unknown> {
     tasksByStatus[t.status] = (tasksByStatus[t.status] ?? 0) + 1;
   }
 
+  const leadList = leads.ok ? leads.value : [];
+  const leadsByStatus: Record<string, number> = {};
+  let leadScoreSum = 0;
+  for (const l of leadList) {
+    leadsByStatus[l.status] = (leadsByStatus[l.status] ?? 0) + 1;
+    leadScoreSum += l.score ?? 0;
+  }
+
+  const productList = products.ok ? products.value : [];
+  const activeProducts = productList.filter((p) => p.active).length;
+
   const proposalList = proposals.ok ? proposals.value : [];
   const proposalsByStatus: Record<string, number> = {};
   let proposalTotalViews = 0;
@@ -722,6 +959,16 @@ async function buildOverview(ctx: ToolContext): Promise<unknown> {
       opportunities: opps.length,
       tasks: taskList.length,
       notes: notes.ok ? notes.value.length : 0,
+    },
+    leads: {
+      total: leadList.length,
+      byStatus: leadsByStatus,
+      avgScore:
+        leadList.length > 0 ? Math.round(leadScoreSum / leadList.length) : 0,
+    },
+    products: {
+      total: productList.length,
+      active: activeProducts,
     },
     pipelineByStage,
     tasksByStatus,
