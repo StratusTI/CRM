@@ -1,4 +1,4 @@
-import { ReportsBoard } from "@/components/reports/reports-board";
+import { ReportsTable } from "@/components/reports/reports-table";
 
 export default async function ReportsPage({
   params,
@@ -6,5 +6,5 @@ export default async function ReportsPage({
   params: Promise<{ "workspace-slug": string }>;
 }) {
   const { "workspace-slug": slug } = await params;
-  return <ReportsBoard slug={slug} />;
+  return <ReportsTable slug={slug} />;
 }
