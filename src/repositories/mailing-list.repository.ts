@@ -26,9 +26,7 @@ export const MailingListRepository = {
     }
   },
 
-  async findById(
-    id: string,
-  ): Promise<Result<MailingListWithMembers | null>> {
+  async findById(id: string): Promise<Result<MailingListWithMembers | null>> {
     try {
       const list = await prisma.mailingList.findUnique({
         where: { id, deletedAt: null },

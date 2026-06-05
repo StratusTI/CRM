@@ -13,7 +13,11 @@ const BASE = "https://googleads.googleapis.com/v18";
 
 async function logFailure(label: string, response: Response): Promise<void> {
   const body = await response.text().catch(() => "");
-  console.error(`[google-ads] ${label} falhou`, response.status, body.slice(0, 500));
+  console.error(
+    `[google-ads] ${label} falhou`,
+    response.status,
+    body.slice(0, 500),
+  );
 }
 
 function authHeaders(accessToken: string): Record<string, string> {

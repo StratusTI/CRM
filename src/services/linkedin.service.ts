@@ -4,10 +4,7 @@ import {
   socialScopeMissing,
 } from "@/src/errors/app-error";
 import { err, type Result } from "@/src/lib/result";
-import {
-  fetchProfile,
-  publishPost,
-} from "@/src/lib/social/linkedin/client";
+import { fetchProfile, publishPost } from "@/src/lib/social/linkedin/client";
 import type {
   LinkedInOverview,
   LinkedInPublishInput,

@@ -82,7 +82,11 @@ export const googleAdsProvider: SocialProvider = {
 
     const infoResult = await getJson<{
       results?: {
-        customer?: { id?: string; descriptiveName?: string; currencyCode?: string };
+        customer?: {
+          id?: string;
+          descriptiveName?: string;
+          currencyCode?: string;
+        };
       }[];
     }>(
       `https://googleads.googleapis.com/v18/customers/${customerId}/googleAds:search?query=SELECT customer.id, customer.descriptive_name FROM customer LIMIT 1`,

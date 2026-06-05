@@ -9,7 +9,11 @@ const BASE = "https://api.linkedin.com";
 
 async function logFailure(label: string, response: Response): Promise<void> {
   const body = await response.text().catch(() => "");
-  console.error(`[linkedin] ${label} falhou`, response.status, body.slice(0, 500));
+  console.error(
+    `[linkedin] ${label} falhou`,
+    response.status,
+    body.slice(0, 500),
+  );
 }
 
 /** Cabeçalhos padrão para a LinkedIn API (versão mais recente compatível com free). */

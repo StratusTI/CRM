@@ -194,9 +194,7 @@ export async function fetchRecentTweets(
       id: t.id ?? "",
       text: t.text ?? "",
       createdAt: t.created_at ?? null,
-      url: t.id
-        ? `https://twitter.com/i/web/status/${t.id}`
-        : "",
+      url: t.id ? `https://twitter.com/i/web/status/${t.id}` : "",
       metrics: t.public_metrics
         ? {
             likeCount: t.public_metrics.like_count ?? 0,

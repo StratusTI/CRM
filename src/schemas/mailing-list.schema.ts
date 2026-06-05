@@ -59,7 +59,9 @@ export type AddMailingListMembersInput = z.infer<
   typeof AddMailingListMembersSchema
 >;
 export type MailingListDTO = z.infer<typeof MailingListOutputSchema>;
-export type MailingListMemberDTO = z.infer<typeof MailingListMemberOutputSchema>;
+export type MailingListMemberDTO = z.infer<
+  typeof MailingListMemberOutputSchema
+>;
 export type MailingListWithMembersDTO = z.infer<
   typeof MailingListWithMembersSchema
 >;

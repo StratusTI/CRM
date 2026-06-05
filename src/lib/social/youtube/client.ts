@@ -299,7 +299,10 @@ export async function fetchRecentVideos(
         snippet?: {
           title?: string;
           publishedAt?: string;
-          thumbnails?: { medium?: { url?: string }; default?: { url?: string } };
+          thumbnails?: {
+            medium?: { url?: string };
+            default?: { url?: string };
+          };
         };
         contentDetails?: { videoId?: string };
       }[];
@@ -325,7 +328,12 @@ export async function fetchRecentVideos(
     // Passo 3: buscar estatísticas e duração por vídeo.
     const statsMap = new Map<
       string,
-      { viewCount: number; likeCount: number; commentCount: number; duration: string | null }
+      {
+        viewCount: number;
+        likeCount: number;
+        commentCount: number;
+        duration: string | null;
+      }
     >();
     if (baseVideos.length > 0) {
       const ids = baseVideos.map((v) => v.videoId).join(",");

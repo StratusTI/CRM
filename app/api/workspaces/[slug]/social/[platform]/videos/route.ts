@@ -33,23 +33,33 @@ export async function GET(_request: NextRequest, { params }: RouteContext) {
   switch (platform) {
     case "TIKTOK": {
       const result = await TiktokService.getVideos(userId, slug);
-      return result.ok ? successResponse(result.value) : handleError(result.error);
+      return result.ok
+        ? successResponse(result.value)
+        : handleError(result.error);
     }
     case "YOUTUBE": {
       const result = await YoutubeService.getRecentVideos(userId, slug);
-      return result.ok ? successResponse(result.value) : handleError(result.error);
+      return result.ok
+        ? successResponse(result.value)
+        : handleError(result.error);
     }
     case "INSTAGRAM": {
       const result = await InstagramService.getRecentMedia(userId, slug);
-      return result.ok ? successResponse(result.value) : handleError(result.error);
+      return result.ok
+        ? successResponse(result.value)
+        : handleError(result.error);
     }
     case "FACEBOOK": {
       const result = await FacebookService.getRecentPosts(userId, slug);
-      return result.ok ? successResponse(result.value) : handleError(result.error);
+      return result.ok
+        ? successResponse(result.value)
+        : handleError(result.error);
     }
     case "TWITTER": {
       const result = await TwitterService.getRecentTweets(userId, slug);
-      return result.ok ? successResponse(result.value) : handleError(result.error);
+      return result.ok
+        ? successResponse(result.value)
+        : handleError(result.error);
     }
     default:
       return handleError(badRequest("Plataforma não suportada"));

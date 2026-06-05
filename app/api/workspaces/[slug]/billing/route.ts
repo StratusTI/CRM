@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
-import { getAuthSession } from "@/src/lib/auth-session";
 import { getOpenAiModel } from "@/src/lib/ai/env";
+import { getAuthSession } from "@/src/lib/auth-session";
 import { AiUsageRepository } from "@/src/repositories/ai-usage.repository";
 import { MembershipRepository } from "@/src/repositories/membership.repository";
 import { handleError, successResponse } from "@/utils/http-response";
@@ -41,7 +41,9 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
     } as never);
   }
 
-  const summary = await AiUsageRepository.getSummary(membership.value.workspace.id);
+  const summary = await AiUsageRepository.getSummary(
+    membership.value.workspace.id,
+  );
   if (!summary.ok) return handleError(summary.error);
 
   const model = getOpenAiModel();

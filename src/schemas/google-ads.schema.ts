@@ -28,7 +28,9 @@ export const GoogleAdsInsightsRangeSchema = z
   .enum(["7d", "30d", "90d"])
   .default("30d");
 
-export type GoogleAdsInsightsRange = z.infer<typeof GoogleAdsInsightsRangeSchema>;
+export type GoogleAdsInsightsRange = z.infer<
+  typeof GoogleAdsInsightsRangeSchema
+>;
 
 export const GOOGLE_ADS_RANGE_DAYS: Record<GoogleAdsInsightsRange, number> = {
   "7d": 7,
@@ -45,7 +47,9 @@ export const GoogleAdsInsightsPointSchema = z.object({
   conversions: z.number().nonnegative(),
 });
 
-export type GoogleAdsInsightsPoint = z.infer<typeof GoogleAdsInsightsPointSchema>;
+export type GoogleAdsInsightsPoint = z.infer<
+  typeof GoogleAdsInsightsPointSchema
+>;
 
 /** Insights: totais do período + série diária. */
 export const GoogleAdsInsightsSchema = z.object({

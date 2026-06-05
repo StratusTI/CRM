@@ -1,11 +1,10 @@
 import { NextRequest } from "next/server";
 import { describe, expect, it } from "vitest";
+import { POST } from "@/app/api/p/[token]/view/route";
 import { createProposal } from "@/src/__tests__/factories/proposal.factory";
 import { createUser } from "@/src/__tests__/factories/user.factory";
 import { createWorkspaceWithOwner } from "@/src/__tests__/factories/workspace.factory";
 import { ProposalRepository } from "@/src/repositories/proposal.repository";
-
-import { POST } from "@/app/api/p/[token]/view/route";
 
 function viewRequest(token: string, body: unknown, ip = "203.0.113.9") {
   return new NextRequest(`http://localhost/api/p/${token}/view`, {

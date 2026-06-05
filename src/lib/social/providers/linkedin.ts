@@ -1,7 +1,4 @@
-import {
-  LINKEDIN_CLIENT_ID,
-  LINKEDIN_CLIENT_SECRET,
-} from "@/lib/env/_server";
+import { LINKEDIN_CLIENT_ID, LINKEDIN_CLIENT_SECRET } from "@/lib/env/_server";
 import { ok, type Result } from "@/src/lib/result";
 import { expiresInToDate, getJson, postForm } from "./http";
 import type { SocialAccount, SocialProvider, TokenSet } from "./types";
