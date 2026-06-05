@@ -27,11 +27,13 @@ export function AppSidebar({
   currentSlug,
   workspaces,
   user,
+  isOwner,
   ...props
 }: {
   currentSlug: string;
   workspaces: WorkspaceSummary[];
   user: SidebarUser;
+  isOwner: boolean;
 } & ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar variant="inset" {...props}>
@@ -42,7 +44,7 @@ export function AppSidebar({
         <NavWorkspace slug={currentSlug} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={user} slug={currentSlug} />
+        <NavUser user={user} slug={currentSlug} isOwner={isOwner} />
       </SidebarFooter>
     </Sidebar>
   );

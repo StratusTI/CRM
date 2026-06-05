@@ -9,8 +9,8 @@ import {
   UnfoldMoreIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
+import { useTheme } from "next-themes";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -41,6 +41,7 @@ function initials(name: string) {
 export function NavUser({
   user,
   slug,
+  isOwner,
 }: {
   user: {
     name: string;
@@ -48,6 +49,7 @@ export function NavUser({
     avatar: string;
   };
   slug: string;
+  isOwner: boolean;
 }) {
   const { isMobile } = useSidebar();
   const { theme, setTheme } = useTheme();
@@ -99,13 +101,19 @@ export function NavUser({
               </DropdownMenuLabel>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem onClick={() => router.push(`/${slug}/billing`)}>
-                <HugeiconsIcon icon={MoneyBag01Icon} strokeWidth={2} />
-                Billing
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
+            {isOwner ? (
+              <>
+                <DropdownMenuGroup>
+                  <DropdownMenuItem
+                    onClick={() => router.push(`/${slug}/billing`)}
+                  >
+                    <HugeiconsIcon icon={MoneyBag01Icon} strokeWidth={2} />
+                    Plano e cobrança
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+                <DropdownMenuSeparator />
+              </>
+            ) : null}
             <DropdownMenuRadioGroup value={theme} onValueChange={setTheme}>
               <DropdownMenuLabel className="text-xs text-muted-foreground">
                 Tema
