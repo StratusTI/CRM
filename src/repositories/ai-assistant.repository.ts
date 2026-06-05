@@ -1,10 +1,16 @@
-import type { AiConversation, AiMessage, AiMessageRole } from "@prisma/client";
+import type { AiConversation, AiMessageRole, Prisma } from "@prisma/client";
 import { databaseError } from "@/src/errors/app-error";
+import type { ProcessedAttachment } from "@/src/lib/ai/attachments";
 import { prisma } from "@/src/lib/prisma";
 import { err, ok, type Result } from "@/src/lib/result";
 
+/** Mensagem do agente com seus anexos carregados. */
+export type AiMessageWithAttachments = Prisma.AiMessageGetPayload<{
+  include: { attachments: true };
+}>;
+
 export type AiConversationWithMessages = AiConversation & {
-  messages: AiMessage[];
+  messages: AiMessageWithAttachments[];
 };
 
 export type AppendMessageData = {
@@ -12,6 +18,7 @@ export type AppendMessageData = {
   role: AiMessageRole;
   content: string;
   toolCalls?: unknown;
+  attachments?: ProcessedAttachment[];
 };
 
 /** Acesso a dados das conversas/mensagens do agente. Só Prisma. */
@@ -52,7 +59,12 @@ export const AiAssistantRepository = {
     try {
       const conversation = await prisma.aiConversation.findUnique({
         where: { id },
-        include: { messages: { orderBy: { createdAt: "asc" } } },
+        include: {
+          messages: {
+            orderBy: { createdAt: "asc" },
+            include: { attachments: true },
+          },
+        },
       });
       return ok(conversation);
     } catch {
@@ -60,18 +72,54 @@ export const AiAssistantRepository = {
     }
   },
 
-  async appendMessage(data: AppendMessageData): Promise<Result<AiMessage>> {
+  async appendMessage(
+    data: AppendMessageData,
+  ): Promise<Result<AiMessageWithAttachments>> {
     try {
-      const { conversationId, role, content, toolCalls } = data;
+      const { conversationId, role, content, toolCalls, attachments } = data;
       const message = await prisma.aiMessage.create({
         data: {
           conversationId,
           role,
           content,
           toolCalls: (toolCalls ?? undefined) as never,
+          ...(attachments && attachments.length > 0
+            ? {
+                attachments: {
+                  create: attachments.map((a) => ({
+                    kind: a.kind,
+                    filename: a.filename,
+                    contentType: a.contentType,
+                    size: a.size,
+                    storageKey: a.storageKey,
+                    extractedText: a.extractedText,
+                  })),
+                },
+              }
+            : {}),
         },
+        include: { attachments: true },
       });
       return ok(message);
+    } catch {
+      return err(databaseError());
+    }
+  },
+
+  /** Busca um anexo garantindo que pertence a uma mensagem da conversa dada. */
+  async findAttachmentForConversation(
+    attachmentId: string,
+    conversationId: string,
+  ): Promise<Result<{ storageKey: string; contentType: string } | null>> {
+    try {
+      const attachment = await prisma.aiAttachment.findFirst({
+        where: {
+          id: attachmentId,
+          aiMessage: { conversationId },
+        },
+        select: { storageKey: true, contentType: true },
+      });
+      return ok(attachment);
     } catch {
       return err(databaseError());
     }

@@ -1458,9 +1458,43 @@ model AiMessage {
   createdAt      DateTime      @default(now()) @map("created_at")
 
   conversation AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  attachments  AiAttachment[]
 
   @@index([conversationId])
   @@map("ai_messages")
+}
+
+/// Como o anexo é entregue ao modelo: IMAGE vai por vision (image_url base64),
+/// DOCUMENT tem o texto extraído no servidor e injetado no contexto.
+enum AiAttachmentKind {
+  IMAGE
+  DOCUMENT
+}
+
+/// Arquivo enviado pelo usuário como base para a IA (paleta de cores, brand
+/// book, briefing etc.). Serve tanto ao assistente do workspace (aiMessageId)
+/// quanto ao construtor de landing pages (landingPageMessageId) — exatamente um
+/// dos dois é preenchido. Os bytes vivem no MinIO sob `storageKey`; para
+/// documentos, `extractedText` cacheia o texto para reinjeção barata em
+/// follow-ups (imagens não cacheiam texto).
+model AiAttachment {
+  id                   String           @id @default(cuid())
+  aiMessageId          String?          @map("ai_message_id")
+  landingPageMessageId String?          @map("landing_page_message_id")
+  kind                 AiAttachmentKind
+  filename             String
+  contentType          String           @map("content_type")
+  size                 Int
+  storageKey           String           @map("storage_key")
+  extractedText        String?          @map("extracted_text") @db.Text
+  createdAt            DateTime         @default(now()) @map("created_at")
+
+  aiMessage          AiMessage?          @relation(fields: [aiMessageId], references: [id], onDelete: Cascade)
+  landingPageMessage LandingPageMessage? @relation(fields: [landingPageMessageId], references: [id], onDelete: Cascade)
+
+  @@index([aiMessageId])
+  @@index([landingPageMessageId])
+  @@map("ai_attachments")
 }
 
 enum ProposalStatus {
@@ -1652,7 +1686,8 @@ model LandingPageMessage {
   content       String        @db.Text
   createdAt     DateTime      @default(now()) @map("created_at")
 
-  landingPage LandingPage @relation(fields: [landingPageId], references: [id], onDelete: Cascade)
+  landingPage LandingPage    @relation(fields: [landingPageId], references: [id], onDelete: Cascade)
+  attachments AiAttachment[]
 
   @@index([landingPageId])
   @@map("landing_page_messages")

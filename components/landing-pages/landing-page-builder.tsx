@@ -18,6 +18,7 @@ import { Switch } from "@/components/ui/switch";
 import { withBasePath } from "@/lib/api-url";
 import { cn } from "@/lib/utils";
 import { saveLandingPage, useLandingPage } from "@/src/hooks/use-landing-page";
+import type { AiProviderId } from "@/src/lib/ai/provider-meta";
 import type {
   LandingPageDTO,
   LandingPageStatus,
@@ -26,9 +27,12 @@ import type {
 export function LandingPageBuilder({
   slug,
   pageId,
+  providers = ["openai"],
 }: {
   slug: string;
   pageId: string;
+  /** Provedores de IA disponíveis (configurados no servidor). */
+  providers?: AiProviderId[];
 }) {
   const { page, isLoading, error } = useLandingPage(slug, pageId);
 
@@ -55,15 +59,19 @@ export function LandingPageBuilder({
     );
   }
 
-  return <LandingPageBuilderInner slug={slug} initial={page} />;
+  return (
+    <LandingPageBuilderInner slug={slug} initial={page} providers={providers} />
+  );
 }
 
 function LandingPageBuilderInner({
   slug,
   initial,
+  providers,
 }: {
   slug: string;
   initial: LandingPageDTO;
+  providers: AiProviderId[];
 }) {
   const router = useRouter();
 
@@ -196,6 +204,7 @@ function LandingPageBuilderInner({
             pageId={initial.id}
             hasContent={html.trim().length > 0}
             onHtml={setHtml}
+            providers={providers}
           />
         </aside>
         <main className="min-w-0 flex-1 bg-muted/30 p-3">

@@ -1,13 +1,17 @@
 import type {
   AiMessageRole,
   LandingPage,
-  LandingPageMessage,
   LandingPageStatus,
   Prisma,
 } from "@prisma/client";
 import { databaseError } from "@/src/errors/app-error";
+import type { ProcessedAttachment } from "@/src/lib/ai/attachments";
 import { prisma } from "@/src/lib/prisma";
 import { err, ok, type Result } from "@/src/lib/result";
+
+/** Mensagem do chat de geração com seus anexos carregados. */
+export type LandingPageMessageWithAttachments =
+  Prisma.LandingPageMessageGetPayload<{ include: { attachments: true } }>;
 
 /** Página com o total de acessos (do `_count`), usado nas listagens. */
 export type LandingPageWithCount = LandingPage & { _count: { views: number } };
@@ -256,11 +260,12 @@ export const LandingPageRepository = {
 
   async listMessages(
     landingPageId: string,
-  ): Promise<Result<LandingPageMessage[]>> {
+  ): Promise<Result<LandingPageMessageWithAttachments[]>> {
     try {
       const messages = await prisma.landingPageMessage.findMany({
         where: { landingPageId },
         orderBy: { createdAt: "asc" },
+        include: { attachments: true },
       });
       return ok(messages);
     } catch {
@@ -272,10 +277,50 @@ export const LandingPageRepository = {
     landingPageId: string;
     role: AiMessageRole;
     content: string;
-  }): Promise<Result<LandingPageMessage>> {
+    attachments?: ProcessedAttachment[];
+  }): Promise<Result<LandingPageMessageWithAttachments>> {
     try {
-      const message = await prisma.landingPageMessage.create({ data });
+      const { attachments, ...rest } = data;
+      const message = await prisma.landingPageMessage.create({
+        data: {
+          ...rest,
+          ...(attachments && attachments.length > 0
+            ? {
+                attachments: {
+                  create: attachments.map((a) => ({
+                    kind: a.kind,
+                    filename: a.filename,
+                    contentType: a.contentType,
+                    size: a.size,
+                    storageKey: a.storageKey,
+                    extractedText: a.extractedText,
+                  })),
+                },
+              }
+            : {}),
+        },
+        include: { attachments: true },
+      });
       return ok(message);
+    } catch {
+      return err(databaseError());
+    }
+  },
+
+  /** Busca um anexo garantindo que pertence a uma mensagem da página dada. */
+  async findAttachmentForPage(
+    attachmentId: string,
+    landingPageId: string,
+  ): Promise<Result<{ storageKey: string; contentType: string } | null>> {
+    try {
+      const attachment = await prisma.aiAttachment.findFirst({
+        where: {
+          id: attachmentId,
+          landingPageMessage: { landingPageId },
+        },
+        select: { storageKey: true, contentType: true },
+      });
+      return ok(attachment);
     } catch {
       return err(databaseError());
     }

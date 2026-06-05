@@ -30,6 +30,7 @@
     "docker:stop": "docker compose -f docker-compose.yml stop"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.100.1",
     "@aws-sdk/client-s3": "^3.1058.0",
     "@base-ui/react": "^1.5.0",
     "@better-auth/infra": "^0.2.8",
@@ -75,8 +76,10 @@
     "date-fns": "^4.2.1",
     "dotenv": "^17.4.2",
     "katex": "^0.17.0",
+    "mammoth": "^1.12.0",
     "next": "16.2.6",
     "next-themes": "^0.4.6",
+    "pdf-parse": "^2.4.5",
     "pg": "^8.21.0",
     "radix-ui": "^1.4.3",
     "react": "19.2.4",

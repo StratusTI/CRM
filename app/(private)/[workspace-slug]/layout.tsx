@@ -4,7 +4,7 @@ import { type ReactNode, Suspense } from "react";
 import { AiAssistantWidget } from "@/components/ai/ai-assistant-widget";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { isAiConfigured } from "@/src/lib/ai/env";
+import { availableAiProviders, isAiConfigured } from "@/src/lib/ai/env";
 import { getAuthSession } from "@/src/lib/auth-session";
 import { MembershipRepository } from "@/src/repositories/membership.repository";
 import { WorkspaceService } from "@/src/services/workspace.service";
@@ -84,7 +84,11 @@ async function WorkspaceGate({ children, params }: WorkspaceLayoutProps) {
         {children}
       </SidebarInset>
       {isAiConfigured() && (
-        <AiAssistantWidget slug={slug} userName={name ?? ""} />
+        <AiAssistantWidget
+          slug={slug}
+          userName={name ?? ""}
+          providers={availableAiProviders()}
+        />
       )}
     </SidebarProvider>
   );

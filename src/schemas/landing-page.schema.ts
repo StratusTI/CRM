@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { AiAttachmentOutputSchema } from "./ai-attachment.schema";
 
 /**
  * Contrato da feature Landing Pages (construtor com IA, estilo Lovable/v0).
@@ -58,13 +59,14 @@ export const UpdateLandingPageSchema = z
     message: "Informe ao menos um campo para atualizar",
   });
 
-/** Mensagem do usuário para o construtor de IA. */
+/**
+ * Mensagem do usuário para o construtor de IA. `message` pode vir vazio quando
+ * há anexos (a rota valida "mensagem ou anexo"). `provider` é opcional — o
+ * servidor resolve o efetivo (OpenAI ou Anthropic/Claude).
+ */
 export const GenerateLandingPageSchema = z.object({
-  message: z
-    .string()
-    .trim()
-    .min(1, "Mensagem vazia")
-    .max(4000, "Mensagem muito longa"),
+  message: z.string().trim().max(4000, "Mensagem muito longa"),
+  provider: z.enum(["openai", "anthropic"]).optional(),
 });
 
 /**
@@ -116,6 +118,7 @@ export const LandingPageMessageSchema = z.object({
   role: z.enum(["user", "assistant"]),
   content: z.string(),
   createdAt: z.string(),
+  attachments: z.array(AiAttachmentOutputSchema).optional(),
 });
 
 /** O que a página pública precisa — sem campos internos. */

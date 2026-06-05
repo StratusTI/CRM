@@ -1,5 +1,6 @@
-import type { LandingPage, LandingPageMessage } from "@prisma/client";
+import type { LandingPage } from "@prisma/client";
 import type {
+  LandingPageMessageWithAttachments,
   LandingPageMetricsRaw,
   LandingPageWithCount,
   WorkspaceLandingView,
@@ -10,6 +11,7 @@ import type {
   LandingPageMetricsDTO,
   PublicLandingPageDTO,
 } from "@/src/schemas/landing-page.schema";
+import { toAiAttachmentDTO } from "./ai-attachment.mapper";
 
 /** `Prisma.LandingPage` → `LandingPageDTO` (datas em ISO). */
 export function toLandingPageDTO(page: LandingPage): LandingPageDTO {
@@ -84,12 +86,15 @@ export function toLandingPageMetricsDTO(
 
 /** `Prisma.LandingPageMessage` → DTO (role em minúsculo). */
 export function toLandingPageMessageDTO(
-  message: LandingPageMessage,
+  message: LandingPageMessageWithAttachments,
 ): LandingPageMessageDTO {
   return {
     id: message.id,
     role: message.role === "ASSISTANT" ? "assistant" : "user",
     content: message.content,
     createdAt: message.createdAt.toISOString(),
+    ...(message.attachments.length > 0
+      ? { attachments: message.attachments.map(toAiAttachmentDTO) }
+      : {}),
   };
 }
