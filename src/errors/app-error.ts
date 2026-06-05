@@ -124,6 +124,16 @@ export const lineItemNotFound = (message = "Item não encontrado"): AppError =>
 export const quotaNotFound = (message = "Meta não encontrada"): AppError =>
   appError("QUOTA_NOT_FOUND", message);
 
+export const leadNotFound = (message = "Lead não encontrado"): AppError =>
+  appError("LEAD_NOT_FOUND", message);
+
+export const leadAlreadyConverted = (
+  message = "Este lead já foi convertido",
+): AppError => appError("LEAD_ALREADY_CONVERTED", message);
+
+export const leadRuleNotFound = (message = "Regra não encontrada"): AppError =>
+  appError("LEAD_RULE_NOT_FOUND", message);
+
 export const customFieldNotFound = (
   message = "Campo customizado não encontrado",
 ): AppError => appError("CUSTOM_FIELD_NOT_FOUND", message);

@@ -49,6 +49,11 @@ model User {
 
   activities Activity[] @relation("ActivityActor")
 
+  leadsOwned       Lead[]            @relation("LeadOwner")
+  leadsCreated     Lead[]            @relation("LeadCreatedBy")
+  leadsUpdated     Lead[]            @relation("LeadUpdatedBy")
+  leadRoutingOwned LeadRoutingRule[] @relation("LeadRoutingOwner")
+
   tasksCreated  Task[] @relation("TaskCreatedBy")
   tasksUpdated  Task[] @relation("TaskUpdatedBy")
   tasksAssigned Task[] @relation("TaskAssignee")
@@ -153,6 +158,9 @@ model Workspace {
   customFields       CustomFieldDefinition[]
   profiles           Profile[]
   activities         Activity[]
+  leads              Lead[]
+  leadScoringRules   LeadScoringRule[]
+  leadRoutingRules   LeadRoutingRule[]
   opportunities      Opportunity[]
   tasks              Task[]
   notes              Note[]
@@ -503,6 +511,109 @@ model Activity {
   @@index([entity, entityId])
   @@index([actorUserId])
   @@map("activities")
+}
+
+enum LeadStatus {
+  NEW
+  WORKING
+  QUALIFIED
+  UNQUALIFIED
+  CONVERTED
+}
+
+enum LeadRuleField {
+  name
+  email
+  phone
+  company
+  jobTitle
+  source
+  city
+}
+
+enum LeadRuleOperator {
+  equals
+  not_equals
+  contains
+  is_empty
+  is_not_empty
+}
+
+/// Lead (contato bruto de marketing) antes de virar Pessoa+Oportunidade.
+/// Pontuado e roteado automaticamente; convertido manualmente.
+model Lead {
+  id                     String     @id @default(cuid())
+  workspaceId            String     @map("workspace_id")
+  name                   String
+  emails                 String[]   @default([])
+  phones                 String[]   @default([])
+  company                String?
+  jobTitle               String?    @map("job_title")
+  city                   String?
+  linkedin               String?
+  source                 String?
+  status                 LeadStatus @default(NEW)
+  score                  Int        @default(0)
+  ownerId                String?    @map("owner_id")
+  convertedPersonId      String?    @map("converted_person_id")
+  convertedOpportunityId String?    @map("converted_opportunity_id")
+  createdById            String     @map("created_by_id")
+  updatedById            String?    @map("updated_by_id")
+  position               Int        @default(0)
+  createdAt              DateTime   @default(now()) @map("created_at")
+  updatedAt              DateTime   @updatedAt @map("updated_at")
+  deletedAt              DateTime?  @map("deleted_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  owner     User?     @relation("LeadOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  createdBy User      @relation("LeadCreatedBy", fields: [createdById], references: [id])
+  updatedBy User?     @relation("LeadUpdatedBy", fields: [updatedById], references: [id])
+
+  @@index([workspaceId])
+  @@index([ownerId])
+  @@index([status])
+  @@index([deletedAt])
+  @@index([workspaceId, position])
+  @@map("leads")
+}
+
+/// Regra de pontuação de leads (no-code): condição → pontos.
+model LeadScoringRule {
+  id          String           @id @default(cuid())
+  workspaceId String           @map("workspace_id")
+  field       LeadRuleField
+  operator    LeadRuleOperator
+  value       String?
+  points      Int              @default(0)
+  active      Boolean          @default(true)
+  position    Int              @default(0)
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, position])
+  @@map("lead_scoring_rules")
+}
+
+/// Regra de roteamento de leads: condição → responsável. Sem match → round-robin.
+model LeadRoutingRule {
+  id          String           @id @default(cuid())
+  workspaceId String           @map("workspace_id")
+  field       LeadRuleField
+  operator    LeadRuleOperator
+  value       String?
+  ownerId     String           @map("owner_id")
+  active      Boolean          @default(true)
+  position    Int              @default(0)
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  owner     User      @relation("LeadRoutingOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, position])
+  @@map("lead_routing_rules")
 }
 
 /// Meta de receita de um responsável num período (mês "2026-06" ou trimestre

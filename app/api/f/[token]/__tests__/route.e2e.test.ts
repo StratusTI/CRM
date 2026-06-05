@@ -52,7 +52,7 @@ describe("/api/f/[token] (e2e)", () => {
     expect(json.data.fields[0].mapping).toBeUndefined();
   });
 
-  it("submete LEAD: cria pessoa + oportunidade e registra a submissão", async () => {
+  it("submete LEAD: cria um Lead e registra a submissão", async () => {
     const { prisma } = await import("@/src/lib/prisma");
     const { user, workspace } = await ownerWorkspace();
     const form = await createForm(workspace.id, user.id, {
@@ -68,22 +68,20 @@ describe("/api/f/[token] (e2e)", () => {
     );
     expect(res.status).toBe(201);
 
-    const person = await prisma.person.findFirst({
+    // A ação LEAD agora cria um Lead (conversão em Pessoa+Oportunidade é manual).
+    const lead = await prisma.lead.findFirst({
       where: { workspaceId: workspace.id, emails: { has: "ada@example.com" } },
     });
-    expect(person).not.toBeNull();
-    expect(person?.createdById).toBe(user.id);
-
-    const opp = await prisma.opportunity.findFirst({
-      where: { workspaceId: workspace.id, pointOfContactId: person?.id },
-    });
-    expect(opp).not.toBeNull();
+    expect(lead).not.toBeNull();
+    expect(lead?.name).toBe("Ada Lovelace");
+    expect(lead?.createdById).toBe(user.id);
 
     const submissions = await prisma.formSubmission.findMany({
       where: { formId: form.id },
     });
     expect(submissions).toHaveLength(1);
-    expect(submissions[0].createdPersonId).toBe(person?.id);
+    // submission LEAD não registra pessoa/oportunidade (conversão é posterior).
+    expect(submissions[0].createdPersonId).toBeNull();
 
     const refreshed = await prisma.form.findUnique({ where: { id: form.id } });
     expect(refreshed?.submissionCount).toBe(1);

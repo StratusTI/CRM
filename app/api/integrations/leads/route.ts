@@ -3,13 +3,13 @@ import { z } from "zod";
 import { validationError } from "@/src/errors/app-error";
 import { IngestLeadSchema } from "@/src/schemas/lead-ingest.schema";
 import { IntegrationApiKeyService } from "@/src/services/integration-api-key.service";
-import { LeadIngestService } from "@/src/services/lead-ingest.service";
+import { LeadService } from "@/src/services/lead.service";
 import { handleError, successResponse } from "@/utils/http-response";
 
 /**
  * Ingestão de leads vinda de canais de marketing (WhatsApp, ligação, direct).
- * Recebe os dados básicos do contato e da oportunidade e abre a oportunidade
- * automaticamente, deduplicando a pessoa por e-mail/telefone.
+ * Cria um **Lead** (pontuado e roteado automaticamente). A conversão em
+ * Pessoa + Oportunidade é feita depois, manualmente, no CRM.
  * Autenticação por chave de API da workspace (header `Authorization: Bearer`).
  * A workspace e o autor são resolvidos pela própria chave.
  */
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const result = await LeadIngestService.ingest(
+  const result = await LeadService.createFromIngest(
     auth.value.workspaceId,
     auth.value.actorUserId,
     parsed.data,

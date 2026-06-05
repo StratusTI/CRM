@@ -95,8 +95,8 @@
     "/api/integrations/leads": {
       "post": {
         "tags": ["Integração"],
-        "summary": "Abertura de oportunidade a partir de um lead",
-        "description": "Recebe os dados básicos de um contato e de uma oportunidade vindos de canais de marketing (WhatsApp, ligação, direct) e abre a oportunidade automaticamente. A pessoa é deduplicada por e-mail/telefone na workspace: se já existir, a oportunidade é vinculada a ela. A workspace e o autor são resolvidos pela própria chave de API.",
+        "summary": "Criação de um lead",
+        "description": "Recebe os dados básicos de um contato vindos de canais de marketing (WhatsApp, ligação, direct) e cria um Lead, pontuado e roteado automaticamente conforme as regras da workspace. A conversão em Pessoa + Oportunidade é feita depois, manualmente, no CRM. A workspace e o autor são resolvidos pela própria chave de API.",
         "security": [
           {
             "integrationApiKey": []
@@ -651,21 +651,21 @@
       },
       "IngestLeadResult": {
         "type": "object",
+        "description": "O Lead criado, com pontuação (score) e responsável (ownerId) atribuídos automaticamente.",
         "properties": {
-          "personReused": {
-            "type": "boolean",
-            "description": "true quando a oportunidade foi vinculada a uma pessoa já existente."
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "emails": { "type": "array", "items": { "type": "string" } },
+          "phones": { "type": "array", "items": { "type": "string" } },
+          "status": {
+            "type": "string",
+            "enum": ["NEW", "WORKING", "QUALIFIED", "UNQUALIFIED", "CONVERTED"]
           },
-          "person": {
-            "type": "object",
-            "description": "Pessoa criada ou reaproveitada."
-          },
-          "opportunity": {
-            "type": "object",
-            "description": "Oportunidade aberta para o lead."
-          }
+          "score": { "type": "integer" },
+          "ownerId": { "type": ["string", "null"] },
+          "source": { "type": ["string", "null"] }
         },
-        "required": ["personReused", "person", "opportunity"]
+        "required": ["id", "name", "status", "score"]
       }
     }
   }

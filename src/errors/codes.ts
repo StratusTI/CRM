@@ -60,6 +60,11 @@ export const ERROR_CODES = {
   CUSTOM_FIELD_KEY_TAKEN: { code: "CUSTOM_FIELD_KEY_TAKEN", status: 409 },
   CUSTOM_FIELD_INVALID: { code: "CUSTOM_FIELD_INVALID", status: 422 },
 
+  // Lead domain
+  LEAD_NOT_FOUND: { code: "LEAD_NOT_FOUND", status: 404 },
+  LEAD_ALREADY_CONVERTED: { code: "LEAD_ALREADY_CONVERTED", status: 409 },
+  LEAD_RULE_NOT_FOUND: { code: "LEAD_RULE_NOT_FOUND", status: 404 },
+
   // Profile / RBAC domain
   PROFILE_NOT_FOUND: { code: "PROFILE_NOT_FOUND", status: 404 },
   PROFILE_NAME_TAKEN: { code: "PROFILE_NAME_TAKEN", status: 409 },

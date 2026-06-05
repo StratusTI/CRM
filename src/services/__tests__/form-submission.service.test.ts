@@ -15,7 +15,7 @@ const companyRepo = vi.hoisted(() => ({
   findByCnpj: vi.fn(),
   create: vi.fn(),
 }));
-const leadIngest = vi.hoisted(() => ({ ingest: vi.fn() }));
+const leadService = vi.hoisted(() => ({ createFromIngest: vi.fn() }));
 const dispatch = vi.hoisted(() => vi.fn());
 
 vi.mock("@/src/repositories/form.repository", () => ({
@@ -27,8 +27,8 @@ vi.mock("@/src/repositories/person.repository", () => ({
 vi.mock("@/src/repositories/company.repository", () => ({
   CompanyRepository: companyRepo,
 }));
-vi.mock("@/src/services/lead-ingest.service", () => ({
-  LeadIngestService: leadIngest,
+vi.mock("@/src/services/lead.service", () => ({
+  LeadService: leadService,
 }));
 vi.mock("@/src/services/workflow-dispatcher", () => ({
   dispatchRecordEvent: dispatch,
@@ -75,7 +75,7 @@ function form(overrides: Record<string, unknown> = {}) {
 }
 
 beforeEach(() => {
-  for (const m of [formRepo, personRepo, companyRepo, leadIngest]) {
+  for (const m of [formRepo, personRepo, companyRepo, leadService]) {
     for (const fn of Object.values(m))
       (fn as ReturnType<typeof vi.fn>).mockReset();
   }
@@ -100,7 +100,7 @@ describe("FormSubmissionService.submit", () => {
     );
     expect(res.ok).toBe(true);
     expect(formRepo.recordSubmission).not.toHaveBeenCalled();
-    expect(leadIngest.ingest).not.toHaveBeenCalled();
+    expect(leadService.createFromIngest).not.toHaveBeenCalled();
   });
 
   it("rejeita valores inválidos (obrigatório vazio)", async () => {
@@ -111,18 +111,12 @@ describe("FormSubmissionService.submit", () => {
       CTX,
     );
     expect(res.ok).toBe(false);
-    expect(leadIngest.ingest).not.toHaveBeenCalled();
+    expect(leadService.createFromIngest).not.toHaveBeenCalled();
   });
 
-  it("LEAD: chama LeadIngestService e registra os ids criados", async () => {
+  it("LEAD: cria um Lead a partir dos dados do formulário", async () => {
     formRepo.findByPublicToken.mockResolvedValue(ok(form()));
-    leadIngest.ingest.mockResolvedValue(
-      ok({
-        personReused: false,
-        person: { id: "p_1" },
-        opportunity: { id: "o_1" },
-      }),
-    );
+    leadService.createFromIngest.mockResolvedValue(ok({ id: "lead_1" }));
 
     const res = await FormSubmissionService.submit(
       "tok",
@@ -131,19 +125,19 @@ describe("FormSubmissionService.submit", () => {
     );
 
     expect(res.ok).toBe(true);
-    expect(leadIngest.ingest).toHaveBeenCalledTimes(1);
-    const [wsId, actor, input] = leadIngest.ingest.mock.calls[0];
+    expect(leadService.createFromIngest).toHaveBeenCalledTimes(1);
+    const [wsId, actor, input] = leadService.createFromIngest.mock.calls[0];
     expect(wsId).toBe("ws_1");
     expect(actor).toBe("actor_1");
     expect(input.person.name).toBe("Ada");
     expect(input.person.emails).toEqual(["ada@x.com"]);
 
+    // A submission LEAD não registra ids de pessoa/oportunidade (conversão é manual).
     expect(formRepo.recordSubmission).toHaveBeenCalledWith(
       expect.objectContaining({
         formId: "form_1",
-        createdPersonId: "p_1",
-        createdOpportunityId: "o_1",
-        personReused: false,
+        createdPersonId: null,
+        createdOpportunityId: null,
       }),
     );
   });

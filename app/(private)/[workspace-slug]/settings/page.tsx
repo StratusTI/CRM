@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { PageShell } from "@/components/page-shell";
 import { AuditLogSection } from "@/components/settings/audit-log-section";
 import { CustomFieldsSection } from "@/components/settings/custom-fields-section";
+import { LeadRulesSection } from "@/components/settings/lead-rules-section";
 import { PipelinesSection } from "@/components/settings/pipelines-section";
 import { PrivacySection } from "@/components/settings/privacy-section";
 import { ProfilesSection } from "@/components/settings/profiles-section";
@@ -56,6 +57,15 @@ export default async function SettingsPage({
       </Suspense>
       <Suspense>
         <CustomFieldsSection
+          slug={slug}
+          canManage={
+            membership.value.role === "OWNER" ||
+            membership.value.role === "ADMIN"
+          }
+        />
+      </Suspense>
+      <Suspense>
+        <LeadRulesSection
           slug={slug}
           canManage={
             membership.value.role === "OWNER" ||

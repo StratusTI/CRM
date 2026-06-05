@@ -16,7 +16,7 @@ import {
 } from "@/src/schemas/form.schema";
 import type { LeadOpportunityInput } from "@/src/schemas/lead-ingest.schema";
 import { normalizeBrazilPhone, normalizeDomain } from "@/src/schemas/shared";
-import { LeadIngestService } from "@/src/services/lead-ingest.service";
+import { LeadService } from "@/src/services/lead.service";
 import { dispatchRecordEvent } from "@/src/services/workflow-dispatcher";
 
 /** Contexto da submissão pública, extraído do request (nunca do corpo). */
@@ -135,15 +135,14 @@ export const FormSubmissionService = {
 
     let createdPersonId: string | null = null;
     let createdCompanyId: string | null = null;
-    let createdOpportunityId: string | null = null;
+    const createdOpportunityId: string | null = null;
     let personReused = false;
 
     if (form.action === "LEAD") {
-      const result = await ingestLead(workspaceId, actorUserId, mapped, config);
+      // Cria um Lead (pontuado/roteado). Conversão em Pessoa+Oportunidade é
+      // manual depois — por isso a submission não registra esses ids aqui.
+      const result = await createLead(workspaceId, actorUserId, mapped, config);
       if (!result.ok) return result;
-      createdPersonId = result.value.personId;
-      createdOpportunityId = result.value.opportunityId;
-      personReused = result.value.personReused;
     } else if (form.action === "PERSON") {
       const result = await upsertPerson(workspaceId, actorUserId, mapped);
       if (!result.ok) return result;
@@ -176,15 +175,13 @@ export const FormSubmissionService = {
   },
 };
 
-/** LEAD: reusa a ingestão de leads (deduplica pessoa, abre oportunidade). */
-async function ingestLead(
+/** LEAD: cria um Lead (pontuado e roteado). Conversão é manual depois. */
+async function createLead(
   workspaceId: string,
   actorUserId: string,
   mapped: Mapped,
   config: ActionConfig,
-): Promise<
-  Result<{ personId: string; opportunityId: string; personReused: boolean }>
-> {
+): Promise<Result<true>> {
   const opportunity: LeadOpportunityInput = {
     name: str(mapped.opportunity.name) ?? config.opportunityName,
     amount: num(mapped.opportunity.amount),
@@ -192,7 +189,7 @@ async function ingestLead(
     source: str(mapped.opportunity.source) ?? config.opportunitySource,
   };
 
-  const result = await LeadIngestService.ingest(workspaceId, actorUserId, {
+  const result = await LeadService.createFromIngest(workspaceId, actorUserId, {
     person: {
       name: str(mapped.person.name) ?? "",
       emails: mapped.emails,
@@ -205,11 +202,7 @@ async function ingestLead(
     opportunity,
   });
   if (!result.ok) return result;
-  return ok({
-    personId: result.value.person.id,
-    opportunityId: result.value.opportunity.id,
-    personReused: result.value.personReused,
-  });
+  return ok(true);
 }
 
 /** PERSON: deduplica por e-mail/telefone, reutilizando uma pessoa existente. */

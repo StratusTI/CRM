@@ -24,6 +24,7 @@ import {
   TiktokIcon,
   UserGroup02Icon,
   UserMultipleIcon,
+  UserSearch01Icon,
   WorkflowCircle01Icon,
   YoutubeIcon,
 } from "@hugeicons/core-free-icons";
@@ -52,6 +53,12 @@ export const WORKSPACE_NAV: NavNode[] = [
     segment: "people",
     icon: UserMultipleIcon,
     color: "bg-emerald-500",
+  },
+  {
+    title: "Leads",
+    segment: "leads",
+    icon: UserSearch01Icon,
+    color: "bg-pink-500",
   },
   {
     title: "Oportunidades",
