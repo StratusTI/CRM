@@ -1,14 +1,20 @@
-import type { AiMessage } from "@prisma/client";
 import {
   aiConversationNotFound,
   aiNotConfigured,
 } from "@/src/errors/app-error";
+import {
+  type AttachmentForContent,
+  buildUserContent,
+  type ProcessedAttachment,
+  processUploads,
+} from "@/src/lib/ai/attachments";
 import type { ChatMessage, ToolCallPayload } from "@/src/lib/ai/client";
 import { streamChat } from "@/src/lib/ai/client";
 import { buildSystemPrompt } from "@/src/lib/ai/context";
 import { getOpenAiModel, isAiConfigured } from "@/src/lib/ai/env";
 import { AI_TOOLS, executeTool } from "@/src/lib/ai/tools";
 import { err, ok, type Result } from "@/src/lib/result";
+import { getObjectBytes } from "@/src/lib/storage/s3";
 import {
   toAiConversationDTO,
   toAiMessageDTO,
@@ -16,6 +22,7 @@ import {
 import {
   AiAssistantRepository,
   type AiConversationWithMessages,
+  type AiMessageWithAttachments,
 } from "@/src/repositories/ai-assistant.repository";
 import { AiUsageRepository } from "@/src/repositories/ai-usage.repository";
 import { MembershipRepository } from "@/src/repositories/membership.repository";
@@ -38,6 +45,7 @@ const EMPTY_REPLY = "Não consegui gerar uma resposta. Tente reformular.";
 
 /** Chunk emitido pelo loop de agente, consumido pela rota como SSE. */
 export type ReplyChunk =
+  | { type: "user"; message: AiMessageDTO }
   | { type: "text"; delta: string }
   | { type: "thinking"; tools: string[] }
   | { type: "done"; conversationId: string; message: AiMessageDTO }
@@ -98,10 +106,11 @@ export const AiAssistantService = {
     userName: string;
     slug: string;
     input: SendAiMessageInput;
+    files?: File[];
   }): Promise<
     Result<{ conversationId: string; run: AsyncGenerator<ReplyChunk> }>
   > {
-    const { userId, userName, slug, input } = params;
+    const { userId, userName, slug, input, files = [] } = params;
 
     if (!isAiConfigured()) return err(aiNotConfigured());
 
@@ -112,6 +121,10 @@ export const AiAssistantService = {
     if (!membership.ok) return membership;
     if (!membership.value) return err(aiConversationNotFound());
     const { id: workspaceId, name: workspaceName } = membership.value.workspace;
+
+    // Processa anexos (sobe ao MinIO + extrai texto) antes de persistir.
+    const processed = await processUploads(files, `ai/${workspaceId}`);
+    if (!processed.ok) return processed;
 
     // Garante a conversa (cria ou valida posse) e monta o histórico.
     let conversationId: string;
@@ -125,18 +138,19 @@ export const AiAssistantService = {
       const created = await AiAssistantRepository.createConversation(
         workspaceId,
         userId,
-        deriveTitle(input.message),
+        deriveTitle(input.message, processed.value),
       );
       if (!created.ok) return created;
       conversationId = created.value.id;
       history = [];
     }
 
-    // Persiste a mensagem do usuário.
+    // Persiste a mensagem do usuário (com seus anexos).
     const savedUser = await AiAssistantRepository.appendMessage({
       conversationId,
       role: "USER",
       content: input.message,
+      attachments: processed.value,
     });
     if (!savedUser.ok) return savedUser;
 
@@ -145,18 +159,69 @@ export const AiAssistantService = {
       userName,
       now: new Date(),
     });
+    // Anexos do turno alimentam o modelo: docs como texto, imagens como vision.
+    const userContent = buildUserContent(
+      input.message,
+      processed.value.map(toContentAttachment),
+    );
     const messages: ChatMessage[] = [
       { role: "system", content: system },
       ...history,
-      { role: "user", content: input.message },
+      { role: "user", content: userContent },
     ];
 
     return ok({
       conversationId,
-      run: runAgent({ userId, slug, conversationId, workspaceId, messages }),
+      run: runAgent({
+        userId,
+        slug,
+        conversationId,
+        workspaceId,
+        messages,
+        hasAttachments: processed.value.length > 0,
+        userMessage: savedUser.value,
+      }),
     });
   },
+
+  /**
+   * Baixa os bytes de um anexo de uma conversa, escopado por workspace/usuário.
+   * Usado pela rota de download para servir miniaturas e documentos.
+   */
+  async getAttachment(
+    userId: string,
+    slug: string,
+    conversationId: string,
+    attachmentId: string,
+  ): Promise<Result<{ bytes: ArrayBuffer; contentType: string }>> {
+    const ws = await resolveWorkspaceId(userId, slug);
+    if (!ws.ok) return ws;
+
+    // Garante posse da conversa antes de servir o anexo.
+    const loaded = await loadOwned(ws.value, userId, conversationId);
+    if (!loaded.ok) return loaded;
+
+    const found = await AiAssistantRepository.findAttachmentForConversation(
+      attachmentId,
+      conversationId,
+    );
+    if (!found.ok) return found;
+    if (!found.value) return err(aiConversationNotFound());
+
+    const data = await getObjectBytes(found.value.storageKey);
+    return ok({ bytes: data.bytes, contentType: found.value.contentType });
+  },
 };
+
+/** Mapeia um anexo processado para o formato de montagem de conteúdo. */
+function toContentAttachment(a: ProcessedAttachment): AttachmentForContent {
+  return {
+    kind: a.kind,
+    filename: a.filename,
+    extractedText: a.extractedText,
+    dataUrl: a.dataUrl,
+  };
+}
 
 /** Loop de agente: alterna chamadas ao modelo e execução de tools. */
 async function* runAgent(ctx: {
@@ -165,10 +230,22 @@ async function* runAgent(ctx: {
   conversationId: string;
   workspaceId: string;
   messages: ChatMessage[];
+  hasAttachments: boolean;
+  userMessage: AiMessageWithAttachments;
 }): AsyncGenerator<ReplyChunk> {
-  const { userId, slug, conversationId, workspaceId, messages } = ctx;
+  const {
+    userId,
+    slug,
+    conversationId,
+    workspaceId,
+    messages,
+    hasAttachments,
+  } = ctx;
   let assistantText = "";
   const usedTools: { name: string; args: string }[] = [];
+
+  // Espelha no chat a mensagem persistida do usuário (com seus anexos).
+  yield { type: "user", message: toAiMessageDTO(ctx.userMessage) };
 
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
     let finishReason: string | null = null;
@@ -179,8 +256,12 @@ async function* runAgent(ctx: {
      * Round 0: tool_choice "required" força o modelo a consultar pelo menos
      * uma ferramenta do workspace antes de compor a resposta final. Rounds
      * subsequentes usam "auto" — o modelo decide se precisa de mais dados.
+     *
+     * Exceção: quando há anexos no turno, usamos "auto" já no round 0 — a
+     * pergunta pode ser respondida a partir do material anexado (ex.: "use
+     * esta paleta"), sem forçar uma consulta ao workspace.
      */
-    const toolChoice = round === 0 ? "required" : "auto";
+    const toolChoice = round === 0 && !hasAttachments ? "required" : "auto";
 
     for await (const ev of streamChat(messages, AI_TOOLS, toolChoice)) {
       if (ev.type === "text") {
@@ -289,7 +370,7 @@ function toChatHistory(
 ): ChatMessage[] {
   return conversation.messages
     .slice(-MAX_HISTORY)
-    .map((m: AiMessage): ChatMessage => {
+    .map((m: AiMessageWithAttachments): ChatMessage => {
       if (m.role === "ASSISTANT") {
         const toolsUsed =
           m.toolCalls && Array.isArray(m.toolCalls) && m.toolCalls.length > 0
@@ -301,12 +382,33 @@ function toChatHistory(
             : "";
         return { role: "assistant", content: m.content + annotation };
       }
+      // Reinjeta o texto dos documentos anexados (cacheado) em turns antigos.
+      // Imagens viram nota textual (dataUrl nulo) para conter o custo de tokens.
+      if (m.attachments.length > 0) {
+        const content = buildUserContent(
+          m.content,
+          m.attachments.map((a) => ({
+            kind: a.kind,
+            filename: a.filename,
+            extractedText: a.extractedText,
+            dataUrl: null,
+          })),
+        );
+        return { role: "user", content };
+      }
       return { role: "user", content: m.content };
     });
 }
 
-function deriveTitle(message: string): string {
+/** Título da conversa a partir da 1ª mensagem; cai para os anexos se vazia. */
+function deriveTitle(
+  message: string,
+  attachments: ProcessedAttachment[],
+): string {
   const trimmed = message.trim().replace(/\s+/g, " ");
+  if (!trimmed) {
+    return attachments[0]?.filename.slice(0, TITLE_MAX) ?? "Nova conversa";
+  }
   return trimmed.length > TITLE_MAX
     ? `${trimmed.slice(0, TITLE_MAX)}…`
     : trimmed;

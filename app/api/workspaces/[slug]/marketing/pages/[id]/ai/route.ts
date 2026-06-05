@@ -44,6 +44,9 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       validationError("Dados inválidos", z.flattenError(parsed.error)),
     );
   }
+  if (!parsed.data.message && files.length === 0) {
+    return handleError(validationError("Envie uma mensagem ou um anexo."));
+  }
 
   const { slug, id } = await params;
   const result = await LandingPageService.generate({

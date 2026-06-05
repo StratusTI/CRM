@@ -1,28 +1,17 @@
-import type { AiAttachment, LandingPage } from "@prisma/client";
+import type { LandingPage } from "@prisma/client";
 import type {
   LandingPageMessageWithAttachments,
   LandingPageMetricsRaw,
   LandingPageWithCount,
   WorkspaceLandingView,
 } from "@/src/repositories/landing-page.repository";
-import type { AiAttachmentDTO } from "@/src/schemas/ai-attachment.schema";
 import type {
   LandingPageDTO,
   LandingPageMessageDTO,
   LandingPageMetricsDTO,
   PublicLandingPageDTO,
 } from "@/src/schemas/landing-page.schema";
-
-/** `Prisma.AiAttachment` → DTO (sem os bytes; só metadados). */
-export function toAiAttachmentDTO(a: AiAttachment): AiAttachmentDTO {
-  return {
-    id: a.id,
-    kind: a.kind,
-    filename: a.filename,
-    contentType: a.contentType,
-    size: a.size,
-  };
-}
+import { toAiAttachmentDTO } from "./ai-attachment.mapper";
 
 /** `Prisma.LandingPage` → `LandingPageDTO` (datas em ISO). */
 export function toLandingPageDTO(page: LandingPage): LandingPageDTO {

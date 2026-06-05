@@ -3,8 +3,11 @@
 import {
   Add01Icon,
   AiChat02Icon,
+  Attachment01Icon,
   Cancel01Icon,
   Delete02Icon,
+  File01Icon,
+  Image01Icon,
   Loading03Icon,
   MessageMultiple01Icon,
   Sent02Icon,
@@ -16,8 +19,11 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { apiUrl } from "@/lib/api-url";
 import { cn } from "@/lib/utils";
 import { type UiMessage, useAiAssistant } from "@/src/hooks/use-ai-assistant";
+import { ACCEPTED_ATTACHMENT_ACCEPT } from "@/src/lib/ai/attachment-constants";
+import type { AiAttachmentDTO } from "@/src/schemas/ai-attachment.schema";
 
 const SUGGESTIONS = [
   "Qual o valor total do meu pipeline por estágio?",
@@ -105,7 +111,9 @@ function ChatPanel({
   const ai = useAiAssistant(slug);
   const [showHistory, setShowHistory] = useState(false);
   const [draft, setDraft] = useState("");
+  const [files, setFiles] = useState<File[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: rola ao mudar mensagens/streaming/thinking
   useEffect(() => {
@@ -118,11 +126,20 @@ function ChatPanel({
     if (next) ai.refreshList();
   }
 
+  function addFiles(picked: FileList | File[] | null) {
+    if (!picked) return;
+    const list = Array.from(picked);
+    if (list.length === 0) return;
+    setFiles((prev) => [...prev, ...list].slice(0, 5));
+  }
+
   function submit() {
     const text = draft.trim();
-    if (!text || ai.isStreaming) return;
+    if ((!text && files.length === 0) || ai.isStreaming) return;
+    const attached = files;
     setDraft("");
-    ai.sendMessage(text);
+    setFiles([]);
+    ai.sendMessage(text, attached);
   }
 
   return (
@@ -200,6 +217,8 @@ function ChatPanel({
                   message={m}
                   streaming={isLastAssistant}
                   thinkingTools={isLastAssistant ? ai.thinkingTools : []}
+                  slug={slug}
+                  conversationId={ai.activeId}
                 />
               );
             })
@@ -212,10 +231,65 @@ function ChatPanel({
 
       {!showHistory && (
         <div className="shrink-0 border-t border-border p-2.5">
+          {files.length > 0 && (
+            <div className="mb-2 flex flex-wrap gap-1.5">
+              {files.map((f, i) => (
+                <span
+                  key={`${f.name}-${i}`}
+                  className="flex items-center gap-1.5 rounded-md border border-border bg-muted px-2 py-1 text-xs"
+                >
+                  <HugeiconsIcon
+                    icon={
+                      f.type.startsWith("image/") ? Image01Icon : File01Icon
+                    }
+                    className="size-3.5 shrink-0 text-muted-foreground"
+                  />
+                  <span className="max-w-[120px] truncate">{f.name}</span>
+                  <button
+                    type="button"
+                    aria-label={`Remover ${f.name}`}
+                    onClick={() =>
+                      setFiles((prev) => prev.filter((_, j) => j !== i))
+                    }
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    <HugeiconsIcon icon={Cancel01Icon} className="size-3.5" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
           <div className="flex items-end gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              accept={ACCEPTED_ATTACHMENT_ACCEPT}
+              className="hidden"
+              onChange={(e) => {
+                addFiles(e.target.files);
+                e.target.value = "";
+              }}
+            />
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label="Anexar arquivo"
+              disabled={ai.isStreaming || files.length >= 5}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <HugeiconsIcon icon={Attachment01Icon} />
+            </Button>
             <Textarea
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
+              onPaste={(e) => {
+                const pasted = Array.from(e.clipboardData.files);
+                if (pasted.length > 0) {
+                  e.preventDefault();
+                  addFiles(pasted);
+                }
+              }}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
@@ -229,7 +303,7 @@ function ChatPanel({
             <Button
               size="icon"
               aria-label="Enviar"
-              disabled={!draft.trim() || ai.isStreaming}
+              disabled={(!draft.trim() && files.length === 0) || ai.isStreaming}
               onClick={submit}
             >
               <HugeiconsIcon
@@ -304,15 +378,20 @@ function MessageBubble({
   message,
   streaming,
   thinkingTools,
+  slug,
+  conversationId,
 }: {
   message: UiMessage;
   streaming: boolean;
   thinkingTools: string[];
+  slug: string;
+  conversationId: string | null;
 }) {
   const isUser = message.role === "user";
   const showThinking = !isUser && streaming && thinkingTools.length > 0;
   const showEmptyCursor =
     !isUser && streaming && !showThinking && message.content === "";
+  const hasAttachments = !!message.attachments?.length;
 
   return (
     <div className={cn("flex gap-2", isUser && "justify-end")}>
@@ -326,35 +405,109 @@ function MessageBubble({
       )}
       <div
         className={cn(
-          "max-w-[82%] rounded-2xl px-3 py-2 text-sm leading-relaxed",
-          isUser
-            ? "rounded-br-sm bg-primary text-primary-foreground"
-            : "rounded-bl-sm bg-muted text-foreground",
+          "flex max-w-[82%] flex-col gap-1.5",
+          isUser ? "items-end" : "items-start",
         )}
       >
-        {showThinking ? (
-          <ThinkingIndicator tools={thinkingTools} />
-        ) : (
-          <>
-            {isUser ? (
-              <span className="whitespace-pre-wrap">{message.content}</span>
+        {hasAttachments && (
+          <div
+            className={cn(
+              "flex flex-wrap gap-1.5",
+              isUser ? "justify-end" : "justify-start",
+            )}
+          >
+            {message.attachments?.map((a) => (
+              <AttachmentBubble
+                key={a.id}
+                attachment={a}
+                slug={slug}
+                conversationId={conversationId}
+              />
+            ))}
+          </div>
+        )}
+        {(message.content !== "" || !isUser) && (
+          <div
+            className={cn(
+              "rounded-2xl px-3 py-2 text-sm leading-relaxed",
+              isUser
+                ? "rounded-br-sm bg-primary text-primary-foreground"
+                : "rounded-bl-sm bg-muted text-foreground",
+            )}
+          >
+            {showThinking ? (
+              <ThinkingIndicator tools={thinkingTools} />
             ) : (
-              <div className="prose prose-sm prose-neutral dark:prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_code]:rounded [&_code]:bg-black/10 [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-[0.8em] [&_code]:font-mono dark:[&_code]:bg-white/15 [&_pre]:rounded-lg [&_pre]:bg-black/10 [&_pre]:p-3 dark:[&_pre]:bg-white/10 [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_li]:my-0.5 [&_p]:my-1 [&_h1]:text-base [&_h1]:font-semibold [&_h2]:text-sm [&_h2]:font-semibold [&_h3]:text-sm [&_h3]:font-medium [&_blockquote]:border-l-2 [&_blockquote]:border-current [&_blockquote]:pl-3 [&_blockquote]:opacity-70 [&_strong]:font-semibold [&_a]:underline [&_a]:underline-offset-2 [&_hr]:border-current [&_hr]:opacity-20 [&_table]:w-full [&_th]:text-left [&_th]:font-medium [&_td]:py-1">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                  {message.content}
-                </ReactMarkdown>
-              </div>
+              <>
+                {isUser ? (
+                  <span className="whitespace-pre-wrap">{message.content}</span>
+                ) : (
+                  <div className="prose prose-sm prose-neutral dark:prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_code]:rounded [&_code]:bg-black/10 [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-[0.8em] [&_code]:font-mono dark:[&_code]:bg-white/15 [&_pre]:rounded-lg [&_pre]:bg-black/10 [&_pre]:p-3 dark:[&_pre]:bg-white/10 [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_li]:my-0.5 [&_p]:my-1 [&_h1]:text-base [&_h1]:font-semibold [&_h2]:text-sm [&_h2]:font-semibold [&_h3]:text-sm [&_h3]:font-medium [&_blockquote]:border-l-2 [&_blockquote]:border-current [&_blockquote]:pl-3 [&_blockquote]:opacity-70 [&_strong]:font-semibold [&_a]:underline [&_a]:underline-offset-2 [&_hr]:border-current [&_hr]:opacity-20 [&_table]:w-full [&_th]:text-left [&_th]:font-medium [&_td]:py-1">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {message.content}
+                    </ReactMarkdown>
+                  </div>
+                )}
+                {showEmptyCursor && (
+                  <span className="inline-block size-3.5 animate-pulse rounded-full bg-current align-middle opacity-60" />
+                )}
+                {streaming && !showEmptyCursor && (
+                  <span className="ml-0.5 inline-block h-3.5 w-px animate-pulse bg-current align-middle" />
+                )}
+              </>
             )}
-            {showEmptyCursor && (
-              <span className="inline-block size-3.5 animate-pulse rounded-full bg-current align-middle opacity-60" />
-            )}
-            {streaming && !showEmptyCursor && (
-              <span className="ml-0.5 inline-block h-3.5 w-px animate-pulse bg-current align-middle" />
-            )}
-          </>
+          </div>
         )}
       </div>
     </div>
+  );
+}
+
+/** Renderiza um anexo numa mensagem: miniatura p/ imagem, chip p/ documento. */
+function AttachmentBubble({
+  attachment,
+  slug,
+  conversationId,
+}: {
+  attachment: AiAttachmentDTO;
+  slug: string;
+  conversationId: string | null;
+}) {
+  const isLocal = attachment.id.startsWith("local-") || !conversationId;
+  const href = isLocal
+    ? null
+    : apiUrl(
+        `/api/workspaces/${slug}/ai/conversations/${conversationId}/attachments/${attachment.id}`,
+      );
+
+  if (attachment.kind === "IMAGE" && href) {
+    return (
+      <a href={href} target="_blank" rel="noreferrer" className="block">
+        {/* biome-ignore lint/performance/noImgElement: anexo dinâmico do storage */}
+        <img
+          src={href}
+          alt={attachment.filename}
+          className="max-h-28 rounded-lg border border-border object-cover"
+        />
+      </a>
+    );
+  }
+
+  const chip = (
+    <span className="flex items-center gap-1.5 rounded-md border border-border bg-card px-2 py-1 text-foreground text-xs">
+      <HugeiconsIcon
+        icon={attachment.kind === "IMAGE" ? Image01Icon : File01Icon}
+        className="size-3.5 shrink-0 text-muted-foreground"
+      />
+      <span className="max-w-[160px] truncate">{attachment.filename}</span>
+    </span>
+  );
+  return href ? (
+    <a href={href} target="_blank" rel="noreferrer">
+      {chip}
+    </a>
+  ) : (
+    chip
   );
 }
 

@@ -6,6 +6,7 @@ import type {
   AiConversationDTO,
   AiMessageDTO,
 } from "@/src/schemas/ai-assistant.schema";
+import type { AiAttachmentDTO } from "@/src/schemas/ai-attachment.schema";
 
 type ApiResponse<T> = {
   success: boolean;
@@ -17,11 +18,13 @@ export type UiMessage = {
   id: string;
   role: "user" | "assistant";
   content: string;
+  attachments?: AiAttachmentDTO[];
 };
 
 /** Eventos SSE emitidos pela rota de chat. */
 type ChatEvent =
   | { type: "start"; conversationId: string }
+  | { type: "user"; message: AiMessageDTO }
   | { type: "thinking"; tools: string[] }
   | { type: "text"; delta: string }
   | { type: "done"; conversationId: string; message: AiMessageDTO }
@@ -80,6 +83,7 @@ export function useAiAssistant(slug: string) {
               id: m.id,
               role: m.role,
               content: m.content,
+              attachments: m.attachments,
             })),
           );
         } else {
@@ -110,14 +114,29 @@ export function useAiAssistant(slug: string) {
   );
 
   const sendMessage = useCallback(
-    async (text: string) => {
+    async (text: string, files: File[] = []) => {
       const content = text.trim();
-      if (!content || isStreaming) return;
+      // Permite enviar só com anexos, desde que haja arquivos.
+      if ((!content && files.length === 0) || isStreaming) return;
 
       setError(null);
       setIsStreaming(true);
 
-      const userMsg: UiMessage = { id: tempId(), role: "user", content };
+      const userId = tempId();
+      // Prévia local dos anexos enquanto o servidor não devolve os IDs reais.
+      const localAttachments: AiAttachmentDTO[] = files.map((f, i) => ({
+        id: `local-${i}`,
+        kind: f.type.startsWith("image/") ? "IMAGE" : "DOCUMENT",
+        filename: f.name,
+        contentType: f.type,
+        size: f.size,
+      }));
+      const userMsg: UiMessage = {
+        id: userId,
+        role: "user",
+        content,
+        attachments: localAttachments.length > 0 ? localAttachments : undefined,
+      };
       const assistantId = tempId();
       setMessages((prev) => [
         ...prev,
@@ -133,14 +152,27 @@ export function useAiAssistant(slug: string) {
         );
 
       try {
-        const res = await fetch(apiUrl(`/api/workspaces/${slug}/ai/chat`), {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+        // Com anexos enviamos multipart; sem anexos mantemos JSON.
+        const init: RequestInit = { method: "POST" };
+        if (files.length > 0) {
+          const form = new FormData();
+          form.set("message", content);
+          if (activeIdRef.current)
+            form.set("conversationId", activeIdRef.current);
+          for (const f of files) form.append("files", f);
+          init.body = form;
+        } else {
+          init.headers = { "Content-Type": "application/json" };
+          init.body = JSON.stringify({
             conversationId: activeIdRef.current ?? undefined,
             message: content,
-          }),
-        });
+          });
+        }
+
+        const res = await fetch(
+          apiUrl(`/api/workspaces/${slug}/ai/chat`),
+          init,
+        );
 
         if (!res.ok || !res.body) {
           const json = (await res
@@ -154,6 +186,20 @@ export function useAiAssistant(slug: string) {
         await consumeStream(res.body, (event) => {
           if (event.type === "start") {
             if (!activeIdRef.current) setActive(event.conversationId);
+          } else if (event.type === "user") {
+            // Substitui a prévia local pela mensagem persistida (IDs reais).
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === userId
+                  ? {
+                      id: event.message.id,
+                      role: "user",
+                      content: event.message.content,
+                      attachments: event.message.attachments,
+                    }
+                  : m,
+              ),
+            );
           } else if (event.type === "thinking") {
             setThinkingTools(event.tools);
           } else if (event.type === "text") {

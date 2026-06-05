@@ -59,13 +59,12 @@ export const UpdateLandingPageSchema = z
     message: "Informe ao menos um campo para atualizar",
   });
 
-/** Mensagem do usuário para o construtor de IA. */
+/**
+ * Mensagem do usuário para o construtor de IA. `message` pode vir vazio quando
+ * há anexos (a rota valida "mensagem ou anexo").
+ */
 export const GenerateLandingPageSchema = z.object({
-  message: z
-    .string()
-    .trim()
-    .min(1, "Mensagem vazia")
-    .max(4000, "Mensagem muito longa"),
+  message: z.string().trim().max(4000, "Mensagem muito longa"),
 });
 
 /**

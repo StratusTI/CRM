@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { z } from "zod";
 import { validationError } from "@/src/errors/app-error";
+import { parseMessageRequest } from "@/src/lib/ai/parse-message-request";
 import { getAuthSession } from "@/src/lib/auth-session";
 import { SendAiMessageSchema } from "@/src/schemas/ai-assistant.schema";
 import { AiAssistantService } from "@/src/services/ai-assistant.service";
@@ -20,12 +21,22 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   const session = await getAuthSession();
   if (!session.ok) return handleError(session.error);
 
-  const body = await request.json().catch(() => null);
-  const parsed = SendAiMessageSchema.safeParse(body);
+  const {
+    message,
+    conversationId: inputConversationId,
+    files,
+  } = await parseMessageRequest(request);
+  const parsed = SendAiMessageSchema.safeParse({
+    message,
+    conversationId: inputConversationId,
+  });
   if (!parsed.success) {
     return handleError(
       validationError("Dados inválidos", z.flattenError(parsed.error)),
     );
+  }
+  if (!parsed.data.message && files.length === 0) {
+    return handleError(validationError("Envie uma mensagem ou um anexo."));
   }
 
   const { slug } = await params;
@@ -34,6 +45,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     userName: session.value.user.name ?? "você",
     slug,
     input: parsed.data,
+    files,
   });
   if (!result.ok) return handleError(result.error);
 
