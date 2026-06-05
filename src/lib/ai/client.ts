@@ -1,8 +1,18 @@
 import { getOpenAiBaseUrl, getOpenAiKey, getOpenAiModel } from "./env";
 
+/**
+ * Parte de conteúdo multimodal (formato Chat Completions da OpenAI). Texto e
+ * imagens (vision) podem coexistir num mesmo turno de usuário. Imagens entram
+ * como data URL base64 em `image_url.url`.
+ */
+export type ContentPart =
+  | { type: "text"; text: string }
+  | { type: "image_url"; image_url: { url: string } };
+
 /** Mensagens no formato Chat Completions da OpenAI. */
 export type ChatMessage =
-  | { role: "system" | "user"; content: string }
+  | { role: "system"; content: string }
+  | { role: "user"; content: string | ContentPart[] }
   | {
       role: "assistant";
       content: string | null;
