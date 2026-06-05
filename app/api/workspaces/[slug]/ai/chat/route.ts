@@ -24,11 +24,13 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   const {
     message,
     conversationId: inputConversationId,
+    provider,
     files,
   } = await parseMessageRequest(request);
   const parsed = SendAiMessageSchema.safeParse({
     message,
     conversationId: inputConversationId,
+    provider,
   });
   if (!parsed.success) {
     return handleError(

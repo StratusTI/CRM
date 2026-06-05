@@ -37,8 +37,8 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   const session = await getAuthSession();
   if (!session.ok) return handleError(session.error);
 
-  const { message, files } = await parseMessageRequest(request);
-  const parsed = GenerateLandingPageSchema.safeParse({ message });
+  const { message, provider, files } = await parseMessageRequest(request);
+  const parsed = GenerateLandingPageSchema.safeParse({ message, provider });
   if (!parsed.success) {
     return handleError(
       validationError("Dados inválidos", z.flattenError(parsed.error)),
@@ -55,6 +55,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     id,
     message: parsed.data.message,
     files,
+    provider: parsed.data.provider,
   });
   if (!result.ok) return handleError(result.error);
 

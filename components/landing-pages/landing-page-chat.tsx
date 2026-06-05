@@ -16,6 +16,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { apiUrl } from "@/lib/api-url";
 import { cn } from "@/lib/utils";
 import { ACCEPTED_ATTACHMENT_ACCEPT } from "@/src/lib/ai/attachment-constants";
+import {
+  AI_PROVIDER_META,
+  type AiProviderId,
+} from "@/src/lib/ai/provider-meta";
 import type { AiAttachmentDTO } from "@/src/schemas/ai-attachment.schema";
 import type { LandingPageMessageDTO } from "@/src/schemas/landing-page.schema";
 
@@ -54,16 +58,22 @@ export function LandingPageChat({
   pageId,
   hasContent,
   onHtml,
+  providers = ["openai"],
 }: {
   slug: string;
   pageId: string;
   /** Indica se a página já tem HTML (muda o texto do estado vazio). */
   hasContent: boolean;
   onHtml: (html: string) => void;
+  /** Provedores de IA disponíveis (configurados no servidor). */
+  providers?: AiProviderId[];
 }) {
   const [messages, setMessages] = React.useState<UiMessage[]>([]);
   const [input, setInput] = React.useState("");
   const [files, setFiles] = React.useState<File[]>([]);
+  const [provider, setProvider] = React.useState<AiProviderId>(
+    providers[0] ?? "openai",
+  );
   const [isStreaming, setIsStreaming] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const scrollRef = React.useRef<HTMLDivElement | null>(null);
@@ -155,11 +165,12 @@ export function LandingPageChat({
         if (attached.length > 0) {
           const form = new FormData();
           form.set("message", content);
+          form.set("provider", provider);
           for (const f of attached) form.append("files", f);
           body = form;
         } else {
           init.headers = { "Content-Type": "application/json" };
-          body = JSON.stringify({ message: content });
+          body = JSON.stringify({ message: content, provider });
         }
         init.body = body;
 
@@ -211,7 +222,7 @@ export function LandingPageChat({
         setIsStreaming(false);
       }
     },
-    [baseUrl, isStreaming, onHtml],
+    [baseUrl, isStreaming, onHtml, provider],
   );
 
   const empty = messages.length === 0;
@@ -337,6 +348,30 @@ export function LandingPageChat({
               </span>
             ))}
           </div>
+        ) : null}
+        {providers.length > 1 ? (
+          <fieldset
+            aria-label="Modelo de IA"
+            className="mb-2 inline-flex rounded-md border bg-muted/50 p-0.5"
+          >
+            {providers.map((p) => (
+              <button
+                key={p}
+                type="button"
+                aria-pressed={provider === p}
+                disabled={isStreaming}
+                onClick={() => setProvider(p)}
+                className={cn(
+                  "rounded px-2 py-0.5 font-medium text-xs transition-colors disabled:opacity-50",
+                  provider === p
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {AI_PROVIDER_META[p].short}
+              </button>
+            ))}
+          </fieldset>
         ) : null}
         <div className="flex items-end gap-2">
           <input

@@ -23,6 +23,10 @@ import { apiUrl } from "@/lib/api-url";
 import { cn } from "@/lib/utils";
 import { type UiMessage, useAiAssistant } from "@/src/hooks/use-ai-assistant";
 import { ACCEPTED_ATTACHMENT_ACCEPT } from "@/src/lib/ai/attachment-constants";
+import {
+  AI_PROVIDER_META,
+  type AiProviderId,
+} from "@/src/lib/ai/provider-meta";
 import type { AiAttachmentDTO } from "@/src/schemas/ai-attachment.schema";
 
 const SUGGESTIONS = [
@@ -66,9 +70,12 @@ function toolLabel(name: string): string {
 export function AiAssistantWidget({
   slug,
   userName,
+  providers = ["openai"],
 }: {
   slug: string;
   userName: string;
+  /** Provedores de IA disponíveis (configurados no servidor). */
+  providers?: AiProviderId[];
 }) {
   const [open, setOpen] = useState(false);
 
@@ -79,6 +86,7 @@ export function AiAssistantWidget({
         <ChatPanel
           slug={slug}
           userName={userName}
+          providers={providers}
           onClose={() => setOpen(false)}
         />
       )}
@@ -102,16 +110,21 @@ function Launcher({ onClick }: { onClick: () => void }) {
 function ChatPanel({
   slug,
   userName,
+  providers,
   onClose,
 }: {
   slug: string;
   userName: string;
+  providers: AiProviderId[];
   onClose: () => void;
 }) {
   const ai = useAiAssistant(slug);
   const [showHistory, setShowHistory] = useState(false);
   const [draft, setDraft] = useState("");
   const [files, setFiles] = useState<File[]>([]);
+  const [provider, setProvider] = useState<AiProviderId>(
+    providers[0] ?? "openai",
+  );
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -139,7 +152,7 @@ function ChatPanel({
     const attached = files;
     setDraft("");
     setFiles([]);
-    ai.sendMessage(text, attached);
+    ai.sendMessage(text, attached, provider);
   }
 
   return (
@@ -202,7 +215,7 @@ function ChatPanel({
               userName={userName}
               onPick={(s) => {
                 setDraft("");
-                ai.sendMessage(s);
+                ai.sendMessage(s, [], provider);
               }}
             />
           ) : (
@@ -258,6 +271,14 @@ function ChatPanel({
                 </span>
               ))}
             </div>
+          )}
+          {providers.length > 1 && (
+            <ProviderToggle
+              providers={providers}
+              value={provider}
+              onChange={setProvider}
+              disabled={ai.isStreaming}
+            />
           )}
           <div className="flex items-end gap-2">
             <input
@@ -460,6 +481,44 @@ function MessageBubble({
         )}
       </div>
     </div>
+  );
+}
+
+/** Seletor pequeno de provedor de IA (segmented control). */
+function ProviderToggle({
+  providers,
+  value,
+  onChange,
+  disabled,
+}: {
+  providers: AiProviderId[];
+  value: AiProviderId;
+  onChange: (p: AiProviderId) => void;
+  disabled: boolean;
+}) {
+  return (
+    <fieldset
+      aria-label="Modelo de IA"
+      className="mb-2 inline-flex rounded-md border border-border bg-muted/50 p-0.5"
+    >
+      {providers.map((p) => (
+        <button
+          key={p}
+          type="button"
+          aria-pressed={value === p}
+          disabled={disabled}
+          onClick={() => onChange(p)}
+          className={cn(
+            "rounded px-2 py-0.5 text-xs font-medium transition-colors disabled:opacity-50",
+            value === p
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          {AI_PROVIDER_META[p].short}
+        </button>
+      ))}
+    </fieldset>
   );
 }
 

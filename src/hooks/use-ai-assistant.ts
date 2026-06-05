@@ -114,7 +114,7 @@ export function useAiAssistant(slug: string) {
   );
 
   const sendMessage = useCallback(
-    async (text: string, files: File[] = []) => {
+    async (text: string, files: File[] = [], provider?: string) => {
       const content = text.trim();
       // Permite enviar só com anexos, desde que haja arquivos.
       if ((!content && files.length === 0) || isStreaming) return;
@@ -159,6 +159,7 @@ export function useAiAssistant(slug: string) {
           form.set("message", content);
           if (activeIdRef.current)
             form.set("conversationId", activeIdRef.current);
+          if (provider) form.set("provider", provider);
           for (const f of files) form.append("files", f);
           init.body = form;
         } else {
@@ -166,6 +167,7 @@ export function useAiAssistant(slug: string) {
           init.body = JSON.stringify({
             conversationId: activeIdRef.current ?? undefined,
             message: content,
+            provider,
           });
         }
 

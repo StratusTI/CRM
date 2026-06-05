@@ -12,7 +12,11 @@ import {
   processUploads,
 } from "@/src/lib/ai/attachments";
 import { streamChat } from "@/src/lib/ai/client";
-import { isAiConfigured } from "@/src/lib/ai/env";
+import {
+  type AiProvider,
+  isAiConfigured,
+  resolveAiProvider,
+} from "@/src/lib/ai/env";
 import {
   buildCreateSystemPrompt,
   buildEditSystemPrompt,
@@ -363,10 +367,13 @@ export const LandingPageService = {
     id: string;
     message: string;
     files?: File[];
+    provider?: AiProvider;
   }): Promise<Result<{ run: AsyncGenerator<GenerateChunk> }>> {
     const { userId, slug, id, message, files = [] } = params;
 
     if (!isAiConfigured()) return err(aiNotConfigured());
+    const provider = resolveAiProvider(params.provider);
+    if (!provider) return err(aiNotConfigured());
 
     const ws = await resolveWorkspaceId(userId, slug, {
       resource: "landing-pages",
@@ -397,6 +404,7 @@ export const LandingPageService = {
         message,
         attachments: processed.value,
         userMessage: saved.value,
+        provider,
       }),
     });
   },
@@ -475,8 +483,10 @@ async function* runGenerate(ctx: {
   message: string;
   attachments: ProcessedAttachment[];
   userMessage: LandingPageMessageWithAttachments;
+  provider: AiProvider;
 }): AsyncGenerator<GenerateChunk> {
-  const { userId, pageId, page, message, attachments, userMessage } = ctx;
+  const { userId, pageId, page, message, attachments, userMessage, provider } =
+    ctx;
 
   // Espelha no chat a mensagem persistida do usuário (com seus anexos).
   yield { type: "user", message: toLandingPageMessageDTO(userMessage) };
@@ -510,6 +520,7 @@ async function* runGenerate(ctx: {
       maxTokens: LANDING_PAGE_MAX_TOKENS,
       temperature: LANDING_PAGE_TEMPERATURE,
     },
+    provider,
   )) {
     if (ev.type === "text") {
       // Com tool forçada quase não há texto livre; acumulamos só p/ fallback.

@@ -11,7 +11,13 @@ import {
 import type { ChatMessage, ToolCallPayload } from "@/src/lib/ai/client";
 import { streamChat } from "@/src/lib/ai/client";
 import { buildSystemPrompt } from "@/src/lib/ai/context";
-import { getOpenAiModel, isAiConfigured } from "@/src/lib/ai/env";
+import {
+  type AiProvider,
+  getAnthropicModel,
+  getOpenAiModel,
+  isAiConfigured,
+  resolveAiProvider,
+} from "@/src/lib/ai/env";
 import { AI_TOOLS, executeTool } from "@/src/lib/ai/tools";
 import { err, ok, type Result } from "@/src/lib/result";
 import { getObjectBytes } from "@/src/lib/storage/s3";
@@ -113,6 +119,8 @@ export const AiAssistantService = {
     const { userId, userName, slug, input, files = [] } = params;
 
     if (!isAiConfigured()) return err(aiNotConfigured());
+    const provider = resolveAiProvider(input.provider);
+    if (!provider) return err(aiNotConfigured());
 
     const membership = await MembershipRepository.findByUserAndSlug(
       userId,
@@ -180,6 +188,7 @@ export const AiAssistantService = {
         messages,
         hasAttachments: processed.value.length > 0,
         userMessage: savedUser.value,
+        provider,
       }),
     });
   },
@@ -232,6 +241,7 @@ async function* runAgent(ctx: {
   messages: ChatMessage[];
   hasAttachments: boolean;
   userMessage: AiMessageWithAttachments;
+  provider: AiProvider;
 }): AsyncGenerator<ReplyChunk> {
   const {
     userId,
@@ -240,6 +250,7 @@ async function* runAgent(ctx: {
     workspaceId,
     messages,
     hasAttachments,
+    provider,
   } = ctx;
   let assistantText = "";
   const usedTools: { name: string; args: string }[] = [];
@@ -263,7 +274,13 @@ async function* runAgent(ctx: {
      */
     const toolChoice = round === 0 && !hasAttachments ? "required" : "auto";
 
-    for await (const ev of streamChat(messages, AI_TOOLS, toolChoice)) {
+    for await (const ev of streamChat(
+      messages,
+      AI_TOOLS,
+      toolChoice,
+      {},
+      provider,
+    )) {
       if (ev.type === "text") {
         assistantText += ev.delta;
         yield { type: "text", delta: ev.delta };
@@ -280,7 +297,8 @@ async function* runAgent(ctx: {
             conversationId,
             inputTokens: ev.usage.inputTokens,
             outputTokens: ev.usage.outputTokens,
-            model: getOpenAiModel(),
+            model:
+              provider === "anthropic" ? getAnthropicModel() : getOpenAiModel(),
           }).catch(() => {});
         }
       }
