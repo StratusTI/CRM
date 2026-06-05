@@ -10,9 +10,16 @@ const repo = vi.hoisted(() => ({
   scheduleDeletion: vi.fn(),
   cancelDeletion: vi.fn(),
 }));
+const memberRepo = vi.hoisted(() => ({
+  listSoleOwnerWorkspaces: vi.fn(),
+  listByUser: vi.fn(),
+}));
 
 vi.mock("@/src/repositories/user.repository", () => ({
   UserRepository: repo,
+}));
+vi.mock("@/src/repositories/membership.repository", () => ({
+  MembershipRepository: memberRepo,
 }));
 
 import { UserService } from "@/src/services/user.service";
@@ -24,6 +31,7 @@ const user: User = {
   emailVerified: true,
   image: null,
   deletionScheduledAt: null,
+  anonymizedAt: null,
   acceptedTermsAt: null,
   acceptedPrivacyAt: null,
   createdAt: new Date("2026-01-01T00:00:00.000Z"),
@@ -33,6 +41,8 @@ const user: User = {
 describe("UserService", () => {
   beforeEach(() => {
     for (const fn of Object.values(repo)) fn.mockReset();
+    for (const fn of Object.values(memberRepo)) fn.mockReset();
+    memberRepo.listSoleOwnerWorkspaces.mockResolvedValue(ok([]));
   });
 
   it("getMe retorna o DTO quando o usuário existe", async () => {
@@ -67,5 +77,35 @@ describe("UserService", () => {
     await UserService.scheduleDeletion("user_1");
     const [, when] = repo.scheduleDeletion.mock.calls[0];
     expect((when as Date).getTime()).toBeGreaterThan(Date.now());
+  });
+
+  it("scheduleDeletion bloqueia quando é único dono de uma workspace", async () => {
+    memberRepo.listSoleOwnerWorkspaces.mockResolvedValue(
+      ok([{ id: "ws_1", name: "Acme", slug: "acme" }]),
+    );
+    const result = await UserService.scheduleDeletion("user_1");
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.code).toBe("LAST_OWNER_PROTECTED");
+    expect(repo.scheduleDeletion).not.toHaveBeenCalled();
+  });
+
+  it("exportData reúne perfil e vínculos", async () => {
+    repo.findById.mockResolvedValue(ok(user));
+    memberRepo.listByUser.mockResolvedValue(
+      ok([
+        { role: "OWNER", workspace: { name: "Acme", slug: "acme" } },
+        { role: "MEMBER", workspace: { name: "Beta", slug: "beta" } },
+      ]),
+    );
+    const result = await UserService.exportData("user_1");
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.user.id).toBe("user_1");
+      expect(result.value.workspaces).toHaveLength(2);
+      expect(result.value.workspaces[0]).toMatchObject({
+        slug: "acme",
+        role: "OWNER",
+      });
+    }
   });
 });

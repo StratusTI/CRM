@@ -86,6 +86,37 @@ export const MembershipRepository = {
     }
   },
 
+  /**
+   * Workspaces (id + nome/slug) onde o usuário é o **único** proprietário.
+   * Usado para bloquear a exclusão da conta até a propriedade ser transferida.
+   */
+  async listSoleOwnerWorkspaces(
+    userId: string,
+  ): Promise<Result<{ id: string; name: string; slug: string }[]>> {
+    try {
+      const owned = await prisma.membership.findMany({
+        where: { userId, role: "OWNER" },
+        include: { workspace: true },
+      });
+      const sole: { id: string; name: string; slug: string }[] = [];
+      for (const m of owned) {
+        const owners = await prisma.membership.count({
+          where: { workspaceId: m.workspaceId, role: "OWNER" },
+        });
+        if (owners <= 1) {
+          sole.push({
+            id: m.workspace.id,
+            name: m.workspace.name,
+            slug: m.workspace.slug,
+          });
+        }
+      }
+      return ok(sole);
+    } catch {
+      return err(databaseError());
+    }
+  },
+
   /** Atualiza o perfil (e o papel derivado) de uma membership. */
   async setProfile(
     membershipId: string,

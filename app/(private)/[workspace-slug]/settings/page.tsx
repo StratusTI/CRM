@@ -4,6 +4,7 @@ import { PageShell } from "@/components/page-shell";
 import { AuditLogSection } from "@/components/settings/audit-log-section";
 import { CustomFieldsSection } from "@/components/settings/custom-fields-section";
 import { PipelinesSection } from "@/components/settings/pipelines-section";
+import { PrivacySection } from "@/components/settings/privacy-section";
 import { ProfilesSection } from "@/components/settings/profiles-section";
 import { SocialConnectionsSection } from "@/components/settings/social-connections-section";
 import { WorkspaceMembersSection } from "@/components/settings/workspace-members-section";
@@ -73,6 +74,9 @@ export default async function SettingsPage({
       </Suspense>
       <Suspense>
         <AuditLogSection slug={slug} />
+      </Suspense>
+      <Suspense>
+        <PrivacySection />
       </Suspense>
       <Suspense>
         <SocialConnectionsSection
