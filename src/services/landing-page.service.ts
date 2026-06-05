@@ -6,6 +6,11 @@ import {
   landingPageNotPublished,
   landingPageSlugTaken,
 } from "@/src/errors/app-error";
+import {
+  buildUserContent,
+  type ProcessedAttachment,
+  processUploads,
+} from "@/src/lib/ai/attachments";
 import { streamChat } from "@/src/lib/ai/client";
 import { isAiConfigured } from "@/src/lib/ai/env";
 import {
@@ -16,6 +21,7 @@ import {
   RENDER_LANDING_PAGE_TOOL,
 } from "@/src/lib/ai/landing-page-prompt";
 import { err, ok, type Result } from "@/src/lib/result";
+import { getObjectBytes } from "@/src/lib/storage/s3";
 import {
   type LandingPageViewRow,
   toLandingPageDTO,
@@ -26,6 +32,7 @@ import {
   toPublicLandingPageDTO,
 } from "@/src/mappers/landing-page.mapper";
 import {
+  type LandingPageMessageWithAttachments,
   LandingPageRepository,
   type UpdateLandingPageData,
 } from "@/src/repositories/landing-page.repository";
@@ -116,6 +123,7 @@ export type LandingViewContext = { ip: string; referrer: string | null };
 
 /** Chunk emitido pelo gerador de IA, consumido pela rota como SSE. */
 export type GenerateChunk =
+  | { type: "user"; message: LandingPageMessageDTO }
   | { type: "text"; delta: string }
   | { type: "done"; html: string; message: LandingPageMessageDTO }
   | { type: "error"; message: string };
@@ -315,6 +323,36 @@ export const LandingPageService = {
   },
 
   /**
+   * Baixa os bytes de um anexo do chat, escopado por workspace/página. Usado
+   * pela rota de download para servir miniaturas de imagem e documentos.
+   */
+  async getAttachment(
+    userId: string,
+    slug: string,
+    id: string,
+    attachmentId: string,
+  ): Promise<Result<{ bytes: ArrayBuffer; contentType: string }>> {
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "landing-pages",
+      action: "VIEW",
+    });
+    if (!ws.ok) return ws;
+
+    const page = await loadInWorkspace(ws.value, id);
+    if (!page.ok) return page;
+
+    const found = await LandingPageRepository.findAttachmentForPage(
+      attachmentId,
+      id,
+    );
+    if (!found.ok) return found;
+    if (!found.value) return err(landingPageNotFound());
+
+    const data = await getObjectBytes(found.value.storageKey);
+    return ok({ bytes: data.bytes, contentType: found.value.contentType });
+  },
+
+  /**
    * Pré-voo da geração por IA (workspace, configuração, posse, persistência da
    * mensagem do usuário) e devolve um gerador que transmite o texto, salva o
    * HTML resultante na página e persiste a resposta do assistente ao final.
@@ -324,8 +362,9 @@ export const LandingPageService = {
     slug: string;
     id: string;
     message: string;
+    files?: File[];
   }): Promise<Result<{ run: AsyncGenerator<GenerateChunk> }>> {
-    const { userId, slug, id, message } = params;
+    const { userId, slug, id, message, files = [] } = params;
 
     if (!isAiConfigured()) return err(aiNotConfigured());
 
@@ -338,15 +377,27 @@ export const LandingPageService = {
     const existing = await loadInWorkspace(ws.value, id);
     if (!existing.ok) return existing;
 
+    // Processa anexos (sobe ao MinIO + extrai texto) antes de persistir.
+    const processed = await processUploads(files, `ai/${ws.value}`);
+    if (!processed.ok) return processed;
+
     const saved = await LandingPageRepository.appendMessage({
       landingPageId: id,
       role: "USER",
       content: message,
+      attachments: processed.value,
     });
     if (!saved.ok) return saved;
 
     return ok({
-      run: runGenerate({ userId, pageId: id, page: existing.value, message }),
+      run: runGenerate({
+        userId,
+        pageId: id,
+        page: existing.value,
+        message,
+        attachments: processed.value,
+        userMessage: saved.value,
+      }),
     });
   },
 
@@ -422,12 +473,28 @@ async function* runGenerate(ctx: {
   pageId: string;
   page: LandingPage;
   message: string;
+  attachments: ProcessedAttachment[];
+  userMessage: LandingPageMessageWithAttachments;
 }): AsyncGenerator<GenerateChunk> {
-  const { userId, pageId, page, message } = ctx;
+  const { userId, pageId, page, message, attachments, userMessage } = ctx;
+
+  // Espelha no chat a mensagem persistida do usuário (com seus anexos).
+  yield { type: "user", message: toLandingPageMessageDTO(userMessage) };
 
   const system = page.html.trim()
     ? buildEditSystemPrompt(page.html)
     : buildCreateSystemPrompt();
+
+  // Anexos do turno alimentam o modelo: docs como texto, imagens como vision.
+  const userContent = buildUserContent(
+    message,
+    attachments.map((a) => ({
+      kind: a.kind,
+      filename: a.filename,
+      extractedText: a.extractedText,
+      dataUrl: a.dataUrl,
+    })),
+  );
 
   let html = "";
   let summary = "";
@@ -435,7 +502,7 @@ async function* runGenerate(ctx: {
   for await (const ev of streamChat(
     [
       { role: "system", content: system },
-      { role: "user", content: message },
+      { role: "user", content: userContent },
     ],
     [RENDER_LANDING_PAGE_TOOL],
     "required",

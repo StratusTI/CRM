@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { z } from "zod";
 import { validationError } from "@/src/errors/app-error";
+import { parseMessageRequest } from "@/src/lib/ai/parse-message-request";
 import { getAuthSession } from "@/src/lib/auth-session";
 import { GenerateLandingPageSchema } from "@/src/schemas/landing-page.schema";
 import { LandingPageService } from "@/src/services/landing-page.service";
@@ -36,8 +37,8 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   const session = await getAuthSession();
   if (!session.ok) return handleError(session.error);
 
-  const body = await request.json().catch(() => null);
-  const parsed = GenerateLandingPageSchema.safeParse(body);
+  const { message, files } = await parseMessageRequest(request);
+  const parsed = GenerateLandingPageSchema.safeParse({ message });
   if (!parsed.success) {
     return handleError(
       validationError("Dados inválidos", z.flattenError(parsed.error)),
@@ -50,6 +51,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     slug,
     id,
     message: parsed.data.message,
+    files,
   });
   if (!result.ok) return handleError(result.error);
 

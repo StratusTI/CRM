@@ -1,6 +1,10 @@
 "use client";
 
 import {
+  Attachment01Icon,
+  Cancel01Icon,
+  File01Icon,
+  Image01Icon,
   Loading03Icon,
   Sent02Icon,
   SparklesIcon,
@@ -11,14 +15,22 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { apiUrl } from "@/lib/api-url";
 import { cn } from "@/lib/utils";
+import { ACCEPTED_ATTACHMENT_ACCEPT } from "@/src/lib/ai/attachment-constants";
+import type { AiAttachmentDTO } from "@/src/schemas/ai-attachment.schema";
 import type { LandingPageMessageDTO } from "@/src/schemas/landing-page.schema";
 
 type ApiResponse<T> = { success: boolean; data?: T; message?: string };
 
-type UiMessage = { id: string; role: "user" | "assistant"; content: string };
+type UiMessage = {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  attachments?: AiAttachmentDTO[];
+};
 
 /** Eventos SSE emitidos pela rota de geração. */
 type GenEvent =
+  | { type: "user"; message: LandingPageMessageDTO }
   | { type: "text"; delta: string }
   | { type: "done"; html: string; message: LandingPageMessageDTO }
   | { type: "error"; message: string };
@@ -51,9 +63,11 @@ export function LandingPageChat({
 }) {
   const [messages, setMessages] = React.useState<UiMessage[]>([]);
   const [input, setInput] = React.useState("");
+  const [files, setFiles] = React.useState<File[]>([]);
   const [isStreaming, setIsStreaming] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const scrollRef = React.useRef<HTMLDivElement | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
   const baseUrl = apiUrl(
     `/api/workspaces/${slug}/marketing/pages/${pageId}/ai`,
@@ -70,6 +84,7 @@ export function LandingPageChat({
               id: m.id,
               role: m.role,
               content: m.content,
+              attachments: m.attachments,
             })),
           );
         }
@@ -77,24 +92,52 @@ export function LandingPageChat({
       .catch(() => {});
   }, [baseUrl]);
 
+  const addFiles = React.useCallback((picked: FileList | File[] | null) => {
+    if (!picked) return;
+    const list = Array.from(picked);
+    if (list.length === 0) return;
+    setFiles((prev) => [...prev, ...list].slice(0, 5));
+  }, []);
+
+  const removeFile = React.useCallback((index: number) => {
+    setFiles((prev) => prev.filter((_, i) => i !== index));
+  }, []);
+
   // biome-ignore lint/correctness/useExhaustiveDependencies: rola ao mudar msgs
   React.useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
   }, [messages]);
 
   const send = React.useCallback(
-    async (text: string) => {
+    async (text: string, attached: File[]) => {
       const content = text.trim();
-      if (!content || isStreaming) return;
+      // Permite enviar só com anexos, desde que haja arquivos.
+      if ((!content && attached.length === 0) || isStreaming) return;
 
       setError(null);
       setInput("");
+      setFiles([]);
       setIsStreaming(true);
 
+      const userId = tempId();
       const assistantId = tempId();
+      // Prévia local dos anexos enquanto o servidor não devolve os IDs reais.
+      const localAttachments: AiAttachmentDTO[] = attached.map((f, i) => ({
+        id: `local-${i}`,
+        kind: f.type.startsWith("image/") ? "IMAGE" : "DOCUMENT",
+        filename: f.name,
+        contentType: f.type,
+        size: f.size,
+      }));
       setMessages((prev) => [
         ...prev,
-        { id: tempId(), role: "user", content },
+        {
+          id: userId,
+          role: "user",
+          content,
+          attachments:
+            localAttachments.length > 0 ? localAttachments : undefined,
+        },
         { id: assistantId, role: "assistant", content: "" },
       ]);
 
@@ -106,11 +149,21 @@ export function LandingPageChat({
         );
 
       try {
-        const res = await fetch(baseUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: content }),
-        });
+        // Com anexos enviamos multipart; sem anexos mantemos JSON.
+        let body: BodyInit;
+        const init: RequestInit = { method: "POST" };
+        if (attached.length > 0) {
+          const form = new FormData();
+          form.set("message", content);
+          for (const f of attached) form.append("files", f);
+          body = form;
+        } else {
+          init.headers = { "Content-Type": "application/json" };
+          body = JSON.stringify({ message: content });
+        }
+        init.body = body;
+
+        const res = await fetch(baseUrl, init);
 
         if (!res.ok || !res.body) {
           const json = (await res
@@ -121,7 +174,21 @@ export function LandingPageChat({
 
         let sawText = false;
         await consumeStream(res.body, (event) => {
-          if (event.type === "text") {
+          if (event.type === "user") {
+            // Substitui a prévia local pela mensagem persistida (IDs reais).
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === userId
+                  ? {
+                      id: event.message.id,
+                      role: "user",
+                      content: event.message.content,
+                      attachments: event.message.attachments,
+                    }
+                  : m,
+              ),
+            );
+          } else if (event.type === "text") {
             // O texto cru é o HTML em construção; não poluímos o chat com ele.
             // Mostramos um indicador de progresso até o `done`.
             if (!sawText) {
@@ -168,7 +235,7 @@ export function LandingPageChat({
                 <button
                   key={s}
                   type="button"
-                  onClick={() => send(s)}
+                  onClick={() => send(s, [])}
                   className="block w-full rounded-md border bg-card px-3 py-2 text-left text-muted-foreground text-xs transition-colors hover:bg-accent hover:text-foreground"
                 >
                   {s}
@@ -187,19 +254,44 @@ export function LandingPageChat({
             >
               <div
                 className={cn(
-                  "max-w-[85%] rounded-lg px-3 py-2 text-sm",
-                  m.role === "user"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-foreground",
+                  "flex max-w-[85%] flex-col gap-1.5",
+                  m.role === "user" ? "items-end" : "items-start",
                 )}
               >
-                {m.content || (
-                  <HugeiconsIcon
-                    icon={Loading03Icon}
-                    strokeWidth={2}
-                    className="size-4 animate-spin"
-                  />
-                )}
+                {m.attachments && m.attachments.length > 0 ? (
+                  <div
+                    className={cn(
+                      "flex flex-wrap gap-1.5",
+                      m.role === "user" ? "justify-end" : "justify-start",
+                    )}
+                  >
+                    {m.attachments.map((a) => (
+                      <AttachmentBubble
+                        key={a.id}
+                        attachment={a}
+                        baseUrl={baseUrl}
+                      />
+                    ))}
+                  </div>
+                ) : null}
+                {m.content || m.role === "assistant" ? (
+                  <div
+                    className={cn(
+                      "rounded-lg px-3 py-2 text-sm",
+                      m.role === "user"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-foreground",
+                    )}
+                  >
+                    {m.content || (
+                      <HugeiconsIcon
+                        icon={Loading03Icon}
+                        strokeWidth={2}
+                        className="size-4 animate-spin"
+                      />
+                    )}
+                  </div>
+                ) : null}
               </div>
             </div>
           ))
@@ -211,42 +303,156 @@ export function LandingPageChat({
       ) : null}
 
       <form
-        className="flex shrink-0 items-end gap-2 border-t p-3"
+        className="shrink-0 border-t p-3"
         onSubmit={(e) => {
           e.preventDefault();
-          send(input);
+          send(input, files);
         }}
       >
-        <Textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              send(input);
-            }
-          }}
-          placeholder={
-            hasContent ? "Peça uma mudança…" : "Descreva sua página…"
-          }
-          rows={2}
-          disabled={isStreaming}
-          className="max-h-32 min-h-0 resize-none"
-        />
-        <Button
-          type="submit"
-          size="icon"
-          disabled={isStreaming || !input.trim()}
-          aria-label="Enviar"
-        >
-          <HugeiconsIcon
-            icon={isStreaming ? Loading03Icon : Sent02Icon}
-            strokeWidth={2}
-            className={cn(isStreaming && "animate-spin")}
+        {files.length > 0 ? (
+          <div className="mb-2 flex flex-wrap gap-1.5">
+            {files.map((f, i) => (
+              <span
+                key={`${f.name}-${i}`}
+                className="flex items-center gap-1.5 rounded-md border bg-muted px-2 py-1 text-xs"
+              >
+                <HugeiconsIcon
+                  icon={f.type.startsWith("image/") ? Image01Icon : File01Icon}
+                  strokeWidth={2}
+                  className="size-3.5 shrink-0 text-muted-foreground"
+                />
+                <span className="max-w-[140px] truncate">{f.name}</span>
+                <button
+                  type="button"
+                  onClick={() => removeFile(i)}
+                  aria-label={`Remover ${f.name}`}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <HugeiconsIcon
+                    icon={Cancel01Icon}
+                    strokeWidth={2}
+                    className="size-3.5"
+                  />
+                </button>
+              </span>
+            ))}
+          </div>
+        ) : null}
+        <div className="flex items-end gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept={ACCEPTED_ATTACHMENT_ACCEPT}
+            className="hidden"
+            onChange={(e) => {
+              addFiles(e.target.files);
+              e.target.value = "";
+            }}
           />
-        </Button>
+          <Button
+            type="button"
+            size="icon"
+            variant="outline"
+            disabled={isStreaming || files.length >= 5}
+            aria-label="Anexar arquivo"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <HugeiconsIcon icon={Attachment01Icon} strokeWidth={2} />
+          </Button>
+          <Textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onPaste={(e) => {
+              const pasted = Array.from(e.clipboardData.files);
+              if (pasted.length > 0) {
+                e.preventDefault();
+                addFiles(pasted);
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                send(input, files);
+              }
+            }}
+            placeholder={
+              hasContent ? "Peça uma mudança…" : "Descreva sua página…"
+            }
+            rows={2}
+            disabled={isStreaming}
+            className="max-h-32 min-h-0 resize-none"
+          />
+          <Button
+            type="submit"
+            size="icon"
+            disabled={isStreaming || (!input.trim() && files.length === 0)}
+            aria-label="Enviar"
+          >
+            <HugeiconsIcon
+              icon={isStreaming ? Loading03Icon : Sent02Icon}
+              strokeWidth={2}
+              className={cn(isStreaming && "animate-spin")}
+            />
+          </Button>
+        </div>
       </form>
     </div>
+  );
+}
+
+/** Renderiza um anexo numa mensagem: miniatura p/ imagem, chip p/ documento. */
+function AttachmentBubble({
+  attachment,
+  baseUrl,
+}: {
+  attachment: AiAttachmentDTO;
+  baseUrl: string;
+}) {
+  const isLocal = attachment.id.startsWith("local-");
+  const href = isLocal ? null : `${baseUrl}/attachments/${attachment.id}`;
+
+  if (attachment.kind === "IMAGE") {
+    if (!href) {
+      return (
+        <span className="flex items-center gap-1.5 rounded-md border bg-card px-2 py-1 text-muted-foreground text-xs">
+          <HugeiconsIcon
+            icon={Image01Icon}
+            strokeWidth={2}
+            className="size-4"
+          />
+          <span className="max-w-[160px] truncate">{attachment.filename}</span>
+        </span>
+      );
+    }
+    return (
+      <a href={href} target="_blank" rel="noreferrer" className="block">
+        {/* biome-ignore lint/performance/noImgElement: anexo dinâmico do storage */}
+        <img
+          src={href}
+          alt={attachment.filename}
+          className="max-h-32 rounded-md border object-cover"
+        />
+      </a>
+    );
+  }
+
+  const chip = (
+    <span className="flex items-center gap-1.5 rounded-md border bg-card px-2 py-1 text-foreground text-xs">
+      <HugeiconsIcon
+        icon={File01Icon}
+        strokeWidth={2}
+        className="size-4 shrink-0 text-muted-foreground"
+      />
+      <span className="max-w-[160px] truncate">{attachment.filename}</span>
+    </span>
+  );
+  return href ? (
+    <a href={href} target="_blank" rel="noreferrer">
+      {chip}
+    </a>
+  ) : (
+    chip
   );
 }
 

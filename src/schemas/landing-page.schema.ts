@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { AiAttachmentOutputSchema } from "./ai-attachment.schema";
 
 /**
  * Contrato da feature Landing Pages (construtor com IA, estilo Lovable/v0).
@@ -116,6 +117,7 @@ export const LandingPageMessageSchema = z.object({
   role: z.enum(["user", "assistant"]),
   content: z.string(),
   createdAt: z.string(),
+  attachments: z.array(AiAttachmentOutputSchema).optional(),
 });
 
 /** O que a página pública precisa — sem campos internos. */

@@ -3,7 +3,14 @@ import type { AiAttachmentKind } from "@prisma/client";
 import { badRequest, storageNotConfigured } from "@/src/errors/app-error";
 import { err, ok, type Result } from "@/src/lib/result";
 import { isStorageConfigured, putObject } from "@/src/lib/storage/s3";
+import { MAX_ATTACHMENT_BYTES, MAX_ATTACHMENTS } from "./attachment-constants";
 import type { ContentPart } from "./client";
+
+export {
+  ACCEPTED_ATTACHMENT_ACCEPT,
+  MAX_ATTACHMENT_BYTES,
+  MAX_ATTACHMENTS,
+} from "./attachment-constants";
 
 /**
  * Anexos enviados pelo usuário como base para a IA (paleta de cores, brand
@@ -13,10 +20,6 @@ import type { ContentPart } from "./client";
  * em `AiAttachment.extractedText` para reinjeção barata em follow-ups.
  */
 
-/** Máximo de arquivos por mensagem. */
-export const MAX_ATTACHMENTS = 5;
-/** Tamanho máximo por arquivo (10 MB). */
-export const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
 /** Teto de caracteres por documento extraído (contém o custo de tokens). */
 const MAX_DOC_CHARS = 30_000;
 
@@ -37,10 +40,6 @@ const DOC_TYPES = new Set([
 ]);
 
 const DOC_EXTENSIONS = /\.(pdf|docx|txt|md|markdown|csv)$/i;
-
-/** Lista de tipos aceitos, pronta para o atributo `accept` de um input. */
-export const ACCEPTED_ATTACHMENT_ACCEPT =
-  "image/png,image/jpeg,image/webp,image/gif,application/pdf,.docx,.txt,.md,.csv";
 
 /** Classifica um arquivo; `null` = tipo não suportado. */
 export function classifyKind(
