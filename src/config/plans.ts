@@ -299,6 +299,36 @@ export function abacateExternalId(id: PlanId, cycle: BillingCycle): string {
   return `plan_${id}_${cycle}`;
 }
 
+/**
+ * IDs dos produtos gerados no AbacatePay (`prod_…`), por plano cobrável e ciclo.
+ *
+ * ⚠️ São **específicos do ambiente** AbacatePay: a chave Dev e a de Produção
+ * geram IDs diferentes. Ao promover para produção, atualize este mapa (ou
+ * mova-o para variáveis de ambiente). A busca canônica continua sendo por
+ * `abacateExternalId` (estável entre ambientes); este mapa é um atalho para
+ * referenciar o produto direto, sem um GET extra na API.
+ */
+export const ABACATE_PRODUCT_IDS: Partial<
+  Record<PlanId, Partial<Record<BillingCycle, string>>>
+> = {
+  pro: {
+    monthly: "prod_JzTwWDcBgPS5ZrmSgXJ3t0Ab",
+    yearly: "prod_eJXTcxSSSEUBXyHFyjHcghGd",
+  },
+  scale: {
+    monthly: "prod_XAzJAZbR4ScWSwfFbfrfACLX",
+    yearly: "prod_FDaGPQenRyN5yJS1xkAJFB51",
+  },
+};
+
+/** ID do produto no AbacatePay para o plano/ciclo, ou `null` se não cadastrado. */
+export function abacateProductId(
+  id: PlanId,
+  cycle: BillingCycle,
+): string | null {
+  return ABACATE_PRODUCT_IDS[id]?.[cycle] ?? null;
+}
+
 /** `true` se `current` ainda cabe no `limit` (respeita `UNLIMITED`). */
 export function withinLimit(limit: number, current: number): boolean {
   return isUnlimited(limit) || current < limit;
