@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { DataTable } from "@/components/data-table";
 import { PageShell } from "@/components/page-shell";
 import type { GridColumn } from "@/components/tables/grid";
+import { RecordTimeline } from "@/components/tables/record-timeline";
 import {
   customFieldColumns,
   useCustomFields,
@@ -100,6 +101,14 @@ export function PeopleTable({ slug }: { slug: string }) {
         isLoading={isLoading}
         searchPlaceholder="Buscar pessoas…"
         refetch={refetch}
+        renderRecordExtra={(record) => (
+          <RecordTimeline
+            slug={slug}
+            entity="person"
+            recordId={record.id}
+            userMap={lookups.maps.users}
+          />
+        )}
       />
     </PageShell>
   );

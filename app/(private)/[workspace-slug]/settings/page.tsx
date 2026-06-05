@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { PageShell } from "@/components/page-shell";
+import { AuditLogSection } from "@/components/settings/audit-log-section";
 import { CustomFieldsSection } from "@/components/settings/custom-fields-section";
 import { PipelinesSection } from "@/components/settings/pipelines-section";
 import { ProfilesSection } from "@/components/settings/profiles-section";
@@ -69,6 +70,9 @@ export default async function SettingsPage({
             membership.value.role === "ADMIN"
           }
         />
+      </Suspense>
+      <Suspense>
+        <AuditLogSection slug={slug} />
       </Suspense>
       <Suspense>
         <SocialConnectionsSection

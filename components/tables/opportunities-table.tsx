@@ -5,6 +5,7 @@ import { DataTable } from "@/components/data-table";
 import { PageShell } from "@/components/page-shell";
 import type { GridColumn } from "@/components/tables/grid";
 import { OpportunityLineItems } from "@/components/tables/opportunity-line-items";
+import { RecordTimeline } from "@/components/tables/record-timeline";
 import {
   customFieldColumns,
   useCustomFields,
@@ -112,12 +113,20 @@ export function OpportunitiesTable({ slug }: { slug: string }) {
         searchPlaceholder="Buscar oportunidades…"
         refetch={refetch}
         renderRecordExtra={(record) => (
-          <OpportunityLineItems
-            slug={slug}
-            opportunityId={record.id}
-            productOptions={lookups.options.products}
-            onChanged={refetch}
-          />
+          <div className="flex flex-col gap-6">
+            <OpportunityLineItems
+              slug={slug}
+              opportunityId={record.id}
+              productOptions={lookups.options.products}
+              onChanged={refetch}
+            />
+            <RecordTimeline
+              slug={slug}
+              entity="opportunity"
+              recordId={record.id}
+              userMap={lookups.maps.users}
+            />
+          </div>
         )}
       />
     </PageShell>

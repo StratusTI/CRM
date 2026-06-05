@@ -8,6 +8,7 @@ import type {
   WorkflowEntity,
   WorkflowTriggerType,
 } from "@/src/schemas/workflow.schema";
+import { recordActivity } from "@/src/services/activity-recorder";
 import { runWorkflow } from "@/src/services/workflow-runner";
 
 type Event = "created" | "updated" | "deleted";
@@ -35,6 +36,9 @@ export async function dispatchRecordEvent(params: {
   record: unknown;
   changedFields?: string[];
 }): Promise<void> {
+  // Auditoria/timeline: registra a atividade (best-effort, não lança).
+  await recordActivity(params);
+
   const candidates = EVENT_TO_TRIGGER[params.event];
   const wfList = await WorkflowRepository.findActiveByEntity(
     params.workspaceId,

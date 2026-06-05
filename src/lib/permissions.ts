@@ -28,6 +28,7 @@ export const PERMISSION_RESOURCES = [
   "integrations",
   "members",
   "settings",
+  "audit-logs",
 ] as const;
 export type PermissionResource = (typeof PERMISSION_RESOURCES)[number];
 
@@ -59,6 +60,7 @@ const MEMBER_READONLY = new Set<PermissionResource>([
   "pipelines",
   "quotas",
   "custom-fields",
+  "audit-logs",
 ]);
 
 function fullMatrix(): PermissionMap {

@@ -46,6 +46,8 @@ model User {
   customFieldsCreated CustomFieldDefinition[] @relation("CustomFieldCreatedBy")
   customFieldsUpdated CustomFieldDefinition[] @relation("CustomFieldUpdatedBy")
 
+  activities Activity[] @relation("ActivityActor")
+
   tasksCreated  Task[] @relation("TaskCreatedBy")
   tasksUpdated  Task[] @relation("TaskUpdatedBy")
   tasksAssigned Task[] @relation("TaskAssignee")
@@ -149,6 +151,7 @@ model Workspace {
   quotas             Quota[]
   customFields       CustomFieldDefinition[]
   profiles           Profile[]
+  activities         Activity[]
   opportunities      Opportunity[]
   tasks              Task[]
   notes              Note[]
@@ -464,6 +467,41 @@ model CustomFieldValue {
   @@index([recordId])
   @@index([definitionId])
   @@map("custom_field_values")
+}
+
+enum ActivityAction {
+  CREATED
+  UPDATED
+  DELETED
+}
+
+/// Registro append-only de atividade. Serve à timeline (feed por registro) e ao
+/// audit log (compliance). Capturado em `dispatchRecordEvent` — nunca editado.
+model Activity {
+  id            String         @id @default(cuid())
+  workspaceId   String         @map("workspace_id")
+  actorUserId   String?        @map("actor_user_id")
+  action        ActivityAction
+  entity        String
+  entityId      String         @map("entity_id")
+  companyId     String?        @map("company_id")
+  personId      String?        @map("person_id")
+  opportunityId String?        @map("opportunity_id")
+  changedFields String[]       @default([]) @map("changed_fields")
+  data          Json
+  summary       String?
+  createdAt     DateTime       @default(now()) @map("created_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  actor     User?     @relation("ActivityActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, createdAt])
+  @@index([companyId, createdAt])
+  @@index([personId, createdAt])
+  @@index([opportunityId, createdAt])
+  @@index([entity, entityId])
+  @@index([actorUserId])
+  @@map("activities")
 }
 
 /// Meta de receita de um responsável num período (mês "2026-06" ou trimestre
