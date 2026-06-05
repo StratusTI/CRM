@@ -30,6 +30,17 @@ export const SubscriptionOutputSchema = z.object({
   currentPeriodEnd: z.string().nullable(),
 });
 
+/**
+ * Resultado de uma troca de plano. Planos cobráveis retornam `checkoutUrl`
+ * (o usuário paga via Pix/cartão no AbacatePay); Free retorna `null` e a
+ * troca é imediata.
+ */
+export const ChangePlanResultSchema = z.object({
+  subscription: SubscriptionOutputSchema,
+  checkoutUrl: z.string().nullable(),
+});
+
 export type SubscriptionStatusValue = (typeof SUBSCRIPTION_STATUSES)[number];
 export type ChangePlanInput = z.infer<typeof ChangePlanSchema>;
 export type SubscriptionDTO = z.infer<typeof SubscriptionOutputSchema>;
+export type ChangePlanResult = z.infer<typeof ChangePlanResultSchema>;
