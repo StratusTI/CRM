@@ -70,3 +70,18 @@ export async function resolveWorkspaceId(
 
   return ok(access.value.workspaceId);
 }
+
+/**
+ * Resolve o id da workspace exigindo que o usuário seja **OWNER**. Mais estrito
+ * que o RBAC (ADMIN não passa). Usado por pagamentos/assinatura, visíveis só ao
+ * proprietário. Não-membros recebem WORKSPACE_NOT_FOUND; demais, FORBIDDEN.
+ */
+export async function resolveOwnerWorkspaceId(
+  userId: string,
+  slug: string,
+): Promise<Result<string>> {
+  const access = await resolveWorkspaceAccess(userId, slug);
+  if (!access.ok) return access;
+  if (!access.value.isOwner) return err(forbidden());
+  return ok(access.value.workspaceId);
+}
