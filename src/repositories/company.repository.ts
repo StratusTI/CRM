@@ -1,6 +1,10 @@
 import type { Company } from "@prisma/client";
 import { Prisma } from "@prisma/client";
-import { databaseError } from "@/src/errors/app-error";
+import {
+  companyCnpjTaken,
+  companyDomainTaken,
+  databaseError,
+} from "@/src/errors/app-error";
 import { prisma } from "@/src/lib/prisma";
 import { err, ok, type Result } from "@/src/lib/result";
 import type { CompanyAddress } from "@/src/schemas/company.schema";
@@ -44,6 +48,41 @@ function toAddressInput(
   return address as Prisma.InputJsonValue;
 }
 
+/**
+ * Traduz erros de escrita do Prisma. Uma violação de unicidade (P2002) vira o
+ * conflito de domínio correspondente (CNPJ/domínio) — assim a API responde 409
+ * em vez de 500 caso uma empresa ativa já use o mesmo valor. Demais erros caem
+ * em `databaseError`.
+ */
+function mapWriteError(error: unknown) {
+  if (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === "P2002"
+  ) {
+    // O formato de `meta` varia: o driver adapter (PrismaPg) deixa `target`
+    // vazio e expõe o campo/constraint em `driverAdapterError.cause`. Reunimos
+    // todos os sinais disponíveis e procuramos o nome do campo.
+    const meta = (error.meta ?? {}) as {
+      target?: unknown;
+      driverAdapterError?: {
+        cause?: {
+          originalMessage?: string;
+          constraint?: { fields?: string[] };
+        };
+      };
+    };
+    const cause = meta.driverAdapterError?.cause;
+    const haystack = [
+      Array.isArray(meta.target) ? meta.target.join(",") : String(meta.target),
+      cause?.originalMessage ?? "",
+      cause?.constraint?.fields?.join(",") ?? "",
+    ].join(" ");
+    if (haystack.includes("cnpj")) return companyCnpjTaken();
+    if (haystack.includes("domain")) return companyDomainTaken();
+  }
+  return databaseError();
+}
+
 /** Acesso a dados de empresa. Sem regra de negócio — só Prisma. */
 export const CompanyRepository = {
   async create(data: CreateCompanyData): Promise<Result<Company>> {
@@ -64,8 +103,8 @@ export const CompanyRepository = {
         },
       });
       return ok(company);
-    } catch {
-      return err(databaseError());
+    } catch (error) {
+      return err(mapWriteError(error));
     }
   },
 
@@ -209,17 +248,22 @@ export const CompanyRepository = {
         },
       });
       return ok(company);
-    } catch {
-      return err(databaseError());
+    } catch (error) {
+      return err(mapWriteError(error));
     }
   },
 
-  /** Soft delete: marca `deletedAt` e registra quem removeu. */
+  /**
+   * Soft delete: marca `deletedAt` e registra quem removeu. Também libera os
+   * campos com unicidade no banco (`cnpj`/`domain`) — o índice único conta
+   * linhas soft-deleted, então mantê-los reservaria o valor e impediria
+   * recadastrar a mesma empresa depois (P2002).
+   */
   async softDelete(id: string, updatedById: string): Promise<Result<Company>> {
     try {
       const company = await prisma.company.update({
         where: { id },
-        data: { deletedAt: new Date(), updatedById },
+        data: { deletedAt: new Date(), updatedById, cnpj: null, domain: null },
       });
       return ok(company);
     } catch {

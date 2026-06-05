@@ -133,12 +133,67 @@ describe("CompanyRepository (integração)", () => {
     }
   });
 
-  it("softDelete marca deletedAt", async () => {
+  it("softDelete marca deletedAt e libera cnpj/domain (slot da unique)", async () => {
     const { owner, workspace } = await workspaceAndOwner();
-    const company = await createCompany(workspace.id, owner.id);
+    const company = await createCompany(workspace.id, owner.id, {
+      cnpj: "11222333000181",
+      domain: "acme.com",
+    });
 
     const result = await CompanyRepository.softDelete(company.id, owner.id);
     expect(result.ok).toBe(true);
-    if (result.ok) expect(result.value.deletedAt).not.toBeNull();
+    if (result.ok) {
+      expect(result.value.deletedAt).not.toBeNull();
+      expect(result.value.cnpj).toBeNull();
+      expect(result.value.domain).toBeNull();
+    }
+  });
+
+  it("permite recadastrar mesmo cnpj/domínio após soft-delete", async () => {
+    const { owner, workspace } = await workspaceAndOwner();
+    const first = await createCompany(workspace.id, owner.id, {
+      cnpj: "11222333000181",
+      domain: "acme.com",
+    });
+    await CompanyRepository.softDelete(first.id, owner.id);
+
+    const again = await CompanyRepository.create({
+      workspaceId: workspace.id,
+      createdById: owner.id,
+      name: "Acme 2",
+      cnpj: "11222333000181",
+      domain: "acme.com",
+      employees: null,
+      linkedin: null,
+      address: null,
+      arr: null,
+      icp: false,
+      accountOwnerId: null,
+    });
+
+    expect(again.ok).toBe(true);
+    if (again.ok) expect(again.value.cnpj).toBe("11222333000181");
+  });
+
+  it("cnpj duplicado em empresa ativa retorna conflito (não erro de banco)", async () => {
+    const { owner, workspace } = await workspaceAndOwner();
+    await createCompany(workspace.id, owner.id, { cnpj: "11222333000181" });
+
+    const dup = await CompanyRepository.create({
+      workspaceId: workspace.id,
+      createdById: owner.id,
+      name: "Duplicada",
+      cnpj: "11222333000181",
+      domain: null,
+      employees: null,
+      linkedin: null,
+      address: null,
+      arr: null,
+      icp: false,
+      accountOwnerId: null,
+    });
+
+    expect(dup.ok).toBe(false);
+    if (!dup.ok) expect(dup.error.code).toBe("COMPANY_CNPJ_TAKEN");
   });
 });
