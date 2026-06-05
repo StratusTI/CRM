@@ -174,6 +174,10 @@ export const ERROR_CODES = {
   AI_PROVIDER_FAILED: { code: "AI_PROVIDER_FAILED", status: 502 },
   AI_MESSAGE_INVALID: { code: "AI_MESSAGE_INVALID", status: 422 },
 
+  // Pagamentos / Assinatura (AbacatePay)
+  ABACATE_NOT_CONFIGURED: { code: "ABACATE_NOT_CONFIGURED", status: 503 },
+  ABACATE_CHECKOUT_FAILED: { code: "ABACATE_CHECKOUT_FAILED", status: 502 },
+
   // Server Errors (500)
   INTERNAL_SERVER_ERROR: { code: "INTERNAL_SERVER_ERROR", status: 500 },
   DATABASE_ERROR: { code: "DATABASE_ERROR", status: 500 },

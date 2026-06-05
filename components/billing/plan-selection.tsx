@@ -172,6 +172,14 @@ export function PlanSelection({
         toast.error(json.message ?? "Não foi possível alterar o plano.");
         return;
       }
+      // Planos cobráveis retornam uma URL de checkout (Pix/cartão) — redireciona
+      // o usuário para pagar. Free troca na hora (sem checkout).
+      const checkoutUrl = json.data?.checkoutUrl as string | null | undefined;
+      if (checkoutUrl) {
+        toast.loading("Redirecionando para o pagamento…");
+        window.location.href = checkoutUrl;
+        return;
+      }
       toast.success("Plano atualizado com sucesso.");
       router.refresh();
     } catch {

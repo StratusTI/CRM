@@ -46,6 +46,10 @@ const serverEnv = {
   S3_BUCKET: process.env.S3_BUCKET || undefined,
   // Segredo (Bearer) que autentica os endpoints /api/cron/* chamados pelo cron.
   CRON_SECRET: process.env.CRON_SECRET || undefined,
+  // AbacatePay (pagamentos/assinatura). A chave define o ambiente (Dev/Prod).
+  // O webhook secret é o mesmo valor configurado no dashboard (?webhookSecret=).
+  ABACATEPAY_API_KEY: process.env.ABACATEPAY_API_KEY || undefined,
+  ABACATEPAY_WEBHOOK_SECRET: process.env.ABACATEPAY_WEBHOOK_SECRET || undefined,
 };
 
 const serverEnvSchema = z.object({
@@ -80,6 +84,8 @@ const serverEnvSchema = z.object({
   S3_SECRET_KEY: z.string().min(1).optional(),
   S3_BUCKET: z.string().min(1).optional(),
   CRON_SECRET: z.string().min(16).optional(),
+  ABACATEPAY_API_KEY: z.string().min(10).optional(),
+  ABACATEPAY_WEBHOOK_SECRET: z.string().min(10).optional(),
 });
 
 const validatedServerEnv =
@@ -113,4 +119,6 @@ export const {
   S3_SECRET_KEY,
   S3_BUCKET,
   CRON_SECRET,
+  ABACATEPAY_API_KEY,
+  ABACATEPAY_WEBHOOK_SECRET,
 } = validatedServerEnv;
