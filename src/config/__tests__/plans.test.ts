@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  ABACATE_PRODUCT_IDS,
   ANNUAL_DISCOUNT_RATE,
   abacateExternalId,
+  abacateProductId,
+  BILLING_CYCLES,
   BillingCycleSchema,
   formatBRL,
   getPlan,
@@ -62,6 +65,26 @@ describe("catálogo de planos", () => {
   it("externalId do AbacatePay segue plan_<id>_<cycle>", () => {
     expect(abacateExternalId("pro", "monthly")).toBe("plan_pro_monthly");
     expect(abacateExternalId("scale", "yearly")).toBe("plan_scale_yearly");
+  });
+
+  it("todo plano cobrável tem productId do AbacatePay em ambos os ciclos", () => {
+    for (const plan of PLAN_LIST) {
+      for (const cycle of BILLING_CYCLES) {
+        const productId = abacateProductId(plan.id, cycle);
+        if (isBillable(plan.id)) {
+          expect(productId).toMatch(/^prod_/);
+        } else {
+          expect(productId).toBeNull();
+        }
+      }
+    }
+  });
+
+  it("productIds são únicos por plano/ciclo", () => {
+    const ids = Object.values(ABACATE_PRODUCT_IDS).flatMap((byCycle) =>
+      Object.values(byCycle ?? {}),
+    );
+    expect(new Set(ids).size).toBe(ids.length);
   });
 
   it("Enterprise tem todos os limites ilimitados", () => {
