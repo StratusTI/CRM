@@ -353,3 +353,12 @@ export const aiProviderFailed = (
 
 export const aiMessageInvalid = (message = "Mensagem inválida"): AppError =>
   appError("AI_MESSAGE_INVALID", message);
+
+export const abacateNotConfigured = (
+  message = "Pagamento não configurado. Falta a ABACATEPAY_API_KEY no servidor.",
+): AppError => appError("ABACATE_NOT_CONFIGURED", message);
+
+export const abacateCheckoutFailed = (
+  message = "Falha ao criar o checkout de pagamento",
+  details?: unknown,
+): AppError => appError("ABACATE_CHECKOUT_FAILED", message, details);
