@@ -10,6 +10,11 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["@prisma/client"],
   experimental: {
     webpackMemoryOptimizations: true,
+    // O middleware faz o Next bufferizar o corpo da request em memória (proxy),
+    // com limite default de 10MB. Uploads de vídeo (YouTube até 256MB, TikTok
+    // até 64MB) eram truncados nesse buffer e `request.formData()` falhava com
+    // "esperado multipart/form-data". Cobrimos o maior upload + folga do multipart.
+    proxyClientMaxBodySize: "500mb",
   },
 };
 
