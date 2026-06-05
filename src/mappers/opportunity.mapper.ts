@@ -11,7 +11,8 @@ export function toOpportunityDTO(opportunity: Opportunity): OpportunityDTO {
       opportunity.closeDate === null
         ? null
         : opportunity.closeDate.toISOString(),
-    stage: opportunity.stage,
+    pipelineId: opportunity.pipelineId,
+    stageId: opportunity.stageId,
     companyId: opportunity.companyId,
     pointOfContactId: opportunity.pointOfContactId,
     ownerId: opportunity.ownerId,

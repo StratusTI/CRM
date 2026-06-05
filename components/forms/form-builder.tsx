@@ -42,7 +42,6 @@ import {
   type PublicFormDTO,
   TARGET_ATTRIBUTES,
 } from "@/src/schemas/form.schema";
-import { OPPORTUNITY_STAGES } from "@/src/schemas/opportunity.schema";
 
 const ACTION_LABELS: Record<FormActionType, string> = {
   COMPANY: "Empresa",
@@ -93,16 +92,6 @@ const ATTR_LABELS: Record<FieldTarget, Record<string, string>> = {
     stage: "Estágio",
     closeDate: "Data de fechamento",
   },
-};
-
-const STAGE_LABELS: Record<string, string> = {
-  NEW: "Novo",
-  QUALIFIED: "Qualificado",
-  MEETING: "Reunião",
-  PROPOSAL: "Proposta",
-  NEGOTIATION: "Negociação",
-  WON: "Ganho",
-  LOST: "Perdido",
 };
 
 type MappingOption = {
@@ -405,45 +394,22 @@ function FormBuilderInner({
               </div>
 
               {action === "LEAD" ? (
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="opp-source">Origem da oportunidade</Label>
-                    <Input
-                      id="opp-source"
-                      value={config.opportunitySource ?? ""}
-                      placeholder="FORMULÁRIO"
-                      onChange={(e) =>
-                        setConfig((c) => ({
-                          ...c,
-                          opportunitySource: e.target.value || undefined,
-                        }))
-                      }
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <Label>Estágio inicial</Label>
-                    <Select
-                      value={config.opportunityStage ?? "NEW"}
-                      onValueChange={(v) =>
-                        setConfig((c) => ({
-                          ...c,
-                          opportunityStage:
-                            v as (typeof OPPORTUNITY_STAGES)[number],
-                        }))
-                      }
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {OPPORTUNITY_STAGES.map((s) => (
-                          <SelectItem key={s} value={s}>
-                            {STAGE_LABELS[s] ?? s}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="opp-source">Origem da oportunidade</Label>
+                  <Input
+                    id="opp-source"
+                    value={config.opportunitySource ?? ""}
+                    placeholder="FORMULÁRIO"
+                    onChange={(e) =>
+                      setConfig((c) => ({
+                        ...c,
+                        opportunitySource: e.target.value || undefined,
+                      }))
+                    }
+                  />
+                  <p className="text-muted-foreground text-xs">
+                    O lead entra na etapa inicial do pipeline padrão.
+                  </p>
                 </div>
               ) : null}
 

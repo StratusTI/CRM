@@ -605,6 +605,7 @@ export function DataTable<TData extends WithId>({
   disableInlineCreate = false,
   headerAction,
   onOpenRecord,
+  renderRecordExtra,
 }: {
   columns: GridColumn[];
   data: TData[];
@@ -631,6 +632,11 @@ export function DataTable<TData extends WithId>({
    * de campanha enviada).
    */
   onOpenRecord?: (record: TData) => void;
+  /**
+   * Conteúdo extra renderizado no rodapé do painel de detalhes (ex.: line items
+   * de uma oportunidade). Recebe o registro aberto.
+   */
+  renderRecordExtra?: (record: TData) => React.ReactNode;
 }) {
   const [rows, setRows] = React.useState(() => data);
   React.useEffect(() => setRows(data), [data]);
@@ -1369,6 +1375,7 @@ export function DataTable<TData extends WithId>({
           resource={resource}
           title={createTitle}
           lookups={lookups}
+          renderExtra={renderRecordExtra}
           onSaved={(updated) =>
             setRows((cur) =>
               cur.map((row) => (row.id === updated.id ? updated : row)),

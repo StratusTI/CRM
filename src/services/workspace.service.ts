@@ -1,12 +1,21 @@
-import { workspaceNotFound, workspaceSlugTaken } from "@/src/errors/app-error";
+import {
+  lastOwnerProtected,
+  profileNotFound,
+  workspaceNotFound,
+  workspaceSlugTaken,
+} from "@/src/errors/app-error";
+import type { PermissionMap } from "@/src/lib/permissions";
+import { SYSTEM_PROFILE_PERMISSIONS } from "@/src/lib/permissions";
 import { err, ok, type Result } from "@/src/lib/result";
 import { toWorkspaceDTO } from "@/src/mappers/workspace.mapper";
 import { MembershipRepository } from "@/src/repositories/membership.repository";
+import { ProfileRepository } from "@/src/repositories/profile.repository";
 import { WorkspaceRepository } from "@/src/repositories/workspace.repository";
 import type {
   CreateWorkspaceInput,
   WorkspaceDTO,
 } from "@/src/schemas/workspace.schema";
+import { resolveWorkspaceId } from "@/src/services/workspace-scope";
 
 const MAX_SLUG_ATTEMPTS = 1000;
 
@@ -61,6 +70,13 @@ export const WorkspaceService = {
       userId,
     );
     if (!created.ok) return created;
+
+    // Semeia os perfis de sistema (RBAC) e liga o owner ao perfil Proprietário.
+    const seeded = await ProfileRepository.ensureSystemProfiles(
+      created.value.id,
+    );
+    if (!seeded.ok) return seeded;
+
     return ok(toWorkspaceDTO(created.value));
   },
 
@@ -113,7 +129,72 @@ export const WorkspaceService = {
         name: m.user.name,
         email: m.user.email,
         role: m.role,
+        profileId: m.profileId,
+        profileName: m.profile?.name ?? null,
       })),
     );
+  },
+
+  /** Permissões efetivas do usuário atual na workspace (para o front gate). */
+  async getMyAccess(
+    userId: string,
+    slug: string,
+  ): Promise<Result<{ isOwner: boolean; permissions: PermissionMap }>> {
+    const membership = await MembershipRepository.findByUserAndSlug(
+      userId,
+      slug,
+    );
+    if (!membership.ok) return membership;
+    if (!membership.value) return err(workspaceNotFound());
+
+    const m = membership.value;
+    const permissions: PermissionMap = m.profile
+      ? (m.profile.permissions as PermissionMap)
+      : (SYSTEM_PROFILE_PERMISSIONS[m.role] ?? {});
+    const isOwner = m.profile?.systemKey === "OWNER" || m.role === "OWNER";
+    return ok({ isOwner, permissions });
+  },
+
+  /** Atribui um perfil a um membro (protege o último proprietário). */
+  async setMemberProfile(
+    userId: string,
+    slug: string,
+    targetUserId: string,
+    profileId: string,
+  ): Promise<Result<true>> {
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "members",
+      action: "EDIT",
+    });
+    if (!ws.ok) return ws;
+
+    const target = await MembershipRepository.findByUserAndWorkspaceId(
+      targetUserId,
+      ws.value,
+    );
+    if (!target.ok) return target;
+    if (!target.value) return err(workspaceNotFound());
+
+    const profile = await ProfileRepository.findById(profileId);
+    if (!profile.ok) return profile;
+    if (!profile.value || profile.value.workspaceId !== ws.value) {
+      return err(profileNotFound());
+    }
+
+    const newRole =
+      profile.value.systemKey === "OWNER"
+        ? "OWNER"
+        : profile.value.systemKey === "ADMIN"
+          ? "ADMIN"
+          : "MEMBER";
+
+    // Não permite remover o último proprietário (por papel OWNER).
+    if (target.value.role === "OWNER" && newRole !== "OWNER") {
+      const owners = await MembershipRepository.countOwners(ws.value);
+      if (!owners.ok) return owners;
+      if (owners.value <= 1) return err(lastOwnerProtected());
+    }
+
+    return MembershipRepository.setProfile(target.value.id, profileId, newRole);
   },
 };

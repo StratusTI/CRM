@@ -31,7 +31,10 @@ export const NoteService = {
     slug: string,
     input: CreateNoteInput,
   ): Promise<Result<NoteDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "notes",
+      action: "CREATE",
+    });
     if (!ws.ok) return ws;
 
     const refs = await assertRelationRefs(ws.value, input);
@@ -59,7 +62,10 @@ export const NoteService = {
   },
 
   async list(userId: string, slug: string): Promise<Result<NoteDTO[]>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "notes",
+      action: "VIEW",
+    });
     if (!ws.ok) return ws;
 
     const result = await NoteRepository.listByWorkspace(ws.value);
@@ -72,7 +78,10 @@ export const NoteService = {
     slug: string,
     id: string,
   ): Promise<Result<NoteDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "notes",
+      action: "VIEW",
+    });
     if (!ws.ok) return ws;
 
     const note = await loadInWorkspace(ws.value, id);
@@ -86,7 +95,10 @@ export const NoteService = {
     id: string,
     input: UpdateNoteInput,
   ): Promise<Result<NoteDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "notes",
+      action: "EDIT",
+    });
     if (!ws.ok) return ws;
 
     const existing = await loadInWorkspace(ws.value, id);
@@ -117,7 +129,10 @@ export const NoteService = {
     slug: string,
     id: string,
   ): Promise<Result<NoteDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "notes",
+      action: "DELETE",
+    });
     if (!ws.ok) return ws;
 
     const existing = await loadInWorkspace(ws.value, id);
@@ -142,7 +157,10 @@ export const NoteService = {
     slug: string,
     ids: string[],
   ): Promise<Result<true>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "notes",
+      action: "EDIT",
+    });
     if (!ws.ok) return ws;
     return NoteRepository.reorder(ws.value, ids);
   },

@@ -1,6 +1,9 @@
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { PageShell } from "@/components/page-shell";
+import { CustomFieldsSection } from "@/components/settings/custom-fields-section";
+import { PipelinesSection } from "@/components/settings/pipelines-section";
+import { ProfilesSection } from "@/components/settings/profiles-section";
 import { SocialConnectionsSection } from "@/components/settings/social-connections-section";
 import { WorkspaceMembersSection } from "@/components/settings/workspace-members-section";
 import { SOCIAL_PLATFORM_META } from "@/components/social-platforms";
@@ -38,6 +41,33 @@ export default async function SettingsPage({
         <WorkspaceMembersSection
           slug={slug}
           currentUserRole={membership.value.role}
+        />
+      </Suspense>
+      <Suspense>
+        <PipelinesSection
+          slug={slug}
+          canManage={
+            membership.value.role === "OWNER" ||
+            membership.value.role === "ADMIN"
+          }
+        />
+      </Suspense>
+      <Suspense>
+        <CustomFieldsSection
+          slug={slug}
+          canManage={
+            membership.value.role === "OWNER" ||
+            membership.value.role === "ADMIN"
+          }
+        />
+      </Suspense>
+      <Suspense>
+        <ProfilesSection
+          slug={slug}
+          canManage={
+            membership.value.role === "OWNER" ||
+            membership.value.role === "ADMIN"
+          }
         />
       </Suspense>
       <Suspense>

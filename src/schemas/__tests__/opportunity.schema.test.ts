@@ -5,26 +5,24 @@ import {
 } from "@/src/schemas/opportunity.schema";
 
 describe("CreateOpportunitySchema", () => {
-  it("aceita apenas o nome e usa stage NEW por padrão", () => {
+  it("aceita apenas o nome (pipeline/etapa resolvidos no service)", () => {
     const result = CreateOpportunitySchema.safeParse({ name: "Deal" });
     expect(result.success).toBe(true);
-    if (result.success) expect(result.data.stage).toBe("NEW");
+    if (result.success) {
+      expect(result.data.pipelineId).toBeUndefined();
+      expect(result.data.stageId).toBeUndefined();
+    }
   });
 
-  it("aceita closeDate ISO e stage válido", () => {
+  it("aceita closeDate ISO, pipeline e etapa", () => {
     const result = CreateOpportunitySchema.safeParse({
       name: "Deal",
       closeDate: "2026-06-01T00:00:00.000Z",
-      stage: "PROPOSAL",
+      pipelineId: "pl_1",
+      stageId: "st_1",
       amount: 1000,
     });
     expect(result.success).toBe(true);
-  });
-
-  it("rejeita stage inválido", () => {
-    expect(
-      CreateOpportunitySchema.safeParse({ name: "Deal", stage: "FOO" }).success,
-    ).toBe(false);
   });
 
   it("rejeita closeDate não-ISO", () => {
@@ -43,7 +41,7 @@ describe("CreateOpportunitySchema", () => {
 
 describe("UpdateOpportunitySchema", () => {
   it("aceita atualização parcial", () => {
-    expect(UpdateOpportunitySchema.safeParse({ stage: "WON" }).success).toBe(
+    expect(UpdateOpportunitySchema.safeParse({ stageId: "st_2" }).success).toBe(
       true,
     );
   });

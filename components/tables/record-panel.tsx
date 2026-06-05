@@ -24,6 +24,7 @@ export function RecordPanel<T extends WithId>({
   resource,
   title,
   lookups,
+  renderExtra,
   onSaved,
   onDeleted,
 }: {
@@ -36,6 +37,8 @@ export function RecordPanel<T extends WithId>({
   /** Nome singular da entidade, ex.: "company". */
   title: string;
   lookups: Lookups;
+  /** Conteúdo extra abaixo dos campos (ex.: line items da oportunidade). */
+  renderExtra?: (record: T) => React.ReactNode;
   onSaved: (updated: T) => void;
   onDeleted: (id: string) => void;
 }) {
@@ -59,12 +62,20 @@ export function RecordPanel<T extends WithId>({
   async function handleSave() {
     const before = record as Record<string, unknown>;
     const patch: Record<string, unknown> = {};
+    const customFields: Record<string, unknown> = {};
     for (const col of editable) {
       const prev = before[col.key] ?? null;
       const next = values[col.key] ?? null;
-      if (JSON.stringify(prev) !== JSON.stringify(next)) {
+      if (JSON.stringify(prev) === JSON.stringify(next)) continue;
+      // Campos customizados (EAV) vão agrupados em `customFields` no PATCH.
+      if (col.customFieldId) {
+        customFields[col.customFieldId] = next;
+      } else {
         patch[col.key] = next;
       }
+    }
+    if (Object.keys(customFields).length > 0) {
+      patch.customFields = customFields;
     }
     if (Object.keys(patch).length === 0) {
       onOpenChange(false);
@@ -140,6 +151,10 @@ export function RecordPanel<T extends WithId>({
               </div>
             ))}
           </div>
+
+          {renderExtra ? (
+            <div className="mt-6 border-t pt-4">{renderExtra(record)}</div>
+          ) : null}
         </div>
 
         {/* Ações: Delete + Salvar lado a lado */}

@@ -29,7 +29,10 @@ export const EmailTemplateService = {
     slug: string,
     input: CreateEmailTemplateInput,
   ): Promise<Result<EmailTemplateDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "email",
+      action: "CREATE",
+    });
     if (!ws.ok) return ws;
 
     const created = await EmailTemplateRepository.create({
@@ -48,7 +51,10 @@ export const EmailTemplateService = {
     userId: string,
     slug: string,
   ): Promise<Result<EmailTemplateDTO[]>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "email",
+      action: "VIEW",
+    });
     if (!ws.ok) return ws;
 
     const result = await EmailTemplateRepository.listByWorkspace(ws.value);
@@ -61,7 +67,10 @@ export const EmailTemplateService = {
     slug: string,
     id: string,
   ): Promise<Result<EmailTemplateDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "email",
+      action: "VIEW",
+    });
     if (!ws.ok) return ws;
 
     const template = await loadInWorkspace(ws.value, id);
@@ -75,7 +84,10 @@ export const EmailTemplateService = {
     id: string,
     input: UpdateEmailTemplateInput,
   ): Promise<Result<EmailTemplateDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "email",
+      action: "EDIT",
+    });
     if (!ws.ok) return ws;
 
     const existing = await loadInWorkspace(ws.value, id);
@@ -94,7 +106,10 @@ export const EmailTemplateService = {
     slug: string,
     id: string,
   ): Promise<Result<EmailTemplateDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "email",
+      action: "DELETE",
+    });
     if (!ws.ok) return ws;
 
     const existing = await loadInWorkspace(ws.value, id);

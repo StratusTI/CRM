@@ -15,7 +15,6 @@ import {
   type FormSubmissionInput,
 } from "@/src/schemas/form.schema";
 import type { LeadOpportunityInput } from "@/src/schemas/lead-ingest.schema";
-import type { OPPORTUNITY_STAGES } from "@/src/schemas/opportunity.schema";
 import { normalizeBrazilPhone, normalizeDomain } from "@/src/schemas/shared";
 import { LeadIngestService } from "@/src/services/lead-ingest.service";
 import { dispatchRecordEvent } from "@/src/services/workflow-dispatcher";
@@ -190,12 +189,6 @@ async function ingestLead(
     name: str(mapped.opportunity.name) ?? config.opportunityName,
     amount: num(mapped.opportunity.amount),
     closeDate: str(mapped.opportunity.closeDate),
-    stage:
-      (str(mapped.opportunity.stage) as
-        | (typeof OPPORTUNITY_STAGES)[number]
-        | undefined) ??
-      config.opportunityStage ??
-      "NEW",
     source: str(mapped.opportunity.source) ?? config.opportunitySource,
   };
 

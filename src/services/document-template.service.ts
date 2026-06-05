@@ -28,7 +28,10 @@ export const DocumentTemplateService = {
     slug: string,
     input: CreateDocumentTemplateInput,
   ): Promise<Result<DocumentTemplateDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "documents",
+      action: "CREATE",
+    });
     if (!ws.ok) return ws;
 
     const created = await DocumentTemplateRepository.create({
@@ -47,7 +50,10 @@ export const DocumentTemplateService = {
     slug: string,
     type?: DocumentType,
   ): Promise<Result<DocumentTemplateDTO[]>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "documents",
+      action: "VIEW",
+    });
     if (!ws.ok) return ws;
 
     const result = await DocumentTemplateRepository.listByWorkspace(
@@ -63,7 +69,10 @@ export const DocumentTemplateService = {
     slug: string,
     id: string,
   ): Promise<Result<DocumentTemplateDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "documents",
+      action: "DELETE",
+    });
     if (!ws.ok) return ws;
 
     const existing = await loadInWorkspace(ws.value, id);

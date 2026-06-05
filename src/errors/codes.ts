@@ -36,6 +36,36 @@ export const ERROR_CODES = {
   // Person / Opportunity / Task / Note domain
   PERSON_NOT_FOUND: { code: "PERSON_NOT_FOUND", status: 404 },
   OPPORTUNITY_NOT_FOUND: { code: "OPPORTUNITY_NOT_FOUND", status: 404 },
+
+  // Pipeline domain
+  PIPELINE_NOT_FOUND: { code: "PIPELINE_NOT_FOUND", status: 404 },
+  PIPELINE_STAGE_NOT_FOUND: { code: "PIPELINE_STAGE_NOT_FOUND", status: 404 },
+  PIPELINE_IN_USE: { code: "PIPELINE_IN_USE", status: 409 },
+  PIPELINE_STAGE_IN_USE: { code: "PIPELINE_STAGE_IN_USE", status: 409 },
+  PIPELINE_DEFAULT_PROTECTED: {
+    code: "PIPELINE_DEFAULT_PROTECTED",
+    status: 409,
+  },
+
+  // Produto / Line item domain
+  PRODUCT_NOT_FOUND: { code: "PRODUCT_NOT_FOUND", status: 404 },
+  PRODUCT_SKU_TAKEN: { code: "PRODUCT_SKU_TAKEN", status: 409 },
+  LINE_ITEM_NOT_FOUND: { code: "LINE_ITEM_NOT_FOUND", status: 404 },
+
+  // Quota / Forecast domain
+  QUOTA_NOT_FOUND: { code: "QUOTA_NOT_FOUND", status: 404 },
+
+  // Custom field domain
+  CUSTOM_FIELD_NOT_FOUND: { code: "CUSTOM_FIELD_NOT_FOUND", status: 404 },
+  CUSTOM_FIELD_KEY_TAKEN: { code: "CUSTOM_FIELD_KEY_TAKEN", status: 409 },
+  CUSTOM_FIELD_INVALID: { code: "CUSTOM_FIELD_INVALID", status: 422 },
+
+  // Profile / RBAC domain
+  PROFILE_NOT_FOUND: { code: "PROFILE_NOT_FOUND", status: 404 },
+  PROFILE_NAME_TAKEN: { code: "PROFILE_NAME_TAKEN", status: 409 },
+  PROFILE_SYSTEM_PROTECTED: { code: "PROFILE_SYSTEM_PROTECTED", status: 409 },
+  PROFILE_IN_USE: { code: "PROFILE_IN_USE", status: 409 },
+  LAST_OWNER_PROTECTED: { code: "LAST_OWNER_PROTECTED", status: 409 },
   TASK_NOT_FOUND: { code: "TASK_NOT_FOUND", status: 404 },
   NOTE_NOT_FOUND: { code: "NOTE_NOT_FOUND", status: 404 },
   DASHBOARD_NOT_FOUND: { code: "DASHBOARD_NOT_FOUND", status: 404 },

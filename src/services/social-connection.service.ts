@@ -27,7 +27,10 @@ export const SocialConnectionService = {
     userId: string,
     slug: string,
   ): Promise<Result<SocialConnectionDTO[]>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "social",
+      action: "VIEW",
+    });
     if (!ws.ok) return ws;
 
     const result = await SocialConnectionRepository.listByWorkspace(ws.value);
@@ -41,7 +44,10 @@ export const SocialConnectionService = {
     slug: string,
     platform: SocialPlatform,
   ): Promise<Result<true>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "social",
+      action: "EDIT",
+    });
     if (!ws.ok) return ws;
 
     const removed = await SocialConnectionRepository.deleteByPlatform(
@@ -62,7 +68,10 @@ export const SocialConnectionService = {
     slug: string,
     platform: SocialPlatform,
   ): Promise<Result<{ authorizeUrl: string; codeVerifier?: string }>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "social",
+      action: "EDIT",
+    });
     if (!ws.ok) return ws;
 
     const provider = getProvider(platform);
@@ -101,7 +110,10 @@ export const SocialConnectionService = {
     // A plataforma do callback deve bater com a assinada no state.
     if (platform !== args.platform) return err(socialStateInvalid());
 
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "social",
+      action: "EDIT",
+    });
     if (!ws.ok) return ws;
 
     const provider = getProvider(platform);

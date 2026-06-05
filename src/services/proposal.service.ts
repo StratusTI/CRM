@@ -63,7 +63,10 @@ export const ProposalService = {
     slug: string,
     input: CreateProposalInput,
   ): Promise<Result<ProposalDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "documents",
+      action: "CREATE",
+    });
     if (!ws.ok) return ws;
 
     const type: DocumentType = input.type ?? "PROPOSAL";
@@ -101,7 +104,10 @@ export const ProposalService = {
   },
 
   async list(userId: string, slug: string): Promise<Result<ProposalDTO[]>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "documents",
+      action: "VIEW",
+    });
     if (!ws.ok) return ws;
 
     const result = await ProposalRepository.listByWorkspace(ws.value);
@@ -114,7 +120,10 @@ export const ProposalService = {
     slug: string,
     id: string,
   ): Promise<Result<ProposalDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "documents",
+      action: "VIEW",
+    });
     if (!ws.ok) return ws;
 
     const proposal = await loadInWorkspace(ws.value, id);
@@ -128,7 +137,10 @@ export const ProposalService = {
     id: string,
     input: UpdateProposalInput,
   ): Promise<Result<ProposalDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "documents",
+      action: "EDIT",
+    });
     if (!ws.ok) return ws;
 
     const existing = await loadInWorkspace(ws.value, id);
@@ -150,7 +162,10 @@ export const ProposalService = {
     slug: string,
     id: string,
   ): Promise<Result<ProposalDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "documents",
+      action: "DELETE",
+    });
     if (!ws.ok) return ws;
 
     const existing = await loadInWorkspace(ws.value, id);
@@ -167,7 +182,10 @@ export const ProposalService = {
     slug: string,
     ids: string[],
   ): Promise<Result<true>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "documents",
+      action: "EDIT",
+    });
     if (!ws.ok) return ws;
     return ProposalRepository.reorder(ws.value, ids);
   },
@@ -177,7 +195,10 @@ export const ProposalService = {
     slug: string,
     id: string,
   ): Promise<Result<ProposalMetricsDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "documents",
+      action: "VIEW",
+    });
     if (!ws.ok) return ws;
 
     const proposal = await loadInWorkspace(ws.value, id);

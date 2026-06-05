@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { isValidCnpj, normalizeCnpj } from "@/lib/cnpj";
+import { CustomFieldsInputSchema } from "@/src/schemas/custom-field.schema";
 import { normalizeDomain, normalizedUrl } from "@/src/schemas/shared";
 
 /** Contrato da feature Company (create / update / list / get / soft-delete). */
@@ -104,6 +105,7 @@ export const CreateCompanySchema = z.object({
   arr: ArrSchema.optional(),
   icp: z.boolean().optional().default(false),
   accountOwnerId: UserIdSchema.optional(),
+  customFields: CustomFieldsInputSchema.optional(),
 });
 
 /**
@@ -121,6 +123,7 @@ export const UpdateCompanySchema = z
     arr: ArrSchema.nullable(),
     icp: z.boolean(),
     accountOwnerId: UserIdSchema.nullable(),
+    customFields: CustomFieldsInputSchema,
   })
   .partial()
   .refine((data) => Object.keys(data).length > 0, {
@@ -144,6 +147,7 @@ export const CompanyOutputSchema = z.object({
   createdAt: z.string(),
   updatedAt: z.string(),
   deletedAt: z.string().nullable(),
+  customFields: CustomFieldsInputSchema.optional(),
 });
 
 export type CompanyAddress = z.infer<typeof CompanyAddressSchema>;

@@ -91,6 +91,69 @@ export const opportunityNotFound = (
   message = "Oportunidade não encontrada",
 ): AppError => appError("OPPORTUNITY_NOT_FOUND", message);
 
+export const pipelineNotFound = (
+  message = "Pipeline não encontrado",
+): AppError => appError("PIPELINE_NOT_FOUND", message);
+
+export const pipelineStageNotFound = (
+  message = "Etapa não encontrada",
+): AppError => appError("PIPELINE_STAGE_NOT_FOUND", message);
+
+export const pipelineInUse = (
+  message = "Pipeline possui oportunidades e não pode ser excluído",
+): AppError => appError("PIPELINE_IN_USE", message);
+
+export const pipelineStageInUse = (
+  message = "Etapa possui oportunidades e não pode ser removida",
+): AppError => appError("PIPELINE_STAGE_IN_USE", message);
+
+export const pipelineDefaultProtected = (
+  message = "O pipeline padrão não pode ser excluído",
+): AppError => appError("PIPELINE_DEFAULT_PROTECTED", message);
+
+export const productNotFound = (message = "Produto não encontrado"): AppError =>
+  appError("PRODUCT_NOT_FOUND", message);
+
+export const productSkuTaken = (
+  message = "Já existe um produto com este SKU",
+): AppError => appError("PRODUCT_SKU_TAKEN", message);
+
+export const lineItemNotFound = (message = "Item não encontrado"): AppError =>
+  appError("LINE_ITEM_NOT_FOUND", message);
+
+export const quotaNotFound = (message = "Meta não encontrada"): AppError =>
+  appError("QUOTA_NOT_FOUND", message);
+
+export const customFieldNotFound = (
+  message = "Campo customizado não encontrado",
+): AppError => appError("CUSTOM_FIELD_NOT_FOUND", message);
+
+export const customFieldKeyTaken = (
+  message = "Já existe um campo com esta chave nesta entidade",
+): AppError => appError("CUSTOM_FIELD_KEY_TAKEN", message);
+
+export const customFieldInvalid = (message: string): AppError =>
+  appError("CUSTOM_FIELD_INVALID", message);
+
+export const profileNotFound = (message = "Perfil não encontrado"): AppError =>
+  appError("PROFILE_NOT_FOUND", message);
+
+export const profileNameTaken = (
+  message = "Já existe um perfil com este nome",
+): AppError => appError("PROFILE_NAME_TAKEN", message);
+
+export const profileSystemProtected = (
+  message = "Perfis de sistema não podem ser editados ou excluídos",
+): AppError => appError("PROFILE_SYSTEM_PROTECTED", message);
+
+export const profileInUse = (
+  message = "Perfil atribuído a membros não pode ser excluído",
+): AppError => appError("PROFILE_IN_USE", message);
+
+export const lastOwnerProtected = (
+  message = "A workspace precisa de ao menos um Proprietário",
+): AppError => appError("LAST_OWNER_PROTECTED", message);
+
 export const taskNotFound = (message = "Tarefa não encontrada"): AppError =>
   appError("TASK_NOT_FOUND", message);
 

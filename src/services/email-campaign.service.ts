@@ -100,7 +100,10 @@ export const EmailCampaignService = {
     slug: string,
     input: CreateEmailCampaignInput,
   ): Promise<Result<EmailCampaignWithRecipientsDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "email",
+      action: "CREATE",
+    });
     if (!ws.ok) return ws;
 
     const resend = getResendClient();
@@ -211,7 +214,10 @@ export const EmailCampaignService = {
     userId: string,
     slug: string,
   ): Promise<Result<EmailCampaignDTO[]>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "email",
+      action: "VIEW",
+    });
     if (!ws.ok) return ws;
 
     const result = await EmailCampaignRepository.listByWorkspace(ws.value);
@@ -224,7 +230,10 @@ export const EmailCampaignService = {
     slug: string,
     id: string,
   ): Promise<Result<EmailCampaignWithRecipientsDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "email",
+      action: "VIEW",
+    });
     if (!ws.ok) return ws;
 
     const result = await EmailCampaignRepository.findByIdWithRecipients(id);

@@ -33,6 +33,19 @@ model User {
   opportunitiesUpdated Opportunity[] @relation("OpportunityUpdatedBy")
   opportunitiesOwned   Opportunity[] @relation("OpportunityOwner")
 
+  pipelinesCreated Pipeline[] @relation("PipelineCreatedBy")
+  pipelinesUpdated Pipeline[] @relation("PipelineUpdatedBy")
+
+  productsCreated Product[] @relation("ProductCreatedBy")
+  productsUpdated Product[] @relation("ProductUpdatedBy")
+
+  quotasOwned   Quota[] @relation("QuotaOwner")
+  quotasCreated Quota[] @relation("QuotaCreatedBy")
+  quotasUpdated Quota[] @relation("QuotaUpdatedBy")
+
+  customFieldsCreated CustomFieldDefinition[] @relation("CustomFieldCreatedBy")
+  customFieldsUpdated CustomFieldDefinition[] @relation("CustomFieldUpdatedBy")
+
   tasksCreated  Task[] @relation("TaskCreatedBy")
   tasksUpdated  Task[] @relation("TaskUpdatedBy")
   tasksAssigned Task[] @relation("TaskAssignee")
@@ -123,14 +136,19 @@ model Verification {
 }
 
 model Workspace {
-  id                 String              @id @default(cuid())
+  id                 String                  @id @default(cuid())
   name               String
-  slug               String              @unique
-  createdAt          DateTime            @default(now()) @map("created_at")
-  updatedAt          DateTime            @updatedAt @map("updated_at")
+  slug               String                  @unique
+  createdAt          DateTime                @default(now()) @map("created_at")
+  updatedAt          DateTime                @updatedAt @map("updated_at")
   memberships        Membership[]
   companies          Company[]
   people             Person[]
+  pipelines          Pipeline[]
+  products           Product[]
+  quotas             Quota[]
+  customFields       CustomFieldDefinition[]
+  profiles           Profile[]
   opportunities      Opportunity[]
   tasks              Task[]
   notes              Note[]
@@ -231,40 +249,246 @@ model Person {
 
 /// Oportunidade/negócio do CRM, escopada por workspace.
 model Opportunity {
-  id               String           @id @default(cuid())
+  id               String    @id @default(cuid())
   name             String
-  amount           Decimal?         @db.Decimal(14, 2)
-  closeDate        DateTime?        @map("close_date")
-  stage            OpportunityStage @default(NEW)
-  companyId        String?          @map("company_id")
-  pointOfContactId String?          @map("point_of_contact_id")
-  ownerId          String?          @map("owner_id")
+  amount           Decimal?  @db.Decimal(14, 2)
+  closeDate        DateTime? @map("close_date")
+  pipelineId       String    @map("pipeline_id")
+  stageId          String    @map("stage_id")
+  companyId        String?   @map("company_id")
+  pointOfContactId String?   @map("point_of_contact_id")
+  ownerId          String?   @map("owner_id")
   source           String?
-  workspaceId      String           @map("workspace_id")
-  createdById      String           @map("created_by_id")
-  updatedById      String?          @map("updated_by_id")
-  position         Int              @default(0)
-  createdAt        DateTime         @default(now()) @map("created_at")
-  updatedAt        DateTime         @updatedAt @map("updated_at")
-  deletedAt        DateTime?        @map("deleted_at")
+  workspaceId      String    @map("workspace_id")
+  createdById      String    @map("created_by_id")
+  updatedById      String?   @map("updated_by_id")
+  position         Int       @default(0)
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+  deletedAt        DateTime? @map("deleted_at")
 
-  workspace      Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  company        Company?  @relation(fields: [companyId], references: [id], onDelete: SetNull)
-  pointOfContact Person?   @relation("OpportunityPointOfContact", fields: [pointOfContactId], references: [id], onDelete: SetNull)
-  owner          User?     @relation("OpportunityOwner", fields: [ownerId], references: [id], onDelete: SetNull)
-  createdBy      User      @relation("OpportunityCreatedBy", fields: [createdById], references: [id])
-  updatedBy      User?     @relation("OpportunityUpdatedBy", fields: [updatedById], references: [id])
+  workspace      Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  pipeline       Pipeline      @relation(fields: [pipelineId], references: [id], onDelete: Restrict)
+  stage          PipelineStage @relation(fields: [stageId], references: [id], onDelete: Restrict)
+  company        Company?      @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  pointOfContact Person?       @relation("OpportunityPointOfContact", fields: [pointOfContactId], references: [id], onDelete: SetNull)
+  owner          User?         @relation("OpportunityOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  createdBy      User          @relation("OpportunityCreatedBy", fields: [createdById], references: [id])
+  updatedBy      User?         @relation("OpportunityUpdatedBy", fields: [updatedById], references: [id])
 
-  tasks Task[]
-  notes Note[]
+  tasks     Task[]
+  notes     Note[]
+  lineItems OpportunityLineItem[]
 
   @@index([workspaceId])
+  @@index([pipelineId])
+  @@index([stageId])
   @@index([companyId])
   @@index([pointOfContactId])
   @@index([ownerId])
   @@index([deletedAt])
   @@index([workspaceId, position])
   @@map("opportunities")
+}
+
+enum BillingType {
+  ONE_TIME
+  MONTHLY
+  YEARLY
+}
+
+/// Produto/serviço do catálogo da workspace (preço base + tipo de cobrança).
+model Product {
+  id          String      @id @default(cuid())
+  workspaceId String      @map("workspace_id")
+  name        String
+  sku         String?
+  description String?
+  unitPrice   Decimal     @default(0) @map("unit_price") @db.Decimal(14, 2)
+  currency    String      @default("BRL")
+  billingType BillingType @default(ONE_TIME) @map("billing_type")
+  active      Boolean     @default(true)
+  position    Int         @default(0)
+  createdById String      @map("created_by_id")
+  updatedById String?     @map("updated_by_id")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+  deletedAt   DateTime?   @map("deleted_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy User      @relation("ProductCreatedBy", fields: [createdById], references: [id])
+  updatedBy User?     @relation("ProductUpdatedBy", fields: [updatedById], references: [id])
+
+  lineItems OpportunityLineItem[]
+
+  @@unique([workspaceId, sku])
+  @@index([workspaceId])
+  @@index([workspaceId, position])
+  @@index([deletedAt])
+  @@map("products")
+}
+
+/// Item de uma oportunidade. Faz snapshot do produto (nome/preço/cobrança) para
+/// preservar o histórico mesmo que o produto mude ou seja excluído. `total` é
+/// denormalizado (quantity * unitPrice * (1 - discountPct/100)).
+model OpportunityLineItem {
+  id            String      @id @default(cuid())
+  opportunityId String      @map("opportunity_id")
+  productId     String?     @map("product_id")
+  name          String
+  quantity      Int         @default(1)
+  unitPrice     Decimal     @default(0) @map("unit_price") @db.Decimal(14, 2)
+  discountPct   Decimal     @default(0) @map("discount_pct") @db.Decimal(5, 2)
+  billingType   BillingType @default(ONE_TIME) @map("billing_type")
+  total         Decimal     @default(0) @db.Decimal(14, 2)
+  position      Int         @default(0)
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+
+  opportunity Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  product     Product?    @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([opportunityId])
+  @@index([opportunityId, position])
+  @@index([productId])
+  @@map("opportunity_line_items")
+}
+
+/// Funil de vendas configurável por workspace. Substitui o antigo enum de etapas.
+model Pipeline {
+  id          String    @id @default(cuid())
+  workspaceId String    @map("workspace_id")
+  name        String
+  position    Int       @default(0)
+  isDefault   Boolean   @default(false) @map("is_default")
+  createdById String    @map("created_by_id")
+  updatedById String?   @map("updated_by_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy User      @relation("PipelineCreatedBy", fields: [createdById], references: [id])
+  updatedBy User?     @relation("PipelineUpdatedBy", fields: [updatedById], references: [id])
+
+  stages        PipelineStage[]
+  opportunities Opportunity[]
+
+  @@index([workspaceId])
+  @@index([workspaceId, position])
+  @@index([deletedAt])
+  @@map("pipelines")
+}
+
+/// Etapa de um pipeline. `probability` (0–100) e `category` alimentam o forecast.
+model PipelineStage {
+  id          String        @id @default(cuid())
+  pipelineId  String        @map("pipeline_id")
+  name        String
+  position    Int           @default(0)
+  probability Int           @default(0)
+  category    StageCategory @default(OPEN)
+  color       String?
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  pipeline      Pipeline      @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  opportunities Opportunity[]
+
+  @@index([pipelineId])
+  @@index([pipelineId, position])
+  @@map("pipeline_stages")
+}
+
+enum QuotaPeriod {
+  MONTH
+  QUARTER
+}
+
+enum CustomFieldEntity {
+  COMPANY
+  PERSON
+  OPPORTUNITY
+}
+
+enum CustomFieldType {
+  TEXT
+  NUMBER
+  DATE
+  BOOLEAN
+  SELECT
+}
+
+/// Definição de um campo customizado (no-code) por workspace e entidade.
+model CustomFieldDefinition {
+  id          String            @id @default(cuid())
+  workspaceId String            @map("workspace_id")
+  entity      CustomFieldEntity
+  key         String
+  label       String
+  type        CustomFieldType   @default(TEXT)
+  options     String[]          @default([])
+  required    Boolean           @default(false)
+  position    Int               @default(0)
+  createdById String            @map("created_by_id")
+  updatedById String?           @map("updated_by_id")
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
+  deletedAt   DateTime?         @map("deleted_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy User      @relation("CustomFieldCreatedBy", fields: [createdById], references: [id])
+  updatedBy User?     @relation("CustomFieldUpdatedBy", fields: [updatedById], references: [id])
+
+  values CustomFieldValue[]
+
+  @@unique([workspaceId, entity, key])
+  @@index([workspaceId, entity])
+  @@index([deletedAt])
+  @@map("custom_field_definitions")
+}
+
+/// Valor de um campo customizado para um registro (Company/Person/Opportunity).
+/// `recordId` é o id do registro da entidade da definição. `value` é JSON tipado.
+model CustomFieldValue {
+  id           String   @id @default(cuid())
+  definitionId String   @map("definition_id")
+  recordId     String   @map("record_id")
+  value        Json
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  definition CustomFieldDefinition @relation(fields: [definitionId], references: [id], onDelete: Cascade)
+
+  @@unique([definitionId, recordId])
+  @@index([recordId])
+  @@index([definitionId])
+  @@map("custom_field_values")
+}
+
+/// Meta de receita de um responsável num período (mês "2026-06" ou trimestre
+/// "2026-Q2"). Comparada ao forecast (ganho + pipeline aberto ponderado).
+model Quota {
+  id           String      @id @default(cuid())
+  workspaceId  String      @map("workspace_id")
+  ownerId      String      @map("owner_id")
+  period       QuotaPeriod
+  periodKey    String      @map("period_key")
+  targetAmount Decimal     @default(0) @map("target_amount") @db.Decimal(14, 2)
+  createdById  String      @map("created_by_id")
+  updatedById  String?     @map("updated_by_id")
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  owner     User      @relation("QuotaOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  createdBy User      @relation("QuotaCreatedBy", fields: [createdById], references: [id])
+  updatedBy User?     @relation("QuotaUpdatedBy", fields: [updatedById], references: [id])
+
+  @@unique([workspaceId, ownerId, period, periodKey])
+  @@index([workspaceId])
+  @@index([workspaceId, period, periodKey])
+  @@map("quotas")
 }
 
 /// Tarefa do CRM. As "relações" apontam para até uma Company, Person e/ou Opportunity.
@@ -547,12 +771,8 @@ model IntegrationApiKey {
   @@map("integration_api_keys")
 }
 
-enum OpportunityStage {
-  NEW
-  QUALIFIED
-  MEETING
-  PROPOSAL
-  NEGOTIATION
+enum StageCategory {
+  OPEN
   WON
   LOST
 }
@@ -568,15 +788,38 @@ model Membership {
   userId      String   @map("user_id")
   workspaceId String   @map("workspace_id")
   role        Role     @default(MEMBER)
+  profileId   String?  @map("profile_id")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  profile   Profile?  @relation(fields: [profileId], references: [id], onDelete: SetNull)
 
   @@unique([userId, workspaceId])
   @@index([workspaceId])
+  @@index([profileId])
   @@map("memberships")
+}
+
+/// Perfil de acesso (RBAC). `permissions` é um mapa `recurso → [ações]`.
+/// Perfis de sistema (`isSystem`) espelham OWNER/ADMIN/MEMBER e não são editáveis.
+model Profile {
+  id          String   @id @default(cuid())
+  workspaceId String   @map("workspace_id")
+  name        String
+  isSystem    Boolean  @default(false) @map("is_system")
+  systemKey   String?  @map("system_key")
+  permissions Json
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  workspace   Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  memberships Membership[]
+
+  @@unique([workspaceId, name])
+  @@index([workspaceId])
+  @@map("profiles")
 }
 
 enum Role {

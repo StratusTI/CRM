@@ -17,10 +17,14 @@ import {
 /**
  * Dados da oportunidade no lead. Reaproveita o contrato de Opportunity, mas:
  * - `pointOfContactId` é resolvido pela pessoa do próprio lead (não é enviado);
+ * - `pipelineId`/`stageId` não são enviados — todo lead entra na etapa inicial
+ *   do pipeline padrão da workspace (topo do funil);
  * - `name` é opcional — quando ausente, herda o nome da pessoa.
  */
 const LeadOpportunitySchema = CreateOpportunitySchema.omit({
   pointOfContactId: true,
+  pipelineId: true,
+  stageId: true,
 }).partial({ name: true });
 
 export const IngestLeadSchema = z.object({

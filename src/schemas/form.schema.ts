@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { OPPORTUNITY_STAGES } from "@/src/schemas/opportunity.schema";
 import { normalizedUrl } from "@/src/schemas/shared";
 
 /**
@@ -116,10 +115,13 @@ export const FormFieldsSchema = z
     });
   });
 
-/** Defaults aplicados pela ação no envio (ex.: origem/estágio da oportunidade). */
+/**
+ * Defaults aplicados pela ação no envio (ex.: origem da oportunidade). A etapa
+ * não é configurável: todo lead de formulário entra na etapa inicial do
+ * pipeline padrão da workspace.
+ */
 export const ActionConfigSchema = z.object({
   opportunitySource: z.string().trim().max(60).optional(),
-  opportunityStage: z.enum(OPPORTUNITY_STAGES).optional(),
   opportunityName: z.string().trim().max(200).optional(),
   icp: z.boolean().optional(),
 });

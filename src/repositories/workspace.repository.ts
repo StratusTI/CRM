@@ -6,6 +6,8 @@ import {
   makeShareToken,
   SEED_DASHBOARDS,
   SEED_DOCUMENTS,
+  SEED_PIPELINE_NAME,
+  SEED_PIPELINE_STAGES,
 } from "@/src/services/workspace-seed-data";
 
 type CreateWorkspaceData = {
@@ -31,6 +33,23 @@ export const WorkspaceRepository = {
           slug: data.slug,
           memberships: {
             create: { userId: ownerId, role: "OWNER" },
+          },
+          pipelines: {
+            create: {
+              name: SEED_PIPELINE_NAME,
+              isDefault: true,
+              position: 1,
+              createdBy: { connect: { id: ownerId } },
+              stages: {
+                create: SEED_PIPELINE_STAGES.map((stage, index) => ({
+                  name: stage.name,
+                  probability: stage.probability,
+                  category: stage.category,
+                  color: stage.color,
+                  position: index + 1,
+                })),
+              },
+            },
           },
           proposals: {
             create: SEED_DOCUMENTS.map((doc) => ({

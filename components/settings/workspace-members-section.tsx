@@ -30,6 +30,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { apiUrl } from "@/lib/api-url";
+import { setMemberProfile, useProfiles } from "@/src/hooks/use-profiles";
 import { useWorkspaceInvite } from "@/src/hooks/use-workspace-invite";
 
 type Member = {
@@ -37,12 +38,8 @@ type Member = {
   name: string;
   email: string;
   role: "OWNER" | "ADMIN" | "MEMBER";
-};
-
-const ROLE_LABEL: Record<Member["role"], string> = {
-  OWNER: "Proprietário",
-  ADMIN: "Administrador",
-  MEMBER: "Membro",
+  profileId: string | null;
+  profileName: string | null;
 };
 
 export function WorkspaceMembersSection({
@@ -54,6 +51,7 @@ export function WorkspaceMembersSection({
 }) {
   const canManage = currentUserRole === "OWNER" || currentUserRole === "ADMIN";
 
+  const { profiles } = useProfiles(slug);
   const [members, setMembers] = useState<Member[]>([]);
   const [membersLoading, setMembersLoading] = useState(true);
 
@@ -113,9 +111,44 @@ export function WorkspaceMembersSection({
                   </p>
                 </div>
               </div>
-              <span className="text-muted-foreground text-xs">
-                {ROLE_LABEL[member.role]}
-              </span>
+              {canManage && profiles.length > 0 ? (
+                <Select
+                  value={member.profileId ?? ""}
+                  onValueChange={async (profileId) => {
+                    if (!profileId) return;
+                    const result = await setMemberProfile(
+                      slug,
+                      member.id,
+                      profileId,
+                    );
+                    if (result.ok) {
+                      toast.success("Perfil atualizado.");
+                      refetchMembers();
+                    } else {
+                      toast.error(
+                        result.message ?? "Não foi possível atualizar o perfil.",
+                      );
+                    }
+                  }}
+                >
+                  <SelectTrigger size="sm" className="w-44">
+                    <span className="truncate">
+                      {member.profileName ?? "Sem perfil"}
+                    </span>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {profiles.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <span className="text-muted-foreground text-xs">
+                  {member.profileName ?? member.role}
+                </span>
+              )}
             </Card>
           ))
         )}

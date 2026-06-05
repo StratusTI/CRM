@@ -34,7 +34,10 @@ export const TaskService = {
     slug: string,
     input: CreateTaskInput,
   ): Promise<Result<TaskDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "tasks",
+      action: "CREATE",
+    });
     if (!ws.ok) return ws;
 
     const refs = await assertRelationRefs(ws.value, input);
@@ -65,7 +68,10 @@ export const TaskService = {
   },
 
   async list(userId: string, slug: string): Promise<Result<TaskDTO[]>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "tasks",
+      action: "VIEW",
+    });
     if (!ws.ok) return ws;
 
     const result = await TaskRepository.listByWorkspace(ws.value);
@@ -78,7 +84,10 @@ export const TaskService = {
     slug: string,
     id: string,
   ): Promise<Result<TaskDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "tasks",
+      action: "VIEW",
+    });
     if (!ws.ok) return ws;
 
     const task = await loadInWorkspace(ws.value, id);
@@ -92,7 +101,10 @@ export const TaskService = {
     id: string,
     input: UpdateTaskInput,
   ): Promise<Result<TaskDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "tasks",
+      action: "EDIT",
+    });
     if (!ws.ok) return ws;
 
     const existing = await loadInWorkspace(ws.value, id);
@@ -126,7 +138,10 @@ export const TaskService = {
     slug: string,
     id: string,
   ): Promise<Result<TaskDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "tasks",
+      action: "DELETE",
+    });
     if (!ws.ok) return ws;
 
     const existing = await loadInWorkspace(ws.value, id);
@@ -151,7 +166,10 @@ export const TaskService = {
     slug: string,
     ids: string[],
   ): Promise<Result<true>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "tasks",
+      action: "EDIT",
+    });
     if (!ws.ok) return ws;
     return TaskRepository.reorder(ws.value, ids);
   },

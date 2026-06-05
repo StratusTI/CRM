@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createOpportunity } from "@/src/__tests__/factories/opportunity.factory";
+import { createPipeline } from "@/src/__tests__/factories/pipeline.factory";
 import { createUser } from "@/src/__tests__/factories/user.factory";
 import { createWorkspaceWithOwner } from "@/src/__tests__/factories/workspace.factory";
 import { OpportunityRepository } from "@/src/repositories/opportunity.repository";
@@ -11,15 +12,17 @@ async function scope() {
 }
 
 describe("OpportunityRepository (integração)", () => {
-  it("create persiste amount, closeDate e stage", async () => {
+  it("create persiste amount, closeDate e a etapa", async () => {
     const { owner, workspace } = await scope();
+    const pipeline = await createPipeline(workspace.id, owner.id);
     const result = await OpportunityRepository.create({
       workspaceId: workspace.id,
       createdById: owner.id,
       name: "Deal",
       amount: 50000,
       closeDate: new Date("2026-06-01T00:00:00.000Z"),
-      stage: "PROPOSAL",
+      pipelineId: pipeline.id,
+      stageId: pipeline.stages[0].id,
       companyId: null,
       pointOfContactId: null,
       ownerId: owner.id,
@@ -28,7 +31,7 @@ describe("OpportunityRepository (integração)", () => {
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.value.amount?.toString()).toBe("50000");
-      expect(result.value.stage).toBe("PROPOSAL");
+      expect(result.value.stageId).toBe(pipeline.stages[0].id);
       expect(result.value.ownerId).toBe(owner.id);
     }
   });
@@ -49,17 +52,22 @@ describe("OpportunityRepository (integração)", () => {
     }
   });
 
-  it("update altera stage e registra updatedById", async () => {
+  it("update altera a etapa e registra updatedById", async () => {
     const { owner, workspace } = await scope();
     const editor = await createUser();
-    const opp = await createOpportunity(workspace.id, owner.id);
+    const pipeline = await createPipeline(workspace.id, owner.id);
+    const opp = await createOpportunity(workspace.id, owner.id, {
+      pipeline: { connect: { id: pipeline.id } },
+      stage: { connect: { id: pipeline.stages[0].id } },
+    });
+    const target = pipeline.stages[1];
     const result = await OpportunityRepository.update(opp.id, {
       updatedById: editor.id,
-      stage: "WON",
+      stageId: target.id,
     });
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.value.stage).toBe("WON");
+      expect(result.value.stageId).toBe(target.id);
       expect(result.value.updatedById).toBe(editor.id);
     }
   });

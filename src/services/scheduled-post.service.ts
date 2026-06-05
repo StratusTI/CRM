@@ -374,7 +374,10 @@ export const ScheduledPostService = {
     input: CreateScheduledPostInput,
     media: UploadMedia[],
   ): Promise<Result<ScheduledPostDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "social",
+      action: "CREATE",
+    });
     if (!ws.ok) return ws;
 
     if (!isStorageConfigured()) return err(storageNotConfigured());
@@ -447,7 +450,10 @@ export const ScheduledPostService = {
     userId: string,
     slug: string,
   ): Promise<Result<ScheduledPostDTO[]>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "social",
+      action: "VIEW",
+    });
     if (!ws.ok) return ws;
     const result = await ScheduledPostRepository.listByWorkspace(ws.value);
     if (!result.ok) return result;
@@ -459,7 +465,10 @@ export const ScheduledPostService = {
     slug: string,
     id: string,
   ): Promise<Result<ScheduledPostDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "social",
+      action: "VIEW",
+    });
     if (!ws.ok) return ws;
     const result = await ScheduledPostRepository.findById(id);
     if (!result.ok) return result;
@@ -474,7 +483,10 @@ export const ScheduledPostService = {
     slug: string,
     id: string,
   ): Promise<Result<ScheduledPostDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "social",
+      action: "EDIT",
+    });
     if (!ws.ok) return ws;
     const found = await ScheduledPostRepository.findById(id);
     if (!found.ok) return found;
@@ -502,7 +514,10 @@ export const ScheduledPostService = {
     id: string,
     scheduledFor: Date,
   ): Promise<Result<ScheduledPostDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "social",
+      action: "EDIT",
+    });
     if (!ws.ok) return ws;
     const found = await ScheduledPostRepository.findById(id);
     if (!found.ok) return found;

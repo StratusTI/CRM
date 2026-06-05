@@ -64,7 +64,10 @@ export const WorkflowService = {
     slug: string,
     input: CreateWorkflowInput,
   ): Promise<Result<WorkflowDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "workflows",
+      action: "CREATE",
+    });
     if (!ws.ok) return ws;
     const created = await WorkflowRepository.create({
       workspaceId: ws.value,
@@ -78,7 +81,10 @@ export const WorkflowService = {
   },
 
   async list(userId: string, slug: string): Promise<Result<WorkflowDTO[]>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "workflows",
+      action: "VIEW",
+    });
     if (!ws.ok) return ws;
     const list = await WorkflowRepository.listByWorkspace(ws.value);
     if (!list.ok) return list;
@@ -90,7 +96,10 @@ export const WorkflowService = {
     slug: string,
     id: string,
   ): Promise<Result<WorkflowDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "workflows",
+      action: "VIEW",
+    });
     if (!ws.ok) return ws;
     const wf = await loadInWorkspace(ws.value, id);
     if (!wf.ok) return wf;
@@ -103,7 +112,10 @@ export const WorkflowService = {
     id: string,
     input: UpdateWorkflowInput,
   ): Promise<Result<WorkflowDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "workflows",
+      action: "EDIT",
+    });
     if (!ws.ok) return ws;
     const existing = await loadInWorkspace(ws.value, id);
     if (!existing.ok) return existing;
@@ -122,7 +134,10 @@ export const WorkflowService = {
     slug: string,
     id: string,
   ): Promise<Result<WorkflowDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "workflows",
+      action: "DELETE",
+    });
     if (!ws.ok) return ws;
     const existing = await loadInWorkspace(ws.value, id);
     if (!existing.ok) return existing;
@@ -136,7 +151,10 @@ export const WorkflowService = {
     slug: string,
     id: string,
   ): Promise<Result<WorkflowVersionDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "workflows",
+      action: "VIEW",
+    });
     if (!ws.ok) return ws;
     const existing = await loadInWorkspace(ws.value, id);
     if (!existing.ok) return existing;
@@ -151,7 +169,10 @@ export const WorkflowService = {
     slug: string,
     id: string,
   ): Promise<Result<WorkflowVersionDTO[]>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "workflows",
+      action: "VIEW",
+    });
     if (!ws.ok) return ws;
     const existing = await loadInWorkspace(ws.value, id);
     if (!existing.ok) return existing;
@@ -167,7 +188,10 @@ export const WorkflowService = {
     id: string,
     input: UpdateWorkflowDraftInput,
   ): Promise<Result<WorkflowVersionDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "workflows",
+      action: "EDIT",
+    });
     if (!ws.ok) return ws;
     const existing = await loadInWorkspace(ws.value, id);
     if (!existing.ok) return existing;
@@ -197,7 +221,10 @@ export const WorkflowService = {
     slug: string,
     id: string,
   ): Promise<Result<WorkflowDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "workflows",
+      action: "EDIT",
+    });
     if (!ws.ok) return ws;
     const existing = await loadInWorkspace(ws.value, id);
     if (!existing.ok) return existing;
@@ -228,7 +255,10 @@ export const WorkflowService = {
     slug: string,
     id: string,
   ): Promise<Result<WorkflowVersionDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "workflows",
+      action: "EDIT",
+    });
     if (!ws.ok) return ws;
     const existing = await loadInWorkspace(ws.value, id);
     if (!existing.ok) return existing;
@@ -242,7 +272,10 @@ export const WorkflowService = {
     slug: string,
     id: string,
   ): Promise<Result<WorkflowRunDTO[]>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "workflows",
+      action: "VIEW",
+    });
     if (!ws.ok) return ws;
     const existing = await loadInWorkspace(ws.value, id);
     if (!existing.ok) return existing;
@@ -257,7 +290,10 @@ export const WorkflowService = {
     id: string,
     runId: string,
   ): Promise<Result<WorkflowRunDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "workflows",
+      action: "VIEW",
+    });
     if (!ws.ok) return ws;
     const existing = await loadInWorkspace(ws.value, id);
     if (!existing.ok) return existing;
@@ -280,7 +316,10 @@ export const WorkflowService = {
     id: string,
     input: TriggerManualRunInput,
   ): Promise<Result<WorkflowRunDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "workflows",
+      action: "EDIT",
+    });
     if (!ws.ok) return ws;
     const existing = await loadInWorkspace(ws.value, id);
     if (!existing.ok) return existing;
@@ -337,7 +376,10 @@ export const WorkflowService = {
     runId: string,
     input: ResumeRunInput,
   ): Promise<Result<WorkflowRunDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "workflows",
+      action: "EDIT",
+    });
     if (!ws.ok) return ws;
     const existing = await loadInWorkspace(ws.value, id);
     if (!existing.ok) return existing;

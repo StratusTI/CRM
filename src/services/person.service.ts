@@ -9,6 +9,11 @@ import type {
   PersonDTO,
   UpdatePersonInput,
 } from "@/src/schemas/person.schema";
+import {
+  applyCustomFieldValues,
+  withCustomFields,
+  withCustomFieldsList,
+} from "@/src/services/custom-field-sync";
 import { dispatchRecordEvent } from "@/src/services/workflow-dispatcher";
 import { resolveWorkspaceId } from "@/src/services/workspace-scope";
 
@@ -46,7 +51,10 @@ export const PersonService = {
     slug: string,
     input: CreatePersonInput,
   ): Promise<Result<PersonDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "people",
+      action: "CREATE",
+    });
     if (!ws.ok) return ws;
 
     if (input.companyId) {
@@ -67,24 +75,40 @@ export const PersonService = {
       companyId: input.companyId ?? null,
     });
     if (!created.ok) return created;
-    const dto = toPersonDTO(created.value);
+
+    if (input.customFields) {
+      const applied = await applyCustomFieldValues(
+        ws.value,
+        "PERSON",
+        created.value.id,
+        input.customFields,
+        userId,
+      );
+      if (!applied.ok) return applied;
+    }
+
+    const merged = await withCustomFields(toPersonDTO(created.value));
+    if (!merged.ok) return merged;
     await dispatchRecordEvent({
       workspaceId: ws.value,
       actingUserId: userId,
       entity: "person",
       event: "created",
-      record: dto,
+      record: merged.value,
     });
-    return ok(dto);
+    return ok(merged.value);
   },
 
   async list(userId: string, slug: string): Promise<Result<PersonDTO[]>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "people",
+      action: "VIEW",
+    });
     if (!ws.ok) return ws;
 
     const result = await PersonRepository.listByWorkspace(ws.value);
     if (!result.ok) return result;
-    return ok(result.value.map(toPersonDTO));
+    return withCustomFieldsList(result.value.map(toPersonDTO));
   },
 
   async getById(
@@ -92,12 +116,15 @@ export const PersonService = {
     slug: string,
     personId: string,
   ): Promise<Result<PersonDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "people",
+      action: "VIEW",
+    });
     if (!ws.ok) return ws;
 
     const person = await loadInWorkspace(ws.value, personId);
     if (!person.ok) return person;
-    return ok(toPersonDTO(person.value));
+    return withCustomFields(toPersonDTO(person.value));
   },
 
   async update(
@@ -106,7 +133,10 @@ export const PersonService = {
     personId: string,
     input: UpdatePersonInput,
   ): Promise<Result<PersonDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "people",
+      action: "EDIT",
+    });
     if (!ws.ok) return ws;
 
     const existing = await loadInWorkspace(ws.value, personId);
@@ -117,21 +147,35 @@ export const PersonService = {
       if (!check.ok) return check;
     }
 
+    const { customFields, ...fields } = input;
     const updated = await PersonRepository.update(personId, {
       updatedById: userId,
-      ...input,
+      ...fields,
     });
     if (!updated.ok) return updated;
-    const dto = toPersonDTO(updated.value);
+
+    if (customFields) {
+      const applied = await applyCustomFieldValues(
+        ws.value,
+        "PERSON",
+        personId,
+        customFields,
+        userId,
+      );
+      if (!applied.ok) return applied;
+    }
+
+    const merged = await withCustomFields(toPersonDTO(updated.value));
+    if (!merged.ok) return merged;
     await dispatchRecordEvent({
       workspaceId: ws.value,
       actingUserId: userId,
       entity: "person",
       event: "updated",
-      record: dto,
+      record: merged.value,
       changedFields: Object.keys(input),
     });
-    return ok(dto);
+    return ok(merged.value);
   },
 
   async remove(
@@ -139,7 +183,10 @@ export const PersonService = {
     slug: string,
     personId: string,
   ): Promise<Result<PersonDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "people",
+      action: "DELETE",
+    });
     if (!ws.ok) return ws;
 
     const existing = await loadInWorkspace(ws.value, personId);
@@ -164,7 +211,10 @@ export const PersonService = {
     slug: string,
     ids: string[],
   ): Promise<Result<true>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "people",
+      action: "EDIT",
+    });
     if (!ws.ok) return ws;
     return PersonRepository.reorder(ws.value, ids);
   },

@@ -32,7 +32,10 @@ export const IntegrationApiKeyService = {
     slug: string,
     input: CreateIntegrationApiKeyInput,
   ): Promise<Result<CreatedIntegrationApiKeyDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "integrations",
+      action: "CREATE",
+    });
     if (!ws.ok) return ws;
 
     const { token, hash, prefix } = generateApiKey();
@@ -53,7 +56,10 @@ export const IntegrationApiKeyService = {
     userId: string,
     slug: string,
   ): Promise<Result<IntegrationApiKeyDTO[]>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "integrations",
+      action: "VIEW",
+    });
     if (!ws.ok) return ws;
 
     const keys = await IntegrationApiKeyRepository.listByWorkspace(ws.value);
@@ -67,7 +73,10 @@ export const IntegrationApiKeyService = {
     slug: string,
     keyId: string,
   ): Promise<Result<IntegrationApiKeyDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "integrations",
+      action: "EDIT",
+    });
     if (!ws.ok) return ws;
 
     const found = await IntegrationApiKeyRepository.findById(keyId);

@@ -24,6 +24,14 @@ vi.mock("@/src/repositories/company.repository", () => ({
 vi.mock("@/src/repositories/membership.repository", () => ({
   MembershipRepository: memberRepo,
 }));
+vi.mock("@/src/services/custom-field-sync", () => ({
+  applyCustomFieldValues: vi.fn(async () => ({ ok: true, value: true })),
+  withCustomFields: vi.fn(async (dto) => ({
+    ok: true,
+    value: { ...dto, customFields: {} },
+  })),
+  withCustomFieldsList: vi.fn(async (dtos) => ({ ok: true, value: dtos })),
+}));
 
 import { PersonService } from "@/src/services/person.service";
 

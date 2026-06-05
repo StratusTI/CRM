@@ -126,7 +126,10 @@ export const LandingPageService = {
     slug: string,
     input: CreateLandingPageInput,
   ): Promise<Result<LandingPageDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "landing-pages",
+      action: "CREATE",
+    });
     if (!ws.ok) return ws;
 
     const pageSlug = await uniqueSlug(ws.value, slugify(input.title));
@@ -144,7 +147,10 @@ export const LandingPageService = {
   },
 
   async list(userId: string, slug: string): Promise<Result<LandingPageDTO[]>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "landing-pages",
+      action: "VIEW",
+    });
     if (!ws.ok) return ws;
 
     const result = await LandingPageRepository.listByWorkspace(ws.value);
@@ -157,7 +163,10 @@ export const LandingPageService = {
     userId: string,
     slug: string,
   ): Promise<Result<LandingPageViewRow[]>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "landing-pages",
+      action: "VIEW",
+    });
     if (!ws.ok) return ws;
 
     const result = await LandingPageRepository.listViewsByWorkspace(ws.value);
@@ -170,7 +179,10 @@ export const LandingPageService = {
     slug: string,
     id: string,
   ): Promise<Result<LandingPageDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "landing-pages",
+      action: "VIEW",
+    });
     if (!ws.ok) return ws;
 
     const page = await loadInWorkspace(ws.value, id);
@@ -184,7 +196,10 @@ export const LandingPageService = {
     id: string,
     input: UpdateLandingPageInput,
   ): Promise<Result<LandingPageDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "landing-pages",
+      action: "EDIT",
+    });
     if (!ws.ok) return ws;
 
     const existing = await loadInWorkspace(ws.value, id);
@@ -232,7 +247,10 @@ export const LandingPageService = {
     slug: string,
     id: string,
   ): Promise<Result<LandingPageDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "landing-pages",
+      action: "DELETE",
+    });
     if (!ws.ok) return ws;
 
     const existing = await loadInWorkspace(ws.value, id);
@@ -249,7 +267,10 @@ export const LandingPageService = {
     slug: string,
     ids: string[],
   ): Promise<Result<true>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "landing-pages",
+      action: "EDIT",
+    });
     if (!ws.ok) return ws;
     return LandingPageRepository.reorder(ws.value, ids);
   },
@@ -259,7 +280,10 @@ export const LandingPageService = {
     slug: string,
     id: string,
   ): Promise<Result<LandingPageMetricsDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "landing-pages",
+      action: "VIEW",
+    });
     if (!ws.ok) return ws;
 
     const page = await loadInWorkspace(ws.value, id);
@@ -276,7 +300,10 @@ export const LandingPageService = {
     slug: string,
     id: string,
   ): Promise<Result<LandingPageMessageDTO[]>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "landing-pages",
+      action: "VIEW",
+    });
     if (!ws.ok) return ws;
 
     const page = await loadInWorkspace(ws.value, id);
@@ -302,7 +329,10 @@ export const LandingPageService = {
 
     if (!isAiConfigured()) return err(aiNotConfigured());
 
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "landing-pages",
+      action: "EDIT",
+    });
     if (!ws.ok) return ws;
 
     const existing = await loadInWorkspace(ws.value, id);

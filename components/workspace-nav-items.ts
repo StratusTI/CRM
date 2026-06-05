@@ -1,4 +1,5 @@
 import {
+  AnalyticsUpIcon,
   BrowserIcon,
   Building03Icon,
   Calendar01Icon,
@@ -14,6 +15,7 @@ import {
   Megaphone01Icon,
   MegaphoneIcon,
   NewTwitterIcon,
+  PackageIcon,
   Settings02Icon,
   Share08Icon,
   StickyNote01Icon,
@@ -56,6 +58,18 @@ export const WORKSPACE_NAV: NavNode[] = [
     segment: "opportunities",
     icon: TargetDollarIcon,
     color: "bg-amber-500",
+  },
+  {
+    title: "Produtos",
+    segment: "products",
+    icon: PackageIcon,
+    color: "bg-orange-500",
+  },
+  {
+    title: "Previsão",
+    segment: "forecast",
+    icon: AnalyticsUpIcon,
+    color: "bg-cyan-500",
   },
   {
     title: "Tarefas",

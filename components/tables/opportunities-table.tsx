@@ -1,29 +1,29 @@
 "use client";
 
+import { useMemo } from "react";
 import { DataTable } from "@/components/data-table";
 import { PageShell } from "@/components/page-shell";
 import type { GridColumn } from "@/components/tables/grid";
+import { OpportunityLineItems } from "@/components/tables/opportunity-line-items";
+import {
+  customFieldColumns,
+  useCustomFields,
+} from "@/src/hooks/use-custom-fields";
 import { useResourceList } from "@/src/hooks/use-resource-list";
 import {
   type LookupKind,
   useWorkspaceLookups,
 } from "@/src/hooks/use-workspace-lookups";
-import {
-  OPPORTUNITY_STAGES,
-  type OpportunityDTO,
-} from "@/src/schemas/opportunity.schema";
+import type { OpportunityDTO } from "@/src/schemas/opportunity.schema";
 
-const LOOKUP_KINDS: LookupKind[] = ["companies", "people", "users"];
-
-const STAGE_STYLES: Record<(typeof OPPORTUNITY_STAGES)[number], string> = {
-  NEW: "bg-slate-500/15 text-slate-600",
-  QUALIFIED: "bg-blue-500/15 text-blue-600",
-  MEETING: "bg-indigo-500/15 text-indigo-600",
-  PROPOSAL: "bg-amber-500/15 text-amber-600",
-  NEGOTIATION: "bg-orange-500/15 text-orange-600",
-  WON: "bg-emerald-500/15 text-emerald-600",
-  LOST: "bg-rose-500/15 text-rose-600",
-};
+const LOOKUP_KINDS: LookupKind[] = [
+  "companies",
+  "people",
+  "users",
+  "pipelines",
+  "stages",
+  "products",
+];
 
 const COLUMNS: GridColumn[] = [
   {
@@ -36,12 +36,16 @@ const COLUMNS: GridColumn[] = [
   },
   { key: "amount", header: "Valor", kind: "money", placeholder: "50000" },
   {
-    key: "stage",
+    key: "pipelineId",
+    header: "Funil",
+    kind: "relation",
+    relationKind: "pipelines",
+  },
+  {
+    key: "stageId",
     header: "Etapa",
-    kind: "select",
-    defaultValue: "NEW",
-    options: OPPORTUNITY_STAGES.map((s) => ({ value: s, label: s })),
-    optionStyles: STAGE_STYLES,
+    kind: "relation",
+    relationKind: "stages",
   },
   { key: "closeDate", header: "Data de fechamento", kind: "date" },
   {
@@ -89,11 +93,16 @@ export function OpportunitiesTable({ slug }: { slug: string }) {
     "opportunities",
   );
   const { lookups } = useWorkspaceLookups(slug, LOOKUP_KINDS);
+  const { fields } = useCustomFields(slug, "OPPORTUNITY");
+  const columns = useMemo(
+    () => [...COLUMNS, ...customFieldColumns(fields)],
+    [fields],
+  );
 
   return (
     <PageShell>
       <DataTable
-        columns={COLUMNS}
+        columns={columns}
         data={items}
         slug={slug}
         resource="opportunities"
@@ -102,6 +111,14 @@ export function OpportunitiesTable({ slug }: { slug: string }) {
         isLoading={isLoading}
         searchPlaceholder="Buscar oportunidades…"
         refetch={refetch}
+        renderRecordExtra={(record) => (
+          <OpportunityLineItems
+            slug={slug}
+            opportunityId={record.id}
+            productOptions={lookups.options.products}
+            onChanged={refetch}
+          />
+        )}
       />
     </PageShell>
   );

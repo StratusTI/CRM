@@ -53,7 +53,6 @@ describe("/api/workspaces/[slug]/opportunities (e2e)", () => {
       postRequest({
         name: "Deal",
         amount: 1000,
-        stage: "QUALIFIED",
         pointOfContactId: person.id,
         closeDate: "2026-06-01T00:00:00.000Z",
       }),
@@ -76,11 +75,11 @@ describe("/api/workspaces/[slug]/opportunities (e2e)", () => {
     expect(res.status).toBe(404);
   });
 
-  it("422 com stage inválido", async () => {
+  it("422 com amount inválido", async () => {
     const { user, workspace } = await memberWorkspace();
     asUser(user.id);
     const res = await POST(
-      postRequest({ name: "Deal", stage: "FOO" }),
+      postRequest({ name: "Deal", amount: -5 }),
       ctx(workspace.slug),
     );
     expect(res.status).toBe(422);

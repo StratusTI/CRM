@@ -55,7 +55,10 @@ export const DashboardWidgetService = {
     slug: string,
     dashboardId: string,
   ): Promise<Result<DashboardWidgetDTO[]>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "dashboards",
+      action: "VIEW",
+    });
     if (!ws.ok) return ws;
     const dashboard = await loadDashboard(ws.value, dashboardId);
     if (!dashboard.ok) return dashboard;
@@ -71,7 +74,10 @@ export const DashboardWidgetService = {
     dashboardId: string,
     input: CreateWidgetInput,
   ): Promise<Result<DashboardWidgetDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "dashboards",
+      action: "CREATE",
+    });
     if (!ws.ok) return ws;
     const dashboard = await loadDashboard(ws.value, dashboardId);
     if (!dashboard.ok) return dashboard;
@@ -96,7 +102,10 @@ export const DashboardWidgetService = {
     widgetId: string,
     input: UpdateWidgetInput,
   ): Promise<Result<DashboardWidgetDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "dashboards",
+      action: "EDIT",
+    });
     if (!ws.ok) return ws;
     const dashboard = await loadDashboard(ws.value, dashboardId);
     if (!dashboard.ok) return dashboard;
@@ -137,7 +146,10 @@ export const DashboardWidgetService = {
     dashboardId: string,
     widgetId: string,
   ): Promise<Result<DashboardWidgetDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "dashboards",
+      action: "DELETE",
+    });
     if (!ws.ok) return ws;
     const dashboard = await loadDashboard(ws.value, dashboardId);
     if (!dashboard.ok) return dashboard;
@@ -156,7 +168,10 @@ export const DashboardWidgetService = {
     dashboardId: string,
     input: WidgetLayoutBatchInput,
   ): Promise<Result<true>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "dashboards",
+      action: "EDIT",
+    });
     if (!ws.ok) return ws;
     const dashboard = await loadDashboard(ws.value, dashboardId);
     if (!dashboard.ok) return dashboard;

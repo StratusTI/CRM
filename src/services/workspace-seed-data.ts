@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import type { DocumentType, WidgetType } from "@prisma/client";
+import type { DocumentType, StageCategory, WidgetType } from "@prisma/client";
 import {
   type ChartConfig,
   ChartConfigSchema,
@@ -106,6 +106,32 @@ export const SEED_DOCUMENTS: SeedDocument[] = [
     type: "PORTFOLIO",
     content: PORTFOLIO_HTML,
   },
+];
+
+/* --------------------------------- pipeline -------------------------------- */
+
+export type SeedStage = {
+  name: string;
+  probability: number;
+  category: StageCategory;
+  color: string;
+};
+
+/**
+ * Etapas do pipeline "Padrão" semeado em toda workspace nova (e usado pela
+ * migração que substituiu o enum `OpportunityStage`). `probability` e
+ * `category` alimentam o forecast.
+ */
+export const SEED_PIPELINE_NAME = "Padrão";
+
+export const SEED_PIPELINE_STAGES: SeedStage[] = [
+  { name: "Novo", probability: 10, category: "OPEN", color: "#64748b" },
+  { name: "Qualificado", probability: 25, category: "OPEN", color: "#3b82f6" },
+  { name: "Reunião", probability: 40, category: "OPEN", color: "#6366f1" },
+  { name: "Proposta", probability: 60, category: "OPEN", color: "#f59e0b" },
+  { name: "Negociação", probability: 80, category: "OPEN", color: "#f97316" },
+  { name: "Ganho", probability: 100, category: "WON", color: "#10b981" },
+  { name: "Perdido", probability: 0, category: "LOST", color: "#f43f5e" },
 ];
 
 /* -------------------------------- dashboards ------------------------------- */

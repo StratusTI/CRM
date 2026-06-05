@@ -33,7 +33,10 @@ export const DashboardService = {
     slug: string,
     input: CreateDashboardInput,
   ): Promise<Result<DashboardDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "dashboards",
+      action: "CREATE",
+    });
     if (!ws.ok) return ws;
 
     const created = await DashboardRepository.create({
@@ -47,7 +50,10 @@ export const DashboardService = {
   },
 
   async list(userId: string, slug: string): Promise<Result<DashboardDTO[]>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "dashboards",
+      action: "VIEW",
+    });
     if (!ws.ok) return ws;
 
     const result = await DashboardRepository.listByWorkspace(ws.value);
@@ -60,7 +66,10 @@ export const DashboardService = {
     slug: string,
     id: string,
   ): Promise<Result<DashboardDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "dashboards",
+      action: "VIEW",
+    });
     if (!ws.ok) return ws;
 
     const dashboard = await loadInWorkspace(ws.value, id);
@@ -74,7 +83,10 @@ export const DashboardService = {
     id: string,
     input: UpdateDashboardInput,
   ): Promise<Result<DashboardDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "dashboards",
+      action: "EDIT",
+    });
     if (!ws.ok) return ws;
 
     const existing = await loadInWorkspace(ws.value, id);
@@ -93,7 +105,10 @@ export const DashboardService = {
     slug: string,
     id: string,
   ): Promise<Result<DashboardDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "dashboards",
+      action: "DELETE",
+    });
     if (!ws.ok) return ws;
 
     const existing = await loadInWorkspace(ws.value, id);
@@ -110,7 +125,10 @@ export const DashboardService = {
     slug: string,
     ids: string[],
   ): Promise<Result<true>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "dashboards",
+      action: "EDIT",
+    });
     if (!ws.ok) return ws;
     return DashboardRepository.reorder(ws.value, ids);
   },

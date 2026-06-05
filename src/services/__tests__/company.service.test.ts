@@ -17,6 +17,14 @@ const memberRepo = vi.hoisted(() => ({
 vi.mock("@/src/repositories/company.repository", () => ({
   CompanyRepository: companyRepo,
 }));
+vi.mock("@/src/services/custom-field-sync", () => ({
+  applyCustomFieldValues: vi.fn(async () => ({ ok: true, value: true })),
+  withCustomFields: vi.fn(async (dto) => ({
+    ok: true,
+    value: { ...dto, customFields: {} },
+  })),
+  withCustomFieldsList: vi.fn(async (dtos) => ({ ok: true, value: dtos })),
+}));
 vi.mock("@/src/repositories/membership.repository", () => ({
   MembershipRepository: memberRepo,
 }));

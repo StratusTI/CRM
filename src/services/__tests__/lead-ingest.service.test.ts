@@ -7,6 +7,7 @@ const personRepo = vi.hoisted(() => ({
 }));
 const oppRepo = vi.hoisted(() => ({ create: vi.fn() }));
 const companyRepo = vi.hoisted(() => ({ existsInWorkspace: vi.fn() }));
+const pipelineService = vi.hoisted(() => ({ resolveDefaultStage: vi.fn() }));
 const dispatch = vi.hoisted(() => vi.fn());
 
 vi.mock("@/src/repositories/person.repository", () => ({
@@ -17,6 +18,9 @@ vi.mock("@/src/repositories/opportunity.repository", () => ({
 }));
 vi.mock("@/src/repositories/company.repository", () => ({
   CompanyRepository: companyRepo,
+}));
+vi.mock("@/src/services/pipeline.service", () => ({
+  PipelineService: pipelineService,
 }));
 vi.mock("@/src/services/workflow-dispatcher", () => ({
   dispatchRecordEvent: dispatch,
@@ -55,7 +59,8 @@ function opp(overrides: Record<string, unknown> = {}) {
     name: "Ada Lovelace",
     amount: null,
     closeDate: null,
-    stage: "NEW",
+    pipelineId: "pl_1",
+    stageId: "st_1",
     companyId: null,
     pointOfContactId: "p_1",
     ownerId: null,
@@ -74,6 +79,9 @@ function opp(overrides: Record<string, unknown> = {}) {
 beforeEach(() => {
   vi.clearAllMocks();
   companyRepo.existsInWorkspace.mockResolvedValue(ok(true));
+  pipelineService.resolveDefaultStage.mockResolvedValue(
+    ok({ pipelineId: "pl_1", stageId: "st_1" }),
+  );
 });
 
 describe("LeadIngestService.ingest", () => {
@@ -84,7 +92,7 @@ describe("LeadIngestService.ingest", () => {
 
     const result = await LeadIngestService.ingest(WS, ACTOR, {
       person: { name: "Ada Lovelace", emails: ["ada@example.com"], phones: [] },
-      opportunity: { stage: "NEW", source: "WHATSAPP" },
+      opportunity: { source: "WHATSAPP" },
     });
 
     expect(result.ok).toBe(true);

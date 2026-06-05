@@ -9,6 +9,7 @@ import type {
   IngestLeadInput,
   IngestLeadResult,
 } from "@/src/schemas/lead-ingest.schema";
+import { PipelineService } from "@/src/services/pipeline.service";
 import { dispatchRecordEvent } from "@/src/services/workflow-dispatcher";
 
 /** Garante que uma Company referenciada (se houver) pertence à workspace. */
@@ -89,13 +90,17 @@ export const LeadIngestService = {
       });
     }
 
+    const stage = await PipelineService.resolveDefaultStage(workspaceId);
+    if (!stage.ok) return stage;
+
     const opportunity = await OpportunityRepository.create({
       workspaceId,
       createdById: actorUserId,
       name: oppInput?.name ?? person.name,
       amount: oppInput?.amount ?? null,
       closeDate: oppInput?.closeDate ? new Date(oppInput.closeDate) : null,
-      stage: oppInput?.stage ?? "NEW",
+      pipelineId: stage.value.pipelineId,
+      stageId: stage.value.stageId,
       companyId: oppInput?.companyId ?? person.companyId,
       pointOfContactId: person.id,
       ownerId: oppInput?.ownerId ?? null,

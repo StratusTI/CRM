@@ -57,7 +57,10 @@ export const FormService = {
     slug: string,
     input: CreateFormInput,
   ): Promise<Result<FormDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "forms",
+      action: "CREATE",
+    });
     if (!ws.ok) return ws;
 
     const action = input.action as FormActionType;
@@ -83,7 +86,10 @@ export const FormService = {
   },
 
   async list(userId: string, slug: string): Promise<Result<FormDTO[]>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "forms",
+      action: "VIEW",
+    });
     if (!ws.ok) return ws;
 
     const result = await FormRepository.listByWorkspace(ws.value);
@@ -96,7 +102,10 @@ export const FormService = {
     slug: string,
     id: string,
   ): Promise<Result<FormDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "forms",
+      action: "VIEW",
+    });
     if (!ws.ok) return ws;
 
     const form = await loadInWorkspace(ws.value, id);
@@ -110,7 +119,10 @@ export const FormService = {
     id: string,
     input: UpdateFormInput,
   ): Promise<Result<FormDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "forms",
+      action: "EDIT",
+    });
     if (!ws.ok) return ws;
 
     const existing = await loadInWorkspace(ws.value, id);
@@ -145,7 +157,10 @@ export const FormService = {
     slug: string,
     id: string,
   ): Promise<Result<FormDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "forms",
+      action: "DELETE",
+    });
     if (!ws.ok) return ws;
 
     const existing = await loadInWorkspace(ws.value, id);
@@ -162,7 +177,10 @@ export const FormService = {
     slug: string,
     ids: string[],
   ): Promise<Result<true>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "forms",
+      action: "EDIT",
+    });
     if (!ws.ok) return ws;
     return FormRepository.reorder(ws.value, ids);
   },
@@ -172,7 +190,10 @@ export const FormService = {
     slug: string,
     id: string,
   ): Promise<Result<FormSubmissionDTO[]>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "forms",
+      action: "VIEW",
+    });
     if (!ws.ok) return ws;
 
     const form = await loadInWorkspace(ws.value, id);
@@ -188,7 +209,10 @@ export const FormService = {
     userId: string,
     slug: string,
   ): Promise<Result<FormSubmissionRow[]>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "forms",
+      action: "VIEW",
+    });
     if (!ws.ok) return ws;
 
     const rows = await FormRepository.listSubmissionsByWorkspace(ws.value);

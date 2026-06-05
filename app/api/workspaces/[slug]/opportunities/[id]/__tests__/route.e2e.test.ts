@@ -38,10 +38,15 @@ const getRequest = new NextRequest(
 );
 
 async function setup() {
+  const { prisma } = await import("@/src/lib/prisma");
   const user = await createUser();
   const workspace = await createWorkspaceWithOwner(user.id);
   const opp = await createOpportunity(workspace.id, user.id);
-  return { user, slug: workspace.slug, opp };
+  const pipeline = await prisma.pipeline.findFirstOrThrow({
+    where: { workspaceId: workspace.id, isDefault: true },
+    include: { stages: { orderBy: { position: "asc" } } },
+  });
+  return { user, slug: workspace.slug, opp, stages: pipeline.stages };
 }
 
 describe("/api/workspaces/[slug]/opportunities/[id] (e2e)", () => {
@@ -58,16 +63,17 @@ describe("/api/workspaces/[slug]/opportunities/[id] (e2e)", () => {
     expect(json.data.id).toBe(opp.id);
   });
 
-  it("PATCH avança o stage e registra updatedById", async () => {
-    const { user, slug, opp } = await setup();
+  it("PATCH avança a etapa e registra updatedById", async () => {
+    const { user, slug, opp, stages } = await setup();
+    const won = stages.find((s) => s.category === "WON") ?? stages[1];
     asUser(user.id);
     const res = await PATCH(
-      patchRequest({ stage: "WON", amount: 999 }),
+      patchRequest({ stageId: won.id, amount: 999 }),
       ctx(slug, opp.id),
     );
     expect(res.status).toBe(200);
     const json = await res.json();
-    expect(json.data.stage).toBe("WON");
+    expect(json.data.stageId).toBe(won.id);
     expect(json.data.amount).toBe(999);
     expect(json.data.updatedById).toBe(user.id);
   });

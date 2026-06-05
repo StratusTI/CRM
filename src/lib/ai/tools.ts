@@ -7,6 +7,7 @@ import { InstagramService } from "@/src/services/instagram.service";
 import { NoteService } from "@/src/services/note.service";
 import { OpportunityService } from "@/src/services/opportunity.service";
 import { PersonService } from "@/src/services/person.service";
+import { PipelineService } from "@/src/services/pipeline.service";
 import { ProposalService } from "@/src/services/proposal.service";
 import { TaskService } from "@/src/services/task.service";
 import { TiktokService } from "@/src/services/tiktok.service";
@@ -431,7 +432,8 @@ export async function executeTool(
           id: o.id,
           name: o.name,
           amount: o.amount,
-          stage: o.stage,
+          stageId: o.stageId,
+          pipelineId: o.pipelineId,
           closeDate: o.closeDate,
           companyId: o.companyId,
         })),
@@ -647,16 +649,33 @@ export async function executeTool(
 
 async function buildOverview(ctx: ToolContext): Promise<unknown> {
   const { userId, slug } = ctx;
-  const [companies, people, opportunities, tasks, notes, proposals, campaigns] =
-    await Promise.all([
-      CompanyService.list(userId, slug),
-      PersonService.list(userId, slug),
-      OpportunityService.list(userId, slug),
-      TaskService.list(userId, slug),
-      NoteService.list(userId, slug),
-      ProposalService.list(userId, slug),
-      EmailCampaignService.list(userId, slug),
-    ]);
+  const [
+    companies,
+    people,
+    opportunities,
+    tasks,
+    notes,
+    proposals,
+    campaigns,
+    pipelines,
+  ] = await Promise.all([
+    CompanyService.list(userId, slug),
+    PersonService.list(userId, slug),
+    OpportunityService.list(userId, slug),
+    TaskService.list(userId, slug),
+    NoteService.list(userId, slug),
+    ProposalService.list(userId, slug),
+    EmailCampaignService.list(userId, slug),
+    PipelineService.list(userId, slug),
+  ]);
+
+  // Mapa etapaId → nome para rotular os buckets do funil de forma legível.
+  const stageNames: Record<string, string> = {};
+  if (pipelines.ok) {
+    for (const p of pipelines.value) {
+      for (const s of p.stages) stageNames[s.id] = s.name;
+    }
+  }
 
   const opps = opportunities.ok ? opportunities.value : [];
   const pipelineByStage: Record<
@@ -664,10 +683,11 @@ async function buildOverview(ctx: ToolContext): Promise<unknown> {
     { count: number; totalAmount: number }
   > = {};
   for (const o of opps) {
-    const bucket = pipelineByStage[o.stage] ?? { count: 0, totalAmount: 0 };
+    const label = stageNames[o.stageId] ?? o.stageId;
+    const bucket = pipelineByStage[label] ?? { count: 0, totalAmount: 0 };
     bucket.count += 1;
     bucket.totalAmount += o.amount ?? 0;
-    pipelineByStage[o.stage] = bucket;
+    pipelineByStage[label] = bucket;
   }
 
   const taskList = tasks.ok ? tasks.value : [];

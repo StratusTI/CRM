@@ -11,6 +11,11 @@ const oppRepo = vi.hoisted(() => ({
 }));
 const companyRepo = vi.hoisted(() => ({ existsInWorkspace: vi.fn() }));
 const personRepo = vi.hoisted(() => ({ existsInWorkspace: vi.fn() }));
+const pipelineRepo = vi.hoisted(() => ({
+  stageBelongsTo: vi.fn(),
+  findById: vi.fn(),
+}));
+const pipelineService = vi.hoisted(() => ({ resolveDefaultStage: vi.fn() }));
 const memberRepo = vi.hoisted(() => ({
   findByUserAndSlug: vi.fn(),
   listByUser: vi.fn(),
@@ -25,8 +30,22 @@ vi.mock("@/src/repositories/company.repository", () => ({
 vi.mock("@/src/repositories/person.repository", () => ({
   PersonRepository: personRepo,
 }));
+vi.mock("@/src/repositories/pipeline.repository", () => ({
+  PipelineRepository: pipelineRepo,
+}));
+vi.mock("@/src/services/pipeline.service", () => ({
+  PipelineService: pipelineService,
+}));
 vi.mock("@/src/repositories/membership.repository", () => ({
   MembershipRepository: memberRepo,
+}));
+vi.mock("@/src/services/custom-field-sync", () => ({
+  applyCustomFieldValues: vi.fn(async () => ({ ok: true, value: true })),
+  withCustomFields: vi.fn(async (dto) => ({
+    ok: true,
+    value: { ...dto, customFields: {} },
+  })),
+  withCustomFieldsList: vi.fn(async (dtos) => ({ ok: true, value: dtos })),
 }));
 
 import { OpportunityService } from "@/src/services/opportunity.service";
@@ -39,7 +58,8 @@ function opp(overrides: Record<string, unknown> = {}) {
     name: "Deal",
     amount: null,
     closeDate: null,
-    stage: "NEW",
+    pipelineId: "pl_1",
+    stageId: "st_1",
     companyId: null,
     pointOfContactId: null,
     ownerId: null,
@@ -63,6 +83,11 @@ beforeEach(() => {
   for (const fn of Object.values(oppRepo)) fn.mockReset();
   for (const fn of Object.values(companyRepo)) fn.mockReset();
   for (const fn of Object.values(personRepo)) fn.mockReset();
+  for (const fn of Object.values(pipelineRepo)) fn.mockReset();
+  pipelineService.resolveDefaultStage.mockReset();
+  pipelineService.resolveDefaultStage.mockResolvedValue(
+    ok({ pipelineId: "pl_1", stageId: "st_1" }),
+  );
   for (const fn of Object.values(memberRepo)) fn.mockReset();
 });
 
@@ -72,7 +97,6 @@ describe("OpportunityService.create", () => {
     oppRepo.create.mockResolvedValue(ok(opp()));
     await OpportunityService.create("user_1", "acme", {
       name: "Deal",
-      stage: "NEW",
       closeDate: "2026-06-01T00:00:00.000Z",
     });
     const arg = oppRepo.create.mock.calls[0][0];
@@ -85,7 +109,6 @@ describe("OpportunityService.create", () => {
     personRepo.existsInWorkspace.mockResolvedValue(ok(false));
     const result = await OpportunityService.create("user_1", "acme", {
       name: "Deal",
-      stage: "NEW",
       pointOfContactId: "p_x",
     });
     expect(result.ok).toBe(false);

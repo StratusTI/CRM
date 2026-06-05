@@ -47,7 +47,13 @@ import type { CompanyAddress } from "@/src/schemas/company.schema";
 export type WithId = { id: string };
 
 /** Tipos de relação que resolvem id → nome e linkam para a página da entidade. */
-export type RelationKind = "companies" | "people" | "opportunities" | "users";
+export type RelationKind =
+  | "companies"
+  | "people"
+  | "opportunities"
+  | "users"
+  | "pipelines"
+  | "stages";
 
 /** Descrição declarativa de uma coluna editável da grade. */
 export type GridColumn = {
@@ -87,6 +93,12 @@ export type GridColumn = {
   readonly?: boolean;
   /** primary: adiciona um ícone que linka para `/{slug}/{resource}/{id}`. */
   linkView?: boolean;
+  /**
+   * Quando definido, a coluna é um campo customizado (EAV): a escrita é roteada
+   * para o objeto `customFields` no PATCH (`{ customFields: { [id]: value } }`),
+   * em vez de uma coluna nativa. A leitura usa `key` (`cf_<id>`).
+   */
+  customFieldId?: string;
 };
 
 /** Largura uniforme das colunas de dados (px). */
@@ -114,8 +126,10 @@ function relationHref(kind: RelationKind, slug: string): string | null {
       return `/${slug}/people`;
     case "opportunities":
       return `/${slug}/opportunities`;
+    case "pipelines":
+      return `/${slug}/settings`;
     default:
-      // Usuários (owner/created by/…) não têm página dedicada.
+      // Usuários e etapas não têm página de listagem dedicada.
       return null;
   }
 }
@@ -971,7 +985,12 @@ function EditableCell<T extends WithId>({
 
   const value = (row.original as Record<string, unknown>)[col.key];
   const commit = (next: unknown) =>
-    grid.patch(row.original.id, { [col.key]: next });
+    grid.patch(
+      row.original.id,
+      col.customFieldId
+        ? { customFields: { [col.customFieldId]: next } }
+        : { [col.key]: next },
+    );
   const autofill = (fields: Record<string, unknown>) =>
     grid.patch(row.original.id, fields);
 

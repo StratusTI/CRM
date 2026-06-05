@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { CustomFieldsInputSchema } from "@/src/schemas/custom-field.schema";
 import { normalizeBrazilPhone, normalizedUrl } from "@/src/schemas/shared";
 
 /** Contrato da feature Person (create / update / list / get / soft-delete). */
@@ -41,6 +42,7 @@ export const CreatePersonSchema = z.object({
   linkedin: LinkedinSchema.optional(),
   avatar: AvatarSchema.optional(),
   companyId: IdSchema.optional(),
+  customFields: CustomFieldsInputSchema.optional(),
 });
 
 export const UpdatePersonSchema = z
@@ -53,6 +55,7 @@ export const UpdatePersonSchema = z
     linkedin: LinkedinSchema.nullable(),
     avatar: AvatarSchema.nullable(),
     companyId: IdSchema.nullable(),
+    customFields: CustomFieldsInputSchema,
   })
   .partial()
   .refine((data) => Object.keys(data).length > 0, {
@@ -75,6 +78,7 @@ export const PersonOutputSchema = z.object({
   createdAt: z.string(),
   updatedAt: z.string(),
   deletedAt: z.string().nullable(),
+  customFields: CustomFieldsInputSchema.optional(),
 });
 
 export type CreatePersonInput = z.infer<typeof CreatePersonSchema>;

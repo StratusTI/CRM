@@ -1,16 +1,7 @@
 import { z } from "zod";
+import { CustomFieldsInputSchema } from "@/src/schemas/custom-field.schema";
 
 /** Contrato da feature Opportunity (create / update / list / get / soft-delete). */
-
-export const OPPORTUNITY_STAGES = [
-  "NEW",
-  "QUALIFIED",
-  "MEETING",
-  "PROPOSAL",
-  "NEGOTIATION",
-  "WON",
-  "LOST",
-] as const;
 
 const NameSchema = z
   .string()
@@ -24,7 +15,6 @@ const AmountSchema = z
   .max(1_000_000_000_000, "Valor fora do limite");
 
 const CloseDateSchema = z.iso.datetime("Data de fechamento inválida");
-const StageSchema = z.enum(OPPORTUNITY_STAGES);
 const IdSchema = z.string().trim().min(1);
 const SourceSchema = z
   .string()
@@ -36,11 +26,16 @@ export const CreateOpportunitySchema = z.object({
   name: NameSchema,
   amount: AmountSchema.optional(),
   closeDate: CloseDateSchema.optional(),
-  stage: StageSchema.optional().default("NEW"),
+  // Etapa/funil opcionais: quando omitidos, o service resolve o pipeline
+  // padrão e sua primeira etapa. Se `stageId` é informado, `pipelineId` também
+  // deve ser, e o service valida que a etapa pertence ao funil e à workspace.
+  pipelineId: IdSchema.optional(),
+  stageId: IdSchema.optional(),
   companyId: IdSchema.optional(),
   pointOfContactId: IdSchema.optional(),
   ownerId: IdSchema.optional(),
   source: SourceSchema.optional(),
+  customFields: CustomFieldsInputSchema.optional(),
 });
 
 export const UpdateOpportunitySchema = z
@@ -48,11 +43,13 @@ export const UpdateOpportunitySchema = z
     name: NameSchema,
     amount: AmountSchema.nullable(),
     closeDate: CloseDateSchema.nullable(),
-    stage: StageSchema,
+    pipelineId: IdSchema,
+    stageId: IdSchema,
     companyId: IdSchema.nullable(),
     pointOfContactId: IdSchema.nullable(),
     ownerId: IdSchema.nullable(),
     source: SourceSchema.nullable(),
+    customFields: CustomFieldsInputSchema,
   })
   .partial()
   .refine((data) => Object.keys(data).length > 0, {
@@ -64,7 +61,8 @@ export const OpportunityOutputSchema = z.object({
   name: z.string(),
   amount: z.number().nullable(),
   closeDate: z.string().nullable(),
-  stage: z.enum(OPPORTUNITY_STAGES),
+  pipelineId: z.string(),
+  stageId: z.string(),
   companyId: z.string().nullable(),
   pointOfContactId: z.string().nullable(),
   ownerId: z.string().nullable(),
@@ -75,6 +73,7 @@ export const OpportunityOutputSchema = z.object({
   createdAt: z.string(),
   updatedAt: z.string(),
   deletedAt: z.string().nullable(),
+  customFields: CustomFieldsInputSchema.optional(),
 });
 
 export type CreateOpportunityInput = z.infer<typeof CreateOpportunitySchema>;

@@ -28,9 +28,7 @@
   "paths": {
     "/api/integrations/people": {
       "post": {
-        "tags": [
-          "Integração"
-        ],
+        "tags": ["Integração"],
         "summary": "Ingestão em lote de pessoas",
         "description": "Recebe contatos de outros sistemas da empresa. A workspace e o autor são resolvidos pela própria chave de API. Cada item é processado de forma independente: a falha de um não aborta os demais (ver relatório).",
         "security": [
@@ -66,11 +64,7 @@
                       "$ref": "#/components/schemas/IngestPeopleReport"
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -100,9 +94,7 @@
     },
     "/api/integrations/leads": {
       "post": {
-        "tags": [
-          "Integração"
-        ],
+        "tags": ["Integração"],
         "summary": "Abertura de oportunidade a partir de um lead",
         "description": "Recebe os dados básicos de um contato e de uma oportunidade vindos de canais de marketing (WhatsApp, ligação, direct) e abre a oportunidade automaticamente. A pessoa é deduplicada por e-mail/telefone na workspace: se já existir, a oportunidade é vinculada a ela. A workspace e o autor são resolvidos pela própria chave de API.",
         "security": [
@@ -138,11 +130,7 @@
                       "$ref": "#/components/schemas/IngestLeadResult"
                     }
                   },
-                  "required": [
-                    "success",
-                    "statusCode",
-                    "data"
-                  ]
+                  "required": ["success", "statusCode", "data"]
                 }
               }
             }
@@ -182,9 +170,7 @@
     },
     "/api/auth/sign-up/email": {
       "post": {
-        "tags": [
-          "Autenticação"
-        ],
+        "tags": ["Autenticação"],
         "summary": "Cadastro por e-mail e senha",
         "description": "Powered by better-auth. Cria a conta e inicia a sessão (cookie).",
         "requestBody": {
@@ -206,11 +192,7 @@
                     "minLength": 8
                   }
                 },
-                "required": [
-                  "name",
-                  "email",
-                  "password"
-                ]
+                "required": ["name", "email", "password"]
               }
             }
           }
@@ -234,9 +216,7 @@
     },
     "/api/auth/sign-in/email": {
       "post": {
-        "tags": [
-          "Autenticação"
-        ],
+        "tags": ["Autenticação"],
         "summary": "Login por e-mail e senha",
         "description": "Powered by better-auth. Inicia a sessão (cookie).",
         "requestBody": {
@@ -254,10 +234,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "email",
-                  "password"
-                ]
+                "required": ["email", "password"]
               }
             }
           }
@@ -281,9 +258,7 @@
     },
     "/api/auth/sign-out": {
       "post": {
-        "tags": [
-          "Autenticação"
-        ],
+        "tags": ["Autenticação"],
         "summary": "Logout",
         "description": "Powered by better-auth. Encerra a sessão atual.",
         "responses": {
@@ -295,9 +270,7 @@
     },
     "/api/auth/get-session": {
       "get": {
-        "tags": [
-          "Autenticação"
-        ],
+        "tags": ["Autenticação"],
         "summary": "Sessão atual",
         "description": "Powered by better-auth. Retorna a sessão e o usuário, ou null.",
         "responses": {
@@ -320,9 +293,7 @@
         }
       ],
       "get": {
-        "tags": [
-          "Autenticação"
-        ],
+        "tags": ["Autenticação"],
         "summary": "Catch-all do better-auth (GET)",
         "description": "O better-auth expõe várias rotas sob /api/auth (OAuth social, verificação, etc.). Consulte a documentação do better-auth para o conjunto completo.",
         "responses": {
@@ -332,9 +303,7 @@
         }
       },
       "post": {
-        "tags": [
-          "Autenticação"
-        ],
+        "tags": ["Autenticação"],
         "summary": "Catch-all do better-auth (POST)",
         "responses": {
           "200": {
@@ -356,9 +325,7 @@
         }
       ],
       "get": {
-        "tags": [
-          "OAuth social"
-        ],
+        "tags": ["OAuth social"],
         "summary": "Callback de OAuth da rede social",
         "description": "Alvo do redirect do provedor. Troca o `code` por tokens, persiste a conexão e redireciona (302) de volta para Configurações.",
         "parameters": [
@@ -407,9 +374,7 @@
         }
       ],
       "get": {
-        "tags": [
-          "OAuth social"
-        ],
+        "tags": ["OAuth social"],
         "summary": "Serve uma mídia carregada",
         "description": "Expõe temporariamente o binário de um upload para o provedor consumir (ex.: imagem do Instagram via Graph API).",
         "responses": {
@@ -461,17 +426,10 @@
               },
               "details": {}
             },
-            "required": [
-              "code"
-            ]
+            "required": ["code"]
           }
         },
-        "required": [
-          "success",
-          "statusCode",
-          "message",
-          "error"
-        ]
+        "required": ["success", "statusCode", "message", "error"]
       },
       "IngestPeopleRequest": {
         "type": "object",
@@ -528,15 +486,11 @@
                   "minLength": 1
                 }
               },
-              "required": [
-                "name"
-              ]
+              "required": ["name"]
             }
           }
         },
-        "required": [
-          "people"
-        ]
+        "required": ["people"]
       },
       "IngestPeopleReport": {
         "type": "object",
@@ -568,11 +522,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "index",
-                    "status",
-                    "id"
-                  ],
+                  "required": ["index", "status", "id"],
                   "additionalProperties": false
                 },
                 {
@@ -595,30 +545,18 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
+                      "required": ["code", "message"],
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "index",
-                    "status",
-                    "error"
-                  ],
+                  "required": ["index", "status", "error"],
                   "additionalProperties": false
                 }
               ]
             }
           }
         },
-        "required": [
-          "total",
-          "created",
-          "failed",
-          "results"
-        ],
+        "required": ["total", "created", "failed", "results"],
         "additionalProperties": false
       },
       "IngestLeadRequest": {
@@ -673,9 +611,7 @@
                 "minLength": 1
               }
             },
-            "required": [
-              "name"
-            ]
+            "required": ["name"]
           },
           "opportunity": {
             "type": "object",
@@ -694,19 +630,6 @@
                 "type": "string",
                 "format": "date-time"
               },
-              "stage": {
-                "type": "string",
-                "enum": [
-                  "NEW",
-                  "QUALIFIED",
-                  "MEETING",
-                  "PROPOSAL",
-                  "NEGOTIATION",
-                  "WON",
-                  "LOST"
-                ],
-                "default": "NEW"
-              },
               "source": {
                 "type": "string",
                 "minLength": 1,
@@ -724,9 +647,7 @@
             }
           }
         },
-        "required": [
-          "person"
-        ]
+        "required": ["person"]
       },
       "IngestLeadResult": {
         "type": "object",
@@ -744,11 +665,7 @@
             "description": "Oportunidade aberta para o lead."
           }
         },
-        "required": [
-          "personReused",
-          "person",
-          "opportunity"
-        ]
+        "required": ["personReused", "person", "opportunity"]
       }
     }
   }

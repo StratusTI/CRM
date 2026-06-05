@@ -3,32 +3,22 @@ import {
   companyCnpjTaken,
   companyDomainTaken,
   companyNotFound,
-  workspaceNotFound,
 } from "@/src/errors/app-error";
 import { err, ok, type Result } from "@/src/lib/result";
 import { toCompanyDTO } from "@/src/mappers/company.mapper";
 import { CompanyRepository } from "@/src/repositories/company.repository";
-import { MembershipRepository } from "@/src/repositories/membership.repository";
 import type {
   CompanyDTO,
   CreateCompanyInput,
   UpdateCompanyInput,
 } from "@/src/schemas/company.schema";
+import {
+  applyCustomFieldValues,
+  withCustomFields,
+  withCustomFieldsList,
+} from "@/src/services/custom-field-sync";
 import { dispatchRecordEvent } from "@/src/services/workflow-dispatcher";
-
-/**
- * Resolve o workspace pelo slug garantindo que o usuário seja membro.
- * Não-membros recebem WORKSPACE_NOT_FOUND (não vazamos existência).
- */
-async function resolveWorkspaceId(
-  userId: string,
-  slug: string,
-): Promise<Result<string>> {
-  const membership = await MembershipRepository.findByUserAndSlug(userId, slug);
-  if (!membership.ok) return membership;
-  if (!membership.value) return err(workspaceNotFound());
-  return ok(membership.value.workspace.id);
-}
+import { resolveWorkspaceId } from "@/src/services/workspace-scope";
 
 /** Carrega uma empresa garantindo que pertence ao workspace e não foi deletada. */
 async function loadInWorkspace(
@@ -51,7 +41,10 @@ export const CompanyService = {
     slug: string,
     input: CreateCompanyInput,
   ): Promise<Result<CompanyDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "companies",
+      action: "CREATE",
+    });
     if (!ws.ok) return ws;
 
     if (input.domain) {
@@ -83,25 +76,41 @@ export const CompanyService = {
       accountOwnerId: input.accountOwnerId ?? null,
     });
     if (!created.ok) return created;
-    const dto = toCompanyDTO(created.value);
+
+    if (input.customFields) {
+      const applied = await applyCustomFieldValues(
+        ws.value,
+        "COMPANY",
+        created.value.id,
+        input.customFields,
+        userId,
+      );
+      if (!applied.ok) return applied;
+    }
+
+    const merged = await withCustomFields(toCompanyDTO(created.value));
+    if (!merged.ok) return merged;
     await dispatchRecordEvent({
       workspaceId: ws.value,
       actingUserId: userId,
       entity: "company",
       event: "created",
-      record: dto,
+      record: merged.value,
     });
-    return ok(dto);
+    return ok(merged.value);
   },
 
   /** Lista as empresas (não-deletadas) do workspace do slug. */
   async list(userId: string, slug: string): Promise<Result<CompanyDTO[]>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "companies",
+      action: "VIEW",
+    });
     if (!ws.ok) return ws;
 
     const result = await CompanyRepository.listByWorkspace(ws.value);
     if (!result.ok) return result;
-    return ok(result.value.map(toCompanyDTO));
+    return withCustomFieldsList(result.value.map(toCompanyDTO));
   },
 
   /** Busca uma empresa por id, garantindo escopo de workspace. */
@@ -110,12 +119,15 @@ export const CompanyService = {
     slug: string,
     companyId: string,
   ): Promise<Result<CompanyDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "companies",
+      action: "VIEW",
+    });
     if (!ws.ok) return ws;
 
     const company = await loadInWorkspace(ws.value, companyId);
     if (!company.ok) return company;
-    return ok(toCompanyDTO(company.value));
+    return withCustomFields(toCompanyDTO(company.value));
   },
 
   /** Atualiza campos de uma empresa. */
@@ -125,7 +137,10 @@ export const CompanyService = {
     companyId: string,
     input: UpdateCompanyInput,
   ): Promise<Result<CompanyDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "companies",
+      action: "EDIT",
+    });
     if (!ws.ok) return ws;
 
     const existing = await loadInWorkspace(ws.value, companyId);
@@ -153,21 +168,35 @@ export const CompanyService = {
       if (taken.value) return err(companyCnpjTaken());
     }
 
+    const { customFields, ...fields } = input;
     const updated = await CompanyRepository.update(companyId, {
       updatedById: userId,
-      ...input,
+      ...fields,
     });
     if (!updated.ok) return updated;
-    const dto = toCompanyDTO(updated.value);
+
+    if (customFields) {
+      const applied = await applyCustomFieldValues(
+        ws.value,
+        "COMPANY",
+        companyId,
+        customFields,
+        userId,
+      );
+      if (!applied.ok) return applied;
+    }
+
+    const merged = await withCustomFields(toCompanyDTO(updated.value));
+    if (!merged.ok) return merged;
     await dispatchRecordEvent({
       workspaceId: ws.value,
       actingUserId: userId,
       entity: "company",
       event: "updated",
-      record: dto,
+      record: merged.value,
       changedFields: Object.keys(input),
     });
-    return ok(dto);
+    return ok(merged.value);
   },
 
   /** Soft delete de uma empresa. */
@@ -176,7 +205,10 @@ export const CompanyService = {
     slug: string,
     companyId: string,
   ): Promise<Result<CompanyDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "companies",
+      action: "DELETE",
+    });
     if (!ws.ok) return ws;
 
     const existing = await loadInWorkspace(ws.value, companyId);
@@ -201,7 +233,10 @@ export const CompanyService = {
     slug: string,
     ids: string[],
   ): Promise<Result<true>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "companies",
+      action: "EDIT",
+    });
     if (!ws.ok) return ws;
     return CompanyRepository.reorder(ws.value, ids);
   },

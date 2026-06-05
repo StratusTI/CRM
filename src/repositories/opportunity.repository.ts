@@ -1,7 +1,9 @@
-import type { Opportunity, OpportunityStage } from "@prisma/client";
+import type { Opportunity, PipelineStage } from "@prisma/client";
 import { databaseError } from "@/src/errors/app-error";
 import { prisma } from "@/src/lib/prisma";
 import { err, ok, type Result } from "@/src/lib/result";
+
+export type OpportunityWithStage = Opportunity & { stage: PipelineStage };
 
 export type CreateOpportunityData = {
   workspaceId: string;
@@ -9,7 +11,8 @@ export type CreateOpportunityData = {
   name: string;
   amount: number | null;
   closeDate: Date | null;
-  stage: OpportunityStage;
+  pipelineId: string;
+  stageId: string;
   companyId: string | null;
   pointOfContactId: string | null;
   ownerId: string | null;
@@ -21,7 +24,8 @@ export type UpdateOpportunityData = {
   name?: string;
   amount?: number | null;
   closeDate?: Date | null;
-  stage?: OpportunityStage;
+  pipelineId?: string;
+  stageId?: string;
   companyId?: string | null;
   pointOfContactId?: string | null;
   ownerId?: string | null;
@@ -37,6 +41,30 @@ export const OpportunityRepository = {
         data: { ...fields, workspaceId, createdById },
       });
       return ok(opportunity);
+    } catch {
+      return err(databaseError());
+    }
+  },
+
+  /**
+   * Oportunidades vivas com etapa OPEN ou WON e `closeDate` definida, incluindo
+   * a etapa (probability/category). Base do forecast — agregação feita em
+   * memória no service (volume por workspace é modesto).
+   */
+  async listOpenAndWonWithStage(
+    workspaceId: string,
+  ): Promise<Result<OpportunityWithStage[]>> {
+    try {
+      const opportunities = await prisma.opportunity.findMany({
+        where: {
+          workspaceId,
+          deletedAt: null,
+          closeDate: { not: null },
+          stage: { category: { in: ["OPEN", "WON"] } },
+        },
+        include: { stage: true },
+      });
+      return ok(opportunities);
     } catch {
       return err(databaseError());
     }

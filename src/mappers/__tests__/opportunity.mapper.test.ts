@@ -8,7 +8,8 @@ const base: Opportunity = {
   name: "Deal",
   amount: new Prisma.Decimal("50000.00"),
   closeDate: new Date("2026-06-01T00:00:00.000Z"),
-  stage: "PROPOSAL",
+  pipelineId: "pl_1",
+  stageId: "st_1",
   companyId: "co_1",
   pointOfContactId: "p_1",
   ownerId: "user_1",
@@ -27,7 +28,8 @@ describe("toOpportunityDTO", () => {
     const dto = toOpportunityDTO(base);
     expect(dto.amount).toBe(50000);
     expect(dto.closeDate).toBe("2026-06-01T00:00:00.000Z");
-    expect(dto.stage).toBe("PROPOSAL");
+    expect(dto.pipelineId).toBe("pl_1");
+    expect(dto.stageId).toBe("st_1");
   });
 
   it("preserva nulos", () => {

@@ -3,7 +3,14 @@
 import { useEffect, useState } from "react";
 import { apiUrl } from "@/lib/api-url";
 
-export type LookupKind = "users" | "companies" | "people" | "opportunities";
+export type LookupKind =
+  | "users"
+  | "companies"
+  | "people"
+  | "opportunities"
+  | "pipelines"
+  | "stages"
+  | "products";
 
 export type Option = { value: string; label: string };
 
@@ -12,12 +19,19 @@ export type Lookups = {
   options: Record<LookupKind, Option[]>;
 };
 
-/** Recurso da API por tipo de lookup (usuários vêm de `members`). */
+/**
+ * Recurso da API por tipo de lookup (usuários vêm de `members`). `pipelines` e
+ * `stages` compartilham o endpoint de pipelines — as etapas são achatadas a
+ * partir das etapas aninhadas de cada pipeline.
+ */
 const RESOURCE_PATH: Record<LookupKind, string> = {
   users: "members",
   companies: "companies",
   people: "people",
   opportunities: "opportunities",
+  pipelines: "pipelines",
+  stages: "pipelines",
+  products: "products",
 };
 
 type RawItem = {
@@ -25,7 +39,17 @@ type RawItem = {
   name?: string | null;
   title?: string | null;
   email?: string | null;
+  stages?: { id: string; name: string }[] | null;
 };
+
+/** Achata as etapas de todos os pipelines numa lista de itens id→nome. */
+function flattenStages(pipelines: RawItem[]): RawItem[] {
+  return pipelines.flatMap((p) =>
+    Array.isArray(p.stages)
+      ? p.stages.map((s) => ({ id: s.id, name: s.name }))
+      : [],
+  );
+}
 
 function labelOf(item: RawItem): string {
   return item.name || item.title || item.email || item.id;
@@ -33,8 +57,24 @@ function labelOf(item: RawItem): string {
 
 function emptyLookups(): Lookups {
   return {
-    maps: { users: {}, companies: {}, people: {}, opportunities: {} },
-    options: { users: [], companies: [], people: [], opportunities: [] },
+    maps: {
+      users: {},
+      companies: {},
+      people: {},
+      opportunities: {},
+      pipelines: {},
+      stages: {},
+      products: {},
+    },
+    options: {
+      users: [],
+      companies: [],
+      people: [],
+      opportunities: [],
+      pipelines: [],
+      stages: [],
+      products: [],
+    },
   };
 }
 
@@ -64,10 +104,11 @@ export function useWorkspaceLookups(slug: string, kinds: LookupKind[]) {
               apiUrl(`/api/workspaces/${slug}/${RESOURCE_PATH[kind]}`),
             );
             const json = await res.json();
-            const items: RawItem[] =
+            const data: RawItem[] =
               res.ok && json.success && Array.isArray(json.data)
                 ? json.data
                 : [];
+            const items = kind === "stages" ? flattenStages(data) : data;
             return [kind, items] as const;
           } catch {
             return [kind, [] as RawItem[]] as const;

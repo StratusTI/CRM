@@ -20,7 +20,10 @@ export const MailingListService = {
     slug: string,
     input: CreateMailingListInput,
   ): Promise<Result<MailingListDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "email",
+      action: "CREATE",
+    });
     if (!ws.ok) return ws;
 
     const result = await MailingListRepository.create({
@@ -33,18 +36,16 @@ export const MailingListService = {
     return ok(toMailingListDTO(result.value, 0));
   },
 
-  async list(
-    userId: string,
-    slug: string,
-  ): Promise<Result<MailingListDTO[]>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+  async list(userId: string, slug: string): Promise<Result<MailingListDTO[]>> {
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "email",
+      action: "VIEW",
+    });
     if (!ws.ok) return ws;
 
     const result = await MailingListRepository.listByWorkspace(ws.value);
     if (!result.ok) return result;
-    return ok(
-      result.value.map((l) => toMailingListDTO(l, l._count.members)),
-    );
+    return ok(result.value.map((l) => toMailingListDTO(l, l._count.members)));
   },
 
   async getById(
@@ -52,7 +53,10 @@ export const MailingListService = {
     slug: string,
     id: string,
   ): Promise<Result<MailingListWithMembersDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "email",
+      action: "VIEW",
+    });
     if (!ws.ok) return ws;
 
     const result = await MailingListRepository.findById(id);
@@ -69,7 +73,10 @@ export const MailingListService = {
     id: string,
     input: UpdateMailingListInput,
   ): Promise<Result<MailingListDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "email",
+      action: "EDIT",
+    });
     if (!ws.ok) return ws;
 
     const existing = await MailingListRepository.findById(id);
@@ -80,9 +87,7 @@ export const MailingListService = {
 
     const result = await MailingListRepository.update(id, input);
     if (!result.ok) return result;
-    return ok(
-      toMailingListDTO(result.value, existing.value.members.length),
-    );
+    return ok(toMailingListDTO(result.value, existing.value.members.length));
   },
 
   async remove(
@@ -90,7 +95,10 @@ export const MailingListService = {
     slug: string,
     id: string,
   ): Promise<Result<void>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "email",
+      action: "DELETE",
+    });
     if (!ws.ok) return ws;
 
     const existing = await MailingListRepository.findById(id);
@@ -108,7 +116,10 @@ export const MailingListService = {
     id: string,
     input: AddMailingListMembersInput,
   ): Promise<Result<MailingListWithMembersDTO>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "email",
+      action: "EDIT",
+    });
     if (!ws.ok) return ws;
 
     const existing = await MailingListRepository.findById(id);
@@ -134,7 +145,10 @@ export const MailingListService = {
     listId: string,
     memberId: string,
   ): Promise<Result<void>> {
-    const ws = await resolveWorkspaceId(userId, slug);
+    const ws = await resolveWorkspaceId(userId, slug, {
+      resource: "email",
+      action: "DELETE",
+    });
     if (!ws.ok) return ws;
 
     const existing = await MailingListRepository.findById(listId);

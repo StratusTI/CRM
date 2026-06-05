@@ -18,6 +18,11 @@ vi.mock("@/src/repositories/workspace.repository", () => ({
 vi.mock("@/src/repositories/membership.repository", () => ({
   MembershipRepository: memberRepo,
 }));
+vi.mock("@/src/repositories/profile.repository", () => ({
+  ProfileRepository: {
+    ensureSystemProfiles: vi.fn(async () => ({ ok: true, value: [] })),
+  },
+}));
 
 import { slugify, WorkspaceService } from "@/src/services/workspace.service";
 

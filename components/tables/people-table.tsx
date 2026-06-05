@@ -1,8 +1,13 @@
 "use client";
 
+import { useMemo } from "react";
 import { DataTable } from "@/components/data-table";
 import { PageShell } from "@/components/page-shell";
 import type { GridColumn } from "@/components/tables/grid";
+import {
+  customFieldColumns,
+  useCustomFields,
+} from "@/src/hooks/use-custom-fields";
 import { useResourceList } from "@/src/hooks/use-resource-list";
 import {
   type LookupKind,
@@ -77,11 +82,16 @@ export function PeopleTable({ slug }: { slug: string }) {
     "people",
   );
   const { lookups } = useWorkspaceLookups(slug, LOOKUP_KINDS);
+  const { fields } = useCustomFields(slug, "PERSON");
+  const columns = useMemo(
+    () => [...COLUMNS, ...customFieldColumns(fields)],
+    [fields],
+  );
 
   return (
     <PageShell>
       <DataTable
-        columns={COLUMNS}
+        columns={columns}
         data={items}
         slug={slug}
         resource="people"
