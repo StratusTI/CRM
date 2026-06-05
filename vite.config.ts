@@ -19,6 +19,7 @@ export default defineConfig({
             "src/services/**/__tests__/*.test.ts",
             "src/mappers/**/__tests__/*.test.ts",
             "src/schemas/**/__tests__/*.test.ts",
+            "src/config/**/__tests__/*.test.ts",
             "src/errors/**/__tests__/*.test.ts",
             "src/lib/__tests__/*.test.ts",
             "utils/__tests__/*.test.ts",
