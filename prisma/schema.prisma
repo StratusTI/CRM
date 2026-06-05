@@ -188,8 +188,46 @@ model Workspace {
   aiConversations    AiConversation[]
   aiUsage            AiUsage[]
   invite             WorkspaceInvite?
+  subscription       Subscription?
 
   @@map("workspaces")
+}
+
+/// Status da assinatura, espelhando os estados do provedor de pagamento.
+enum SubscriptionStatus {
+  ACTIVE
+  TRIALING
+  PAST_DUE
+  CANCELED
+  INCOMPLETE
+}
+
+/// Assinatura/plano da workspace. Uma por workspace (1:1). Quando ausente, a
+/// workspace é tratada como plano `free`. `plan` e `cycle` são strings validadas
+/// pelo catálogo em `src/config/plans.ts` (não enums Prisma, para o catálogo
+/// poder evoluir sem migração). Os campos `abacate*` são preenchidos pelo
+/// serviço de pagamento (AbacatePay v2).
+model Subscription {
+  id          String             @id @default(cuid())
+  workspaceId String             @unique @map("workspace_id")
+  plan        String             @default("free")
+  cycle       String             @default("monthly")
+  status      SubscriptionStatus @default(ACTIVE)
+  /// Assentos contratados (referência para limites/cobrança por assento).
+  seats       Int                @default(1)
+  /// Fim do período atual de cobrança (renovação).
+  currentPeriodEnd DateTime?     @map("current_period_end")
+  /// Cancelar ao fim do período em vez de imediatamente.
+  cancelAtPeriodEnd Boolean      @default(false) @map("cancel_at_period_end")
+  abacateCustomerId     String?  @map("abacate_customer_id")
+  abacateSubscriptionId String?  @map("abacate_subscription_id")
+  abacateProductId      String?  @map("abacate_product_id")
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
 }
 
 /// Empresa/cliente — entidade central do CRM, escopada por workspace.

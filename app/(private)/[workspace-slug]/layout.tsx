@@ -79,6 +79,7 @@ async function WorkspaceGate({ children, params }: WorkspaceLayoutProps) {
         currentSlug={slug}
         workspaces={workspaces}
         user={{ name, email, avatar: image ?? "" }}
+        isOwner={membership.value.role === "OWNER"}
       />
       <SidebarInset className="min-h-0 overflow-hidden md:peer-data-[variant=inset]:ring-1 md:peer-data-[variant=inset]:ring-white/[0.06]">
         {children}
