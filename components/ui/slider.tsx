@@ -17,7 +17,7 @@ function Slider({ className, ...props }: SliderPrimitive.Root.Props) {
       >
         <SliderPrimitive.Track
           data-slot="slider-track"
-          className="relative h-1.5 w-full grow overflow-hidden rounded-full bg-muted"
+          className="relative h-1.5 w-full grow rounded-full bg-muted"
         >
           <SliderPrimitive.Indicator
             data-slot="slider-indicator"
@@ -25,7 +25,7 @@ function Slider({ className, ...props }: SliderPrimitive.Root.Props) {
           />
           <SliderPrimitive.Thumb
             data-slot="slider-thumb"
-            className="block size-4 shrink-0 rounded-full border-2 border-background bg-primary shadow-sm ring-1 ring-primary/20 transition-[color,box-shadow] outline-none focus-visible:ring-4 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50"
+            className="block size-5 shrink-0 rounded-full border-2 border-primary bg-background shadow-md ring-2 ring-background transition-[color,box-shadow] outline-none focus-visible:ring-4 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50"
           />
         </SliderPrimitive.Track>
       </SliderPrimitive.Control>
