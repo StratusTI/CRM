@@ -10,38 +10,13 @@ function timingEqual(a: string, b: string): boolean {
 }
 
 /**
- * Valida a autenticidade de um webhook do AbacatePay.
- *
- * Mecanismo principal: o `?webhookSecret=` na URL (configurado no dashboard)
- * deve bater com `ABACATEPAY_WEBHOOK_SECRET`. Quando vier a assinatura HMAC
- * (`x-webhook-signature`), validamos também — incluindo o timestamp para
- * proteger contra replay (janela de 5 min).
+ * Valida a autenticidade de um webhook do AbacatePay pelo segredo na query
+ * (`?webhookSecret=`), configurado na URL do webhook no dashboard e comparado
+ * com `ABACATEPAY_WEBHOOK_SECRET`. Esse é o mecanismo oficial do AbacatePay; o
+ * segredo aleatório trafega sob HTTPS.
  */
-export function verifyAbacateWebhook(opts: {
-  rawBody: string;
-  querySecret: string | null;
-  signature: string | null;
-  timestamp: string | null;
-}): boolean {
+export function verifyAbacateWebhook(querySecret: string | null): boolean {
   const secret = getAbacateWebhookSecret();
-  if (!secret) return false;
-
-  if (!opts.querySecret || !timingEqual(opts.querySecret, secret)) {
-    return false;
-  }
-
-  if (opts.signature) {
-    if (opts.timestamp) {
-      const now = Date.now() / 1000;
-      const ts = Number(opts.timestamp);
-      if (!Number.isFinite(ts) || Math.abs(now - ts) > 300) return false;
-    }
-    const expected = crypto
-      .createHmac("sha256", secret)
-      .update(opts.rawBody)
-      .digest("base64");
-    if (!timingEqual(opts.signature, expected)) return false;
-  }
-
-  return true;
+  if (!secret || !querySecret) return false;
+  return timingEqual(querySecret, secret);
 }
