@@ -159,7 +159,7 @@ function QuickAddDialog({
         body: JSON.stringify({
           title: title.trim(),
           status: "TODO",
-          dueDate: format(date, "yyyy-MM-dd"),
+          dueDate: startOfDay(date).toISOString(),
         }),
       });
       const json = await res.json();
