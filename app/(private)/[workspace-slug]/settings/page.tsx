@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { PageShell } from "@/components/page-shell";
 import { AuditLogSection } from "@/components/settings/audit-log-section";
 import { CustomFieldsSection } from "@/components/settings/custom-fields-section";
+import { EmailAccountsSection } from "@/components/settings/email-accounts-section";
 import { LeadRulesSection } from "@/components/settings/lead-rules-section";
 import { PipelinesSection } from "@/components/settings/pipelines-section";
 import { PrivacySection } from "@/components/settings/privacy-section";
@@ -84,6 +85,9 @@ export default async function SettingsPage({
       </Suspense>
       <Suspense>
         <AuditLogSection slug={slug} />
+      </Suspense>
+      <Suspense>
+        <EmailAccountsSection slug={slug} />
       </Suspense>
       <Suspense>
         <PrivacySection />

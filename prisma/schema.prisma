@@ -57,6 +57,8 @@ model User {
   reportsCreated Report[] @relation("ReportCreatedBy")
   reportsUpdated Report[] @relation("ReportUpdatedBy")
 
+  emailAccounts EmailAccount[] @relation("EmailAccountUser")
+
   tasksCreated  Task[] @relation("TaskCreatedBy")
   tasksUpdated  Task[] @relation("TaskUpdatedBy")
   tasksAssigned Task[] @relation("TaskAssignee")
@@ -165,6 +167,9 @@ model Workspace {
   leadScoringRules   LeadScoringRule[]
   leadRoutingRules   LeadRoutingRule[]
   reports            Report[]
+  emailAccounts      EmailAccount[]
+  emailMessages      EmailMessage[]
+  calendarEvents     CalendarEvent[]
   opportunities      Opportunity[]
   tasks              Task[]
   notes              Note[]
@@ -252,9 +257,11 @@ model Person {
   createdBy User      @relation("PersonCreatedBy", fields: [createdById], references: [id])
   updatedBy User?     @relation("PersonUpdatedBy", fields: [updatedById], references: [id])
 
-  opportunities Opportunity[] @relation("OpportunityPointOfContact")
-  tasks         Task[]
-  notes         Note[]
+  opportunities  Opportunity[]   @relation("OpportunityPointOfContact")
+  tasks          Task[]
+  notes          Note[]
+  emailMessages  EmailMessage[]
+  calendarEvents CalendarEvent[]
 
   @@index([workspaceId])
   @@index([companyId])
@@ -292,9 +299,11 @@ model Opportunity {
   createdBy      User          @relation("OpportunityCreatedBy", fields: [createdById], references: [id])
   updatedBy      User?         @relation("OpportunityUpdatedBy", fields: [updatedById], references: [id])
 
-  tasks     Task[]
-  notes     Note[]
-  lineItems OpportunityLineItem[]
+  tasks          Task[]
+  notes          Note[]
+  lineItems      OpportunityLineItem[]
+  emailMessages  EmailMessage[]
+  calendarEvents CalendarEvent[]
 
   @@index([workspaceId])
   @@index([pipelineId])
@@ -645,6 +654,99 @@ model Report {
   @@index([workspaceId, position])
   @@index([deletedAt])
   @@map("reports")
+}
+
+enum MailProvider {
+  GOOGLE
+  MICROSOFT
+}
+
+enum MailDirection {
+  INBOUND
+  OUTBOUND
+}
+
+/// Conta de e-mail/calendário conectada (Gmail/Outlook) por usuário e workspace.
+/// Tokens cifrados em repouso (AES-256-GCM), como SocialConnection.
+model EmailAccount {
+  id             String       @id @default(cuid())
+  workspaceId    String       @map("workspace_id")
+  userId         String       @map("user_id")
+  provider       MailProvider
+  email          String
+  accessToken    String       @map("access_token")
+  refreshToken   String?      @map("refresh_token")
+  tokenExpiresAt DateTime?    @map("token_expires_at")
+  scope          String?
+  lastSyncedAt   DateTime?    @map("last_synced_at")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+
+  workspace Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User            @relation("EmailAccountUser", fields: [userId], references: [id], onDelete: Cascade)
+  messages  EmailMessage[]
+  events    CalendarEvent[]
+
+  @@unique([workspaceId, userId, provider])
+  @@index([workspaceId])
+  @@map("email_accounts")
+}
+
+/// E-mail importado/enviado, vinculado a um contato e/ou oportunidade.
+model EmailMessage {
+  id            String        @id @default(cuid())
+  workspaceId   String        @map("workspace_id")
+  accountId     String?       @map("account_id")
+  externalId    String        @map("external_id")
+  threadId      String?       @map("thread_id")
+  direction     MailDirection
+  subject       String?
+  snippet       String?
+  fromEmail     String        @map("from_email")
+  toEmails      String[]      @default([]) @map("to_emails")
+  personId      String?       @map("person_id")
+  opportunityId String?       @map("opportunity_id")
+  sentAt        DateTime      @map("sent_at")
+  createdAt     DateTime      @default(now()) @map("created_at")
+
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  account     EmailAccount? @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  person      Person?       @relation(fields: [personId], references: [id], onDelete: SetNull)
+  opportunity Opportunity?  @relation(fields: [opportunityId], references: [id], onDelete: SetNull)
+
+  @@unique([accountId, externalId])
+  @@index([workspaceId])
+  @@index([personId, sentAt])
+  @@index([opportunityId, sentAt])
+  @@map("email_messages")
+}
+
+/// Evento de calendário importado/criado, vinculado a contato/oportunidade.
+model CalendarEvent {
+  id            String   @id @default(cuid())
+  workspaceId   String   @map("workspace_id")
+  accountId     String?  @map("account_id")
+  externalId    String   @map("external_id")
+  title         String
+  description   String?
+  startsAt      DateTime @map("starts_at")
+  endsAt        DateTime @map("ends_at")
+  attendees     String[] @default([])
+  personId      String?  @map("person_id")
+  opportunityId String?  @map("opportunity_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  account     EmailAccount? @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  person      Person?       @relation(fields: [personId], references: [id], onDelete: SetNull)
+  opportunity Opportunity?  @relation(fields: [opportunityId], references: [id], onDelete: SetNull)
+
+  @@unique([accountId, externalId])
+  @@index([workspaceId])
+  @@index([personId, startsAt])
+  @@index([opportunityId, startsAt])
+  @@map("calendar_events")
 }
 
 /// Meta de receita de um responsável num período (mês "2026-06" ou trimestre

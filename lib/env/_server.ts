@@ -27,6 +27,10 @@ const serverEnv = {
   // Escopos free: r_liteprofile, r_emailaddress, w_member_social.
   LINKEDIN_CLIENT_ID: process.env.LINKEDIN_CLIENT_ID || undefined,
   LINKEDIN_CLIENT_SECRET: process.env.LINKEDIN_CLIENT_SECRET || undefined,
+  // Microsoft (Outlook/Graph) — app registrado no Azure AD. Reusado para
+  // sincronização de e-mail/calendário (Gmail reusa GOOGLE_CLIENT_ID/SECRET).
+  MICROSOFT_CLIENT_ID: process.env.MICROSOFT_CLIENT_ID || undefined,
+  MICROSOFT_CLIENT_SECRET: process.env.MICROSOFT_CLIENT_SECRET || undefined,
   // Google Ads — token de desenvolvedor obtido no Google Ads API Center.
   // Reusa GOOGLE_CLIENT_ID/SECRET; adicione o escopo adwords no OAuth consent.
   GOOGLE_ADS_DEVELOPER_TOKEN:
@@ -67,6 +71,8 @@ const serverEnvSchema = z.object({
   TWITTER_CLIENT_SECRET: z.string().min(1).optional(),
   LINKEDIN_CLIENT_ID: z.string().min(1).optional(),
   LINKEDIN_CLIENT_SECRET: z.string().min(1).optional(),
+  MICROSOFT_CLIENT_ID: z.string().min(1).optional(),
+  MICROSOFT_CLIENT_SECRET: z.string().min(1).optional(),
   GOOGLE_ADS_DEVELOPER_TOKEN: z.string().min(1).optional(),
   SOCIAL_TOKEN_ENCRYPTION_KEY: z.string().min(1).optional(),
   S3_ENDPOINT: z.url().startsWith("http").optional(),
