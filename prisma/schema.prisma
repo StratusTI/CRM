@@ -677,6 +677,7 @@ model Report {
   filters     Json
   groupBy     String?   @map("group_by")
   sort        Json?
+  query       Json?
   position    Int       @default(0)
   createdById String    @map("created_by_id")
   updatedById String?   @map("updated_by_id")

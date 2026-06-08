@@ -1,6 +1,6 @@
 import type { Prisma, Report } from "@prisma/client";
 import { reportNotFound } from "@/src/errors/app-error";
-import { processReport, type Row } from "@/src/lib/report-data";
+import { type Row, type RowsByAlias, runQuery } from "@/src/lib/report-data";
 import { err, ok, type Result } from "@/src/lib/result";
 import { toReportDTO } from "@/src/mappers/report.mapper";
 import { ReportRepository } from "@/src/repositories/report.repository";
@@ -8,6 +8,7 @@ import type {
   CreateReportInput,
   ReportData,
   ReportDTO,
+  ReportQuery,
   ReportSource,
   UpdateReportInput,
 } from "@/src/schemas/report.schema";
@@ -46,6 +47,33 @@ async function fetchSourceRows(
   }
 }
 
+/** Query de fonte única (modo join, 1 dataset) a partir do input legado. */
+function legacyInputToQuery(input: CreateReportInput): ReportQuery {
+  return {
+    mode: "join",
+    datasets: [
+      { alias: input.source, source: input.source, filters: input.filters },
+    ],
+    joins: [],
+    columns: input.columns.map((c) => `${input.source}.${c}`),
+    group: input.groupBy
+      ? {
+          by: [`${input.source}.${input.groupBy}`],
+          aggregations: [{ fn: "count", alias: "count" }],
+        }
+      : undefined,
+    sort: input.sort
+      ? {
+          field:
+            input.sort.field === "count"
+              ? "count"
+              : `${input.source}.${input.sort.field}`,
+          direction: input.sort.direction,
+        }
+      : undefined,
+  };
+}
+
 async function loadInWorkspace(
   workspaceId: string,
   id: string,
@@ -71,6 +99,7 @@ export const ReportService = {
     });
     if (!ws.ok) return ws;
 
+    const query = input.query ?? legacyInputToQuery(input);
     const created = await ReportRepository.create({
       workspaceId: ws.value,
       createdById: userId,
@@ -80,6 +109,7 @@ export const ReportService = {
       filters: input.filters,
       groupBy: input.groupBy ?? null,
       sort: (input.sort ?? null) as Prisma.InputJsonValue | null,
+      query: query as Prisma.InputJsonValue,
     });
     if (!created.ok) return created;
     return ok(toReportDTO(created.value));
@@ -134,6 +164,9 @@ export const ReportService = {
       ...("sort" in input && {
         sort: (input.sort ?? null) as Prisma.InputJsonValue | null,
       }),
+      ...("query" in input && {
+        query: (input.query ?? null) as Prisma.InputJsonValue | null,
+      }),
     });
     if (!updated.ok) return updated;
     return ok(toReportDTO(updated.value));
@@ -172,15 +205,15 @@ export const ReportService = {
     if (!found.ok) return found;
     const report = toReportDTO(found.value);
 
-    const rows = await fetchSourceRows(userId, slug, report.source);
-    if (!rows.ok) return rows;
+    // Busca as linhas de cada dataset (uma vez por alias).
+    const rowsByAlias: RowsByAlias = {};
+    for (const dataset of report.query.datasets) {
+      if (rowsByAlias[dataset.alias]) continue;
+      const rows = await fetchSourceRows(userId, slug, dataset.source);
+      if (!rows.ok) return rows;
+      rowsByAlias[dataset.alias] = rows.value;
+    }
 
-    const processed = processReport(rows.value, {
-      columns: report.columns,
-      filters: report.filters,
-      groupBy: report.groupBy,
-      sort: report.sort,
-    });
-    return ok(processed);
+    return ok(runQuery(report.query, rowsByAlias));
   },
 };

@@ -4,16 +4,26 @@ import {
   ArrowLeft02Icon,
   Delete02Icon,
   Download04Icon,
+  PlusSignIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 import { toast } from "sonner";
 import {
+  type AvailableRelation,
+  availableRelations,
+  makeAlias,
+  outputColumns,
+  queryFields,
+  reconcile,
+} from "@/components/reports/query-helpers";
+import {
   REPORT_FIELDS,
   SOURCE_LABELS,
 } from "@/components/reports/report-fields";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -22,6 +32,7 @@ import {
   SelectTrigger,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
 import {
   deleteReport,
   exportReportUrl,
@@ -29,7 +40,25 @@ import {
   updateReport,
   useReport,
 } from "@/src/hooks/use-reports";
-import type { ReportData, ReportDTO } from "@/src/schemas/report.schema";
+import {
+  AGGREGATION_FNS,
+  type AggregationFn,
+  type JoinQuery,
+  REPORT_SOURCES,
+  type ReportData,
+  type ReportDTO,
+  type ReportQuery,
+  type ReportSource,
+  type UnionQuery,
+} from "@/src/schemas/report.schema";
+
+const AGG_LABELS: Record<AggregationFn, string> = {
+  count: "Contagem",
+  sum: "Soma",
+  avg: "Média",
+  min: "Mínimo",
+  max: "Máximo",
+};
 
 export function ReportBuilder({
   slug,
@@ -66,16 +95,21 @@ function ReportBuilderInner({
   initial: ReportDTO;
 }) {
   const router = useRouter();
-  const fields = REPORT_FIELDS[initial.source];
-
   const [name, setName] = React.useState(initial.name);
-  const [columns, setColumns] = React.useState<string[]>(initial.columns);
-  const [groupBy, setGroupBy] = React.useState<string>(initial.groupBy ?? "");
+  const [query, setQueryState] = React.useState<ReportQuery>(initial.query);
 
   const [data, setData] = React.useState<ReportData | null>(null);
   const [loadingData, setLoadingData] = React.useState(true);
   const [status, setStatus] = React.useState<"idle" | "saving" | "saved">(
     "idle",
+  );
+
+  const setQuery = React.useCallback(
+    (next: ReportQuery | ((q: ReportQuery) => ReportQuery)) =>
+      setQueryState((prev) =>
+        reconcile(typeof next === "function" ? next(prev) : next),
+      ),
+    [],
   );
 
   const refreshPreview = React.useCallback(async () => {
@@ -85,26 +119,23 @@ function ReportBuilderInner({
     setLoadingData(false);
   }, [slug, initial.id]);
 
-  // Preview inicial.
   React.useEffect(() => {
     refreshPreview();
   }, [refreshPreview]);
 
-  // Auto-save (debounce) sempre que a configuração muda — atualiza o preview
-  // depois de persistir. Pula a primeira renderização (estado == inicial).
+  // Auto-save (debounce) — persiste e atualiza o preview. Pula a 1ª renderização.
   const mounted = React.useRef(false);
   React.useEffect(() => {
     if (!mounted.current) {
       mounted.current = true;
       return;
     }
-    if (columns.length === 0) return; // schema exige ao menos uma coluna
+    if (!isSavable(query)) return;
     setStatus("saving");
     const timer = setTimeout(async () => {
       const res = await updateReport(slug, initial.id, {
         name: name.trim() || "Relatório sem título",
-        columns,
-        groupBy: groupBy || null,
+        query,
       });
       if (res.ok) {
         setStatus("saved");
@@ -115,13 +146,7 @@ function ReportBuilderInner({
       }
     }, 600);
     return () => clearTimeout(timer);
-  }, [name, columns, groupBy, slug, initial.id, refreshPreview]);
-
-  function toggleColumn(key: string) {
-    setColumns((prev) =>
-      prev.includes(key) ? prev.filter((c) => c !== key) : [...prev, key],
-    );
-  }
+  }, [name, query, slug, initial.id, refreshPreview]);
 
   async function handleDelete() {
     const r = await deleteReport(slug, initial.id);
@@ -132,8 +157,6 @@ function ReportBuilderInner({
       toast.error("Não foi possível excluir o relatório.");
     }
   }
-
-  const noColumns = columns.length === 0;
 
   return (
     <div className="flex h-full flex-col">
@@ -193,126 +216,827 @@ function ReportBuilderInner({
       </header>
 
       <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
-        {/* configuração */}
-        <div className="min-w-0 overflow-y-auto border-b lg:w-80 lg:shrink-0 lg:border-r lg:border-b-0">
+        <div className="min-w-0 overflow-y-auto border-b lg:w-96 lg:shrink-0 lg:border-r lg:border-b-0">
           <div className="flex flex-col gap-6 p-6">
-            <div className="flex flex-col gap-1.5">
-              <Label>Fonte</Label>
-              <span className="inline-flex w-fit items-center rounded-md bg-muted px-2.5 py-1 font-medium text-sm">
-                {SOURCE_LABELS[initial.source]}
-              </span>
-              <p className="text-muted-foreground text-xs">
-                A fonte é definida na criação e não pode ser alterada.
-              </p>
-            </div>
+            <ModeSection query={query} setQuery={setQuery} />
+            <DatasetsSection query={query} setQuery={setQuery} />
+            <ColumnsSection query={query} setQuery={setQuery} />
+            <GroupSection query={query} setQuery={setQuery} />
+            <SortSection query={query} setQuery={setQuery} />
+          </div>
+        </div>
 
-            <div className="flex flex-col gap-2">
-              <Label>Colunas</Label>
-              <div className="flex flex-wrap gap-1.5">
-                {fields.map((f) => (
+        <PreviewSection data={data} loading={loadingData} />
+      </div>
+    </div>
+  );
+}
+
+type SectionProps = {
+  query: ReportQuery;
+  setQuery: (next: ReportQuery | ((q: ReportQuery) => ReportQuery)) => void;
+};
+
+/* --------------------------------- Modo --------------------------------- */
+
+function ModeSection({ query, setQuery }: SectionProps) {
+  function switchTo(mode: "join" | "union") {
+    if (mode === query.mode) return;
+    setQuery((q) => (mode === "join" ? toJoin(q) : toUnion(q)));
+  }
+  return (
+    <div className="flex flex-col gap-2">
+      <Label>Modo</Label>
+      <div className="grid grid-cols-2 gap-1.5">
+        <ModeChip
+          active={query.mode === "join"}
+          title="Mesclar (JOIN)"
+          desc="Enriquece com colunas de fontes relacionadas"
+          onClick={() => switchTo("join")}
+        />
+        <ModeChip
+          active={query.mode === "union"}
+          title="Empilhar (UNION)"
+          desc="Junta registros de fontes diferentes"
+          onClick={() => switchTo("union")}
+        />
+      </div>
+    </div>
+  );
+}
+
+function ModeChip({
+  active,
+  title,
+  desc,
+  onClick,
+}: {
+  active: boolean;
+  title: string;
+  desc: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex flex-col gap-0.5 rounded-lg border p-2.5 text-left transition-colors ${
+        active ? "border-primary bg-primary/10" : "hover:bg-muted/60"
+      }`}
+    >
+      <span className="font-medium text-sm">{title}</span>
+      <span className="text-muted-foreground text-xs">{desc}</span>
+    </button>
+  );
+}
+
+/* ------------------------------- Fontes -------------------------------- */
+
+function DatasetsSection({ query, setQuery }: SectionProps) {
+  return (
+    <div className="flex flex-col gap-2">
+      <Label>Fontes</Label>
+      <div className="flex flex-col gap-1.5">
+        {query.datasets.map((ds, i) => (
+          <div
+            key={ds.alias}
+            className="flex items-center justify-between rounded-md border px-2.5 py-1.5"
+          >
+            <span className="text-sm">
+              {SOURCE_LABELS[ds.source]}
+              {i === 0 && (
+                <span className="ml-1.5 text-muted-foreground text-xs">
+                  base
+                </span>
+              )}
+            </span>
+            {i > 0 && (
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                aria-label="Remover fonte"
+                onClick={() => setQuery((q) => removeDataset(q, ds.alias))}
+              >
+                <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} />
+              </Button>
+            )}
+          </div>
+        ))}
+      </div>
+      {query.mode === "join" ? (
+        <AddJoinDataset query={query} setQuery={setQuery} />
+      ) : (
+        <AddUnionDataset query={query} setQuery={setQuery} />
+      )}
+    </div>
+  );
+}
+
+function AddJoinDataset({
+  query,
+  setQuery,
+}: {
+  query: JoinQuery;
+  setQuery: SectionProps["setQuery"];
+}) {
+  const relations = availableRelations(query);
+  if (query.datasets.length >= 5 || relations.length === 0) return null;
+  return (
+    <Select
+      value="__add__"
+      onValueChange={(v) => {
+        const rel = relations[Number(v)];
+        if (rel) setQuery((q) => addJoinDataset(q as JoinQuery, rel));
+      }}
+    >
+      <SelectTrigger className="w-full">
+        <span className="flex items-center gap-1.5 text-muted-foreground">
+          <HugeiconsIcon icon={PlusSignIcon} strokeWidth={2} size={14} />
+          Mesclar outra fonte
+        </span>
+      </SelectTrigger>
+      <SelectContent>
+        {relations.map((rel, i) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: lista derivada e estável
+          <SelectItem key={i} value={String(i)}>
+            {rel.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
+function AddUnionDataset({
+  query,
+  setQuery,
+}: {
+  query: UnionQuery;
+  setQuery: SectionProps["setQuery"];
+}) {
+  if (query.datasets.length >= 5) return null;
+  return (
+    <Select
+      value="__add__"
+      onValueChange={(v) =>
+        setQuery((q) => addUnionDataset(q as UnionQuery, v as ReportSource))
+      }
+    >
+      <SelectTrigger className="w-full">
+        <span className="flex items-center gap-1.5 text-muted-foreground">
+          <HugeiconsIcon icon={PlusSignIcon} strokeWidth={2} size={14} />
+          Empilhar outra fonte
+        </span>
+      </SelectTrigger>
+      <SelectContent>
+        {REPORT_SOURCES.map((s) => (
+          <SelectItem key={s} value={s}>
+            {SOURCE_LABELS[s]}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
+/* ------------------------------- Colunas ------------------------------- */
+
+function ColumnsSection({ query, setQuery }: SectionProps) {
+  if (query.mode === "union") {
+    return <UnionColumns query={query} setQuery={setQuery} />;
+  }
+  return (
+    <div className="flex flex-col gap-3">
+      <Label>Colunas</Label>
+      {query.datasets.map((ds) => (
+        <div key={ds.alias} className="flex flex-col gap-1.5">
+          {query.datasets.length > 1 && (
+            <span className="text-muted-foreground text-xs">
+              {SOURCE_LABELS[ds.source]}
+            </span>
+          )}
+          <div className="flex flex-wrap gap-1.5">
+            {REPORT_FIELDS[ds.source].map((f) => {
+              const key = `${ds.alias}.${f.key}`;
+              const selected = query.columns.includes(key);
+              return (
+                <button
+                  type="button"
+                  key={key}
+                  onClick={() =>
+                    setQuery((q) => toggleJoinColumn(q as JoinQuery, key))
+                  }
+                  className={`rounded-full border px-2.5 py-1 text-xs transition-colors ${
+                    selected
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:bg-muted/60"
+                  }`}
+                >
+                  {f.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+      {query.columns.length === 0 && (
+        <p className="text-destructive text-xs">
+          Selecione ao menos uma coluna.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function UnionColumns({
+  query,
+  setQuery,
+}: {
+  query: UnionQuery;
+  setQuery: SectionProps["setQuery"];
+}) {
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <Label>Colunas mescladas</Label>
+        <Button
+          size="icon-sm"
+          variant="ghost"
+          aria-label="Adicionar coluna"
+          onClick={() => setQuery((q) => addUnionColumn(q as UnionQuery))}
+        >
+          <HugeiconsIcon icon={PlusSignIcon} strokeWidth={2} />
+        </Button>
+      </div>
+      <div className="flex flex-col gap-3">
+        {query.columns.map((col, i) => (
+          <div
+            // biome-ignore lint/suspicious/noArrayIndexKey: colunas sem id estável
+            key={i}
+            className="flex flex-col gap-1.5 rounded-md border p-2.5"
+          >
+            <div className="flex items-center gap-1.5">
+              <Input
+                value={col.label}
+                placeholder="Rótulo"
+                className="h-8"
+                onChange={(e) =>
+                  setQuery((q) =>
+                    updateUnionColumnLabel(q as UnionQuery, i, e.target.value),
+                  )
+                }
+              />
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                aria-label="Remover coluna"
+                onClick={() =>
+                  setQuery((q) => removeUnionColumn(q as UnionQuery, i))
+                }
+              >
+                <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} />
+              </Button>
+            </div>
+            {query.datasets.map((ds) => (
+              <div key={ds.alias} className="flex items-center gap-2">
+                <span className="w-24 shrink-0 truncate text-muted-foreground text-xs">
+                  {SOURCE_LABELS[ds.source]}
+                </span>
+                <Select
+                  value={col.fields[ds.alias] ?? "__none__"}
+                  onValueChange={(v) =>
+                    setQuery((q) =>
+                      setUnionColumnField(
+                        q as UnionQuery,
+                        i,
+                        ds.alias,
+                        v === "__none__" ? null : v,
+                      ),
+                    )
+                  }
+                >
+                  <SelectTrigger className="h-8 flex-1">
+                    <span>
+                      {col.fields[ds.alias]
+                        ? (REPORT_FIELDS[ds.source].find(
+                            (f) => f.key === col.fields[ds.alias],
+                          )?.label ?? col.fields[ds.alias])
+                        : "—"}
+                    </span>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">—</SelectItem>
+                    {REPORT_FIELDS[ds.source].map((f) => (
+                      <SelectItem key={f.key} value={f.key}>
+                        {f.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+      <div className="flex items-center justify-between">
+        <span className="text-sm">Incluir coluna de origem</span>
+        <Switch
+          checked={query.includeSource}
+          onCheckedChange={(c) =>
+            setQuery((q) => ({ ...(q as UnionQuery), includeSource: c }))
+          }
+          aria-label="Incluir coluna de origem"
+        />
+      </div>
+    </div>
+  );
+}
+
+/* --------------------------- Agrupar & agregar -------------------------- */
+
+function GroupSection({ query, setQuery }: SectionProps) {
+  const fields = queryFields(query);
+  const grouped = Boolean(query.group);
+
+  function toggle(on: boolean) {
+    setQuery((q) => {
+      if (!on) return { ...q, group: undefined };
+      const first = queryFields(q)[0];
+      if (!first) return q;
+      return {
+        ...q,
+        group: {
+          by: [first.key],
+          aggregations: [{ fn: "count", alias: "Contagem" }],
+        },
+      };
+    });
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center justify-between">
+        <Label>Agrupar e agregar</Label>
+        <Switch
+          checked={grouped}
+          onCheckedChange={toggle}
+          aria-label="Agrupar e agregar"
+        />
+      </div>
+
+      {query.group && (
+        <div className="flex flex-col gap-3 rounded-md border p-2.5">
+          <div className="flex flex-col gap-1.5">
+            <span className="text-muted-foreground text-xs">Agrupar por</span>
+            <div className="flex flex-wrap gap-1.5">
+              {fields.map((f) => {
+                const selected = query.group?.by.includes(f.key);
+                return (
                   <button
                     type="button"
                     key={f.key}
-                    onClick={() => toggleColumn(f.key)}
+                    onClick={() => setQuery((q) => toggleGroupBy(q, f.key))}
                     className={`rounded-full border px-2.5 py-1 text-xs transition-colors ${
-                      columns.includes(f.key)
+                      selected
                         ? "border-primary bg-primary/10 text-primary"
                         : "text-muted-foreground hover:bg-muted/60"
                     }`}
                   >
                     {f.label}
                   </button>
-                ))}
-              </div>
-              {noColumns ? (
-                <p className="text-destructive text-xs">
-                  Selecione ao menos uma coluna.
-                </p>
-              ) : null}
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <Label>Agrupar por (opcional)</Label>
-              <Select
-                value={groupBy || "__none__"}
-                onValueChange={(v) =>
-                  setGroupBy(!v || v === "__none__" ? "" : v)
-                }
-              >
-                <SelectTrigger className="w-full">
-                  <span>
-                    {groupBy
-                      ? (fields.find((f) => f.key === groupBy)?.label ??
-                        groupBy)
-                      : "Não agrupar"}
-                  </span>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">Não agrupar</SelectItem>
-                  {fields.map((f) => (
-                    <SelectItem key={f.key} value={f.key}>
-                      {f.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                );
+              })}
             </div>
           </div>
-        </div>
 
-        {/* preview */}
-        <div className="min-w-0 flex-1 overflow-auto bg-muted/30">
-          <div className="flex flex-col gap-3 p-6">
+          <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
-              <p className="text-muted-foreground text-xs uppercase tracking-wide">
-                Pré-visualização
-              </p>
-              <p className="text-muted-foreground text-xs tabular-nums">
-                {data?.total ?? 0} registros
-              </p>
+              <span className="text-muted-foreground text-xs">Agregações</span>
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                aria-label="Adicionar agregação"
+                onClick={() => setQuery((q) => addAggregation(q))}
+              >
+                <HugeiconsIcon icon={PlusSignIcon} strokeWidth={2} />
+              </Button>
             </div>
-
-            {loadingData ? (
-              <Skeleton className="h-64 w-full" />
-            ) : !data || data.rows.length === 0 ? (
-              <p className="rounded-lg border border-dashed bg-card py-16 text-center text-muted-foreground text-sm">
-                Sem dados para a configuração atual.
-              </p>
-            ) : (
-              <div className="overflow-auto rounded-lg border bg-card">
-                <table className="w-full text-sm">
-                  <thead className="bg-muted/40 text-muted-foreground text-xs">
-                    <tr>
-                      {data.columns.map((col) => (
-                        <th
-                          key={col}
-                          className="px-3 py-2 text-left font-medium"
-                        >
-                          {col}
-                        </th>
+            {query.group.aggregations.map((agg, i) => {
+              const numeric = fields.filter((f) => f.type === "number");
+              return (
+                // biome-ignore lint/suspicious/noArrayIndexKey: agregações sem id estável
+                <div key={i} className="flex items-center gap-1.5">
+                  <Select
+                    value={agg.fn}
+                    onValueChange={(v) =>
+                      setQuery((q) => setAggFn(q, i, v as AggregationFn))
+                    }
+                  >
+                    <SelectTrigger className="h-8 w-28 shrink-0">
+                      <span>{AGG_LABELS[agg.fn]}</span>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {AGGREGATION_FNS.map((fn) => (
+                        <SelectItem key={fn} value={fn}>
+                          {AGG_LABELS[fn]}
+                        </SelectItem>
                       ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.rows.slice(0, 100).map((row, i) => (
-                      // biome-ignore lint/suspicious/noArrayIndexKey: linhas sem id estável
-                      <tr key={i} className="border-t">
-                        {data.columns.map((col) => (
-                          <td key={col} className="px-3 py-1.5">
-                            {formatCell(row[col])}
-                          </td>
+                    </SelectContent>
+                  </Select>
+                  {agg.fn !== "count" && (
+                    <Select
+                      value={agg.field ?? "__none__"}
+                      onValueChange={(v) =>
+                        setQuery((q) =>
+                          setAggField(
+                            q,
+                            i,
+                            v && v !== "__none__" ? v : undefined,
+                          ),
+                        )
+                      }
+                    >
+                      <SelectTrigger className="h-8 flex-1">
+                        <span>
+                          {agg.field
+                            ? (numeric.find((f) => f.key === agg.field)
+                                ?.label ?? "campo")
+                            : "campo"}
+                        </span>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {numeric.map((f) => (
+                          <SelectItem key={f.key} value={f.key}>
+                            {f.label}
+                          </SelectItem>
                         ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                      </SelectContent>
+                    </Select>
+                  )}
+                  <Input
+                    value={agg.alias}
+                    placeholder="Rótulo"
+                    className="h-8 w-24"
+                    onChange={(e) =>
+                      setQuery((q) => setAggAlias(q, i, e.target.value))
+                    }
+                  />
+                  <Button
+                    size="icon-sm"
+                    variant="ghost"
+                    aria-label="Remover agregação"
+                    onClick={() => setQuery((q) => removeAggregation(q, i))}
+                  >
+                    <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} />
+                  </Button>
+                </div>
+              );
+            })}
           </div>
         </div>
+      )}
+    </div>
+  );
+}
+
+/* ------------------------------ Ordenação ------------------------------ */
+
+function SortSection({ query, setQuery }: SectionProps) {
+  const cols = outputColumns(query);
+  const current = query.sort;
+  return (
+    <div className="flex flex-col gap-1.5">
+      <Label>Ordenar por (opcional)</Label>
+      <div className="flex items-center gap-1.5">
+        <Select
+          value={current?.field ?? "__none__"}
+          onValueChange={(v) =>
+            setQuery(
+              (q) =>
+                ({
+                  ...q,
+                  sort:
+                    v && v !== "__none__"
+                      ? { field: v, direction: current?.direction ?? "asc" }
+                      : undefined,
+                }) as ReportQuery,
+            )
+          }
+        >
+          <SelectTrigger className="flex-1">
+            <span>
+              {current
+                ? (cols.find((c) => c.key === current.field)?.label ??
+                  current.field)
+                : "Não ordenar"}
+            </span>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__none__">Não ordenar</SelectItem>
+            {cols.map((c) => (
+              <SelectItem key={c.key} value={c.key}>
+                {c.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {current && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() =>
+              setQuery((q) => ({
+                ...q,
+                sort: {
+                  field: current.field,
+                  direction: current.direction === "asc" ? "desc" : "asc",
+                },
+              }))
+            }
+          >
+            {current.direction === "asc" ? "↑ Asc" : "↓ Desc"}
+          </Button>
+        )}
       </div>
     </div>
   );
+}
+
+/* ------------------------------ Preview -------------------------------- */
+
+function PreviewSection({
+  data,
+  loading,
+}: {
+  data: ReportData | null;
+  loading: boolean;
+}) {
+  return (
+    <div className="min-w-0 flex-1 overflow-auto bg-muted/30">
+      <div className="flex flex-col gap-3 p-6">
+        <div className="flex items-center justify-between">
+          <p className="text-muted-foreground text-xs uppercase tracking-wide">
+            Pré-visualização
+          </p>
+          <p className="text-muted-foreground text-xs tabular-nums">
+            {data?.total ?? 0} registros
+          </p>
+        </div>
+
+        {loading ? (
+          <Skeleton className="h-64 w-full" />
+        ) : !data || data.rows.length === 0 ? (
+          <p className="rounded-lg border border-dashed bg-card py-16 text-center text-muted-foreground text-sm">
+            Sem dados para a configuração atual.
+          </p>
+        ) : (
+          <div className="overflow-auto rounded-lg border bg-card">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/40 text-muted-foreground text-xs">
+                <tr>
+                  {data.columns.map((col) => (
+                    <th
+                      key={col.key}
+                      className="px-3 py-2 text-left font-medium"
+                    >
+                      {col.label}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {data.rows.slice(0, 100).map((row, i) => (
+                  // biome-ignore lint/suspicious/noArrayIndexKey: linhas sem id estável
+                  <tr key={i} className="border-t">
+                    {data.columns.map((col) => (
+                      <td key={col.key} className="px-3 py-1.5">
+                        {formatCell(row[col.key])}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ----------------------------- mutadores -------------------------------- */
+
+function isSavable(query: ReportQuery): boolean {
+  if (query.mode === "join") return query.columns.length > 0;
+  return (
+    query.datasets.length >= 2 &&
+    query.columns.length > 0 &&
+    query.columns.every((c) => Object.keys(c.fields).length > 0)
+  );
+}
+
+function toJoin(q: ReportQuery): JoinQuery {
+  if (q.mode === "join") return q;
+  const base = q.datasets[0];
+  const first = REPORT_FIELDS[base.source][0]?.key;
+  return {
+    mode: "join",
+    datasets: q.datasets,
+    joins: [],
+    columns: first ? [`${base.alias}.${first}`] : [],
+    group: undefined,
+    sort: undefined,
+  };
+}
+
+function toUnion(q: ReportQuery): UnionQuery {
+  if (q.mode === "union") return q;
+  const base = q.datasets[0];
+  const field = REPORT_FIELDS[base.source][0];
+  return {
+    mode: "union",
+    datasets: q.datasets,
+    columns: field
+      ? [
+          {
+            key: field.key,
+            label: field.label,
+            fields: { [base.alias]: field.key },
+          },
+        ]
+      : [],
+    includeSource: false,
+    group: undefined,
+    sort: undefined,
+  };
+}
+
+function removeDataset(q: ReportQuery, alias: string): ReportQuery {
+  const datasets = q.datasets.filter((d) => d.alias !== alias);
+  if (q.mode === "join") {
+    return {
+      ...q,
+      datasets,
+      joins: q.joins.filter(
+        (j) => j.leftAlias !== alias && j.rightAlias !== alias,
+      ),
+      columns: q.columns.filter((c) => !c.startsWith(`${alias}.`)),
+    };
+  }
+  return {
+    ...q,
+    datasets,
+    columns: q.columns.map((c) => {
+      const { [alias]: _drop, ...rest } = c.fields;
+      return { ...c, fields: rest };
+    }),
+  };
+}
+
+function addJoinDataset(q: JoinQuery, rel: AvailableRelation): JoinQuery {
+  const alias = makeAlias(rel.to, new Set(q.datasets.map((d) => d.alias)));
+  return {
+    ...q,
+    datasets: [...q.datasets, { alias, source: rel.to, filters: [] }],
+    joins: [
+      ...q.joins,
+      {
+        leftAlias: rel.fromAlias,
+        rightAlias: alias,
+        leftField: rel.field,
+        rightField: rel.toField,
+        type: "left",
+      },
+    ],
+  };
+}
+
+function addUnionDataset(q: UnionQuery, source: ReportSource): UnionQuery {
+  const alias = makeAlias(source, new Set(q.datasets.map((d) => d.alias)));
+  return { ...q, datasets: [...q.datasets, { alias, source, filters: [] }] };
+}
+
+function toggleJoinColumn(q: JoinQuery, key: string): JoinQuery {
+  return {
+    ...q,
+    columns: q.columns.includes(key)
+      ? q.columns.filter((c) => c !== key)
+      : [...q.columns, key],
+  };
+}
+
+function addUnionColumn(q: UnionQuery): UnionQuery {
+  return {
+    ...q,
+    columns: [
+      ...q.columns,
+      { key: `col_${q.columns.length + 1}`, label: "Nova coluna", fields: {} },
+    ],
+  };
+}
+
+function removeUnionColumn(q: UnionQuery, i: number): UnionQuery {
+  return { ...q, columns: q.columns.filter((_, idx) => idx !== i) };
+}
+
+function updateUnionColumnLabel(
+  q: UnionQuery,
+  i: number,
+  label: string,
+): UnionQuery {
+  const key =
+    label
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_|_$/g, "") || `col_${i + 1}`;
+  return {
+    ...q,
+    columns: q.columns.map((c, idx) => (idx === i ? { ...c, label, key } : c)),
+  };
+}
+
+function setUnionColumnField(
+  q: UnionQuery,
+  i: number,
+  alias: string,
+  field: string | null,
+): UnionQuery {
+  return {
+    ...q,
+    columns: q.columns.map((c, idx) => {
+      if (idx !== i) return c;
+      const fields = { ...c.fields };
+      if (field) fields[alias] = field;
+      else delete fields[alias];
+      return { ...c, fields };
+    }),
+  };
+}
+
+function withGroup(
+  q: ReportQuery,
+  fn: (
+    g: NonNullable<ReportQuery["group"]>,
+  ) => NonNullable<ReportQuery["group"]>,
+): ReportQuery {
+  if (!q.group) return q;
+  return { ...q, group: fn(q.group) } as ReportQuery;
+}
+
+function toggleGroupBy(q: ReportQuery, key: string): ReportQuery {
+  return withGroup(q, (g) => ({
+    ...g,
+    by: g.by.includes(key) ? g.by.filter((k) => k !== key) : [...g.by, key],
+  }));
+}
+
+function addAggregation(q: ReportQuery): ReportQuery {
+  return withGroup(q, (g) => ({
+    ...g,
+    aggregations: [
+      ...g.aggregations,
+      { fn: "count", alias: `Agg ${g.aggregations.length + 1}` },
+    ],
+  }));
+}
+
+function removeAggregation(q: ReportQuery, i: number): ReportQuery {
+  return withGroup(q, (g) => ({
+    ...g,
+    aggregations: g.aggregations.filter((_, idx) => idx !== i),
+  }));
+}
+
+function setAggFn(q: ReportQuery, i: number, fn: AggregationFn): ReportQuery {
+  return withGroup(q, (g) => ({
+    ...g,
+    aggregations: g.aggregations.map((a, idx) =>
+      idx === i ? { ...a, fn } : a,
+    ),
+  }));
+}
+
+function setAggField(
+  q: ReportQuery,
+  i: number,
+  field: string | undefined,
+): ReportQuery {
+  return withGroup(q, (g) => ({
+    ...g,
+    aggregations: g.aggregations.map((a, idx) =>
+      idx === i ? { ...a, field } : a,
+    ),
+  }));
+}
+
+function setAggAlias(q: ReportQuery, i: number, alias: string): ReportQuery {
+  return withGroup(q, (g) => ({
+    ...g,
+    aggregations: g.aggregations.map((a, idx) =>
+      idx === i ? { ...a, alias } : a,
+    ),
+  }));
 }
 
 function formatCell(value: unknown): string {

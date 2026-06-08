@@ -12,6 +12,7 @@ export type CreateReportData = {
   filters: Prisma.InputJsonValue;
   groupBy: string | null;
   sort: Prisma.InputJsonValue | null;
+  query: Prisma.InputJsonValue | null;
 };
 
 export type UpdateReportData = {
@@ -21,19 +22,21 @@ export type UpdateReportData = {
   filters?: Prisma.InputJsonValue;
   groupBy?: string | null;
   sort?: Prisma.InputJsonValue | null;
+  query?: Prisma.InputJsonValue | null;
 };
 
 /** Acesso a dados de relatório. Sem regra de negócio — só Prisma. */
 export const ReportRepository = {
   async create(data: CreateReportData): Promise<Result<Report>> {
     try {
-      const { workspaceId, createdById, sort, ...fields } = data;
+      const { workspaceId, createdById, sort, query, ...fields } = data;
       const report = await prisma.report.create({
         data: {
           ...fields,
           workspaceId,
           createdById,
           sort: sort ?? Prisma.JsonNull,
+          query: query ?? Prisma.JsonNull,
         },
       });
       return ok(report);
@@ -65,12 +68,13 @@ export const ReportRepository = {
 
   async update(id: string, data: UpdateReportData): Promise<Result<Report>> {
     try {
-      const { sort, ...rest } = data;
+      const { sort, query, ...rest } = data;
       const report = await prisma.report.update({
         where: { id },
         data: {
           ...rest,
           ...("sort" in data ? { sort: sort ?? Prisma.JsonNull } : {}),
+          ...("query" in data ? { query: query ?? Prisma.JsonNull } : {}),
         },
       });
       return ok(report);
