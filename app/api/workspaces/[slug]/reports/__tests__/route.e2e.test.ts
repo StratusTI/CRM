@@ -70,7 +70,10 @@ describe("/api/workspaces/[slug]/reports (e2e)", () => {
     expect(dataRes.status).toBe(200);
     const data = (await dataRes.json()).data;
     expect(data.total).toBe(1);
-    expect(data.rows[0]).toMatchObject({ name: "Deal A", amount: 1000 });
+    expect(data.rows[0]).toMatchObject({
+      "opportunities.name": "Deal A",
+      "opportunities.amount": 1000,
+    });
 
     // export CSV
     const csvRes = await EXPORT(getReq(), idCtx(workspace.slug, report.id));
@@ -113,7 +116,7 @@ describe("/api/workspaces/[slug]/reports (e2e)", () => {
     const data = (await dataRes.json()).data;
     expect(data.grouped).toBe(true);
     const wpp = data.rows.find(
-      (r: { source: string }) => r.source === "WhatsApp",
+      (r: Record<string, unknown>) => r["opportunities.source"] === "WhatsApp",
     );
     expect(wpp.count).toBe(2);
   });

@@ -17,11 +17,16 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
   const result = await ReportService.getData(session.value.user.id, slug, id);
   if (!result.ok) return handleError(result.error);
 
-  const { columns, rows } = result.value;
+  // `toCsv`/`toSpreadsheetML` usam a coluna como cabeçalho e como chave da linha,
+  // então remapeamos as linhas para serem indexadas pelo rótulo amigável.
+  const headers = result.value.columns.map((c) => c.label);
+  const rows = result.value.rows.map((row) =>
+    Object.fromEntries(result.value.columns.map((c) => [c.label, row[c.key]])),
+  );
   const format = request.nextUrl.searchParams.get("format");
 
   if (format === "xlsx" || format === "excel") {
-    const body = toSpreadsheetML(columns, rows);
+    const body = toSpreadsheetML(headers, rows);
     return new Response(body, {
       status: 200,
       headers: {
@@ -31,7 +36,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     });
   }
 
-  const body = toCsv(columns, rows);
+  const body = toCsv(headers, rows);
   return new Response(body, {
     status: 200,
     headers: {
