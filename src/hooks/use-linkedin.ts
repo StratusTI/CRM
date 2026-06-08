@@ -37,16 +37,12 @@ async function getJson<T>(
   }
 }
 
-async function postJson<T>(
+async function postForm<T>(
   url: string,
-  body: unknown,
+  body: FormData,
 ): Promise<{ ok: true; data: T } | { ok: false; error: LinkedInError }> {
   try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
+    const response = await fetch(url, { method: "POST", body });
     const json = (await response.json()) as ApiResponse<T>;
     if (!response.ok || !json.success || json.data === undefined) {
       return {
@@ -87,11 +83,17 @@ export function useLinkedIn(slug: string) {
   }, [load]);
 
   const publish = useCallback(
-    async (text: string): Promise<{ ok: boolean; error?: LinkedInError }> => {
+    async (
+      text: string,
+      image?: File | null,
+    ): Promise<{ ok: boolean; error?: LinkedInError }> => {
       setIsPublishing(true);
-      const result = await postJson<{ postUrn: string }>(
+      const form = new FormData();
+      form.append("text", text);
+      if (image) form.append("image", image);
+      const result = await postForm<{ postUrn: string }>(
         `${BASE(slug)}/publish`,
-        { text },
+        form,
       );
       setIsPublishing(false);
       if (result.ok) return { ok: true };

@@ -38,6 +38,7 @@ export const LinkedInService = {
     userId: string,
     slug: string,
     input: LinkedInPublishInput,
+    image?: { bytes: ArrayBuffer; contentType: string } | null,
   ): Promise<Result<LinkedInPublishOutput>> {
     const fresh = await getFreshAccessToken(userId, slug, "LINKEDIN");
     if (!fresh.ok) return fresh;
@@ -51,6 +52,6 @@ export const LinkedInService = {
     }
 
     const authorUrn = `urn:li:person:${personId}`;
-    return publishPost(fresh.value.accessToken, authorUrn, input.text);
+    return publishPost(fresh.value.accessToken, authorUrn, input.text, image);
   },
 };

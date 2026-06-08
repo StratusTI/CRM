@@ -34,30 +34,8 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   const userId = session.value.user.id;
   const platform = parsePlatformSlug(platformSlug);
 
-  /* --------------------------------- LinkedIn ------------------------------- */
-  // LinkedIn envia JSON (não multipart), portanto é tratado antes do FormData.
-  if (platform === "LINKEDIN") {
-    let body: unknown;
-    try {
-      body = await request.json();
-    } catch {
-      return handleError(badRequest("Corpo JSON inválido"));
-    }
-    const parsed = LinkedInPublishInputSchema.safeParse(body);
-    if (!parsed.success) {
-      return handleError(
-        validationError(
-          "Dados da publicação inválidos",
-          z.flattenError(parsed.error),
-        ),
-      );
-    }
-    const result = await LinkedInService.publish(userId, slug, parsed.data);
-    if (!result.ok) return handleError(result.error);
-    return successResponse(result.value, 201);
-  }
-
   if (
+    platform !== "LINKEDIN" &&
     platform !== "YOUTUBE" &&
     platform !== "FACEBOOK" &&
     platform !== "INSTAGRAM" &&
@@ -231,6 +209,44 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       slug,
       parsedIg.data,
       media,
+    );
+    if (!result.ok) return handleError(result.error);
+    return successResponse(result.value, 201);
+  }
+
+  /* --------------------------------- LinkedIn ------------------------------- */
+  if (platform === "LINKEDIN") {
+    const parsed = LinkedInPublishInputSchema.safeParse({
+      text: form.get("text") ?? undefined,
+    });
+    if (!parsed.success) {
+      return handleError(
+        validationError(
+          "Dados da publicação inválidos",
+          z.flattenError(parsed.error),
+        ),
+      );
+    }
+
+    const imageField = form.get("image");
+    let image: { bytes: ArrayBuffer; contentType: string } | null = null;
+    if (imageField instanceof File && imageField.size > 0) {
+      if (imageField.size > MAX_IMAGE_BYTES) {
+        return handleError(
+          badRequest("Imagem excede o tamanho máximo (10 MB)"),
+        );
+      }
+      image = {
+        bytes: await imageField.arrayBuffer(),
+        contentType: imageField.type || "image/jpeg",
+      };
+    }
+
+    const result = await LinkedInService.publish(
+      userId,
+      slug,
+      parsed.data,
+      image,
     );
     if (!result.ok) return handleError(result.error);
     return successResponse(result.value, 201);

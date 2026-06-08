@@ -210,9 +210,12 @@ async function publishTarget(
       return r.ok ? ok({ externalId: r.value.tweetId }) : r;
     }
     case "LINKEDIN": {
-      const r = await LinkedInService.publish(ctx.userId, ctx.slug, {
-        text: ctx.content,
-      });
+      const r = await LinkedInService.publish(
+        ctx.userId,
+        ctx.slug,
+        { text: ctx.content },
+        ctx.image,
+      );
       return r.ok ? ok({ externalId: r.value.postUrn }) : r;
     }
     case "TIKTOK": {

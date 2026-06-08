@@ -73,6 +73,7 @@ describe("LinkedInService.publish", () => {
       "ACCESS",
       "urn:li:person:abc",
       "olá",
+      undefined,
     );
   });
 });
