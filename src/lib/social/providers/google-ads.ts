@@ -107,8 +107,16 @@ export const googleAdsProvider: SocialProvider = {
 
     // Nenhuma anunciante direta: busca a primeira sub-conta não-gerente em cada MCC.
     // Armazena como "managerId|subAccountId" para o client usar login-customer-id.
+    // Query enxuta de propósito: ORDER BY customer_client.level e filtros por
+    // status davam 400 (level não é sortable); filtramos/escolhemos em código.
     type ClientRow = {
-      results?: { customerClient?: { id?: string; descriptiveName?: string } }[];
+      results?: {
+        customerClient?: {
+          id?: string;
+          descriptiveName?: string;
+          status?: string;
+        };
+      }[];
     };
     for (const manager of managers) {
       const clientsRes = await fetch(`${base}/customers/${manager.id}/googleAds:search`, {
@@ -120,18 +128,24 @@ export const googleAdsProvider: SocialProvider = {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          query: "SELECT customer_client.id, customer_client.descriptive_name, customer_client.manager, customer_client.status FROM customer_client WHERE customer_client.manager = FALSE AND customer_client.status = 'ENABLED' ORDER BY customer_client.level ASC LIMIT 5",
+          query: "SELECT customer_client.id, customer_client.descriptive_name, customer_client.status FROM customer_client WHERE customer_client.manager = FALSE LIMIT 50",
         }),
       }).catch(() => null);
 
-      const clientsBody = clientsRes?.ok ? await clientsRes.json().catch(() => ({})) : {};
-      console.log("[google-ads/fetchAccount] sub-contas de", manager.id, "status:", clientsRes?.status, JSON.stringify(clientsBody).slice(0, 600));
-      const firstClient = (clientsBody as ClientRow).results?.[0]?.customerClient;
+      // Loga o corpo SEMPRE (inclusive em erro) para diagnosticar 4xx do Google.
+      const rawBody = clientsRes ? await clientsRes.text().catch(() => "") : "";
+      console.log("[google-ads/fetchAccount] sub-contas de", manager.id, "status:", clientsRes?.status, rawBody.slice(0, 600));
+      if (!clientsRes?.ok) continue;
 
-      if (firstClient?.id) {
+      const clients = (JSON.parse(rawBody || "{}") as ClientRow).results ?? [];
+      // Prefere uma sub-conta ENABLED; se nenhuma vier marcada, aceita a primeira.
+      const enabled = clients.find((r) => r.customerClient?.status === "ENABLED");
+      const chosen = (enabled ?? clients[0])?.customerClient;
+
+      if (chosen?.id) {
         return ok({
-          externalId: `${manager.id}|${firstClient.id}`,
-          name: firstClient.descriptiveName ?? manager.name,
+          externalId: `${manager.id}|${chosen.id}`,
+          name: chosen.descriptiveName ?? manager.name,
         });
       }
     }
