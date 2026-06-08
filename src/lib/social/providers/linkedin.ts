@@ -4,12 +4,12 @@ import { expiresInToDate, getJson, postForm } from "./http";
 import type { SocialAccount, SocialProvider, TokenSet } from "./types";
 
 /**
- * LinkedIn OAuth 2.0 (Authorization Code Flow — conta free).
- * Escopos disponíveis sem partnership: r_liteprofile, r_emailaddress,
- * w_member_social. Tokens: access 60d, refresh 365d (Standard Access).
+ * LinkedIn OAuth 2.0 (Authorization Code Flow — OpenID Connect).
+ * Escopos: openid, profile, email (OIDC) + w_member_social (postagem).
+ * Tokens: access 60d, refresh 365d (Standard Access).
  * Redirect URI a registrar: .../api/social/callback/linkedin
  */
-const SCOPE = ["r_liteprofile", "r_emailaddress", "w_member_social"].join(" ");
+const SCOPE = ["openid", "profile", "email", "w_member_social"].join(" ");
 
 const AUTHORIZE_URL = "https://www.linkedin.com/oauth/v2/authorization";
 const TOKEN_URL = "https://www.linkedin.com/oauth/v2/accessToken";

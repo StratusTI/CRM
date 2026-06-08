@@ -13,7 +13,7 @@ import type {
 import { getFreshAccessToken } from "@/src/services/social-token";
 
 const REQUIRED_SCOPES = {
-  read: "r_liteprofile",
+  read: "profile",
   write: "w_member_social",
 } as const;
 
