@@ -49,11 +49,11 @@ const RECONNECT_CODES = new Set([
   "SOCIAL_PROVIDER_NOT_CONFIGURED",
 ]);
 
-const PRIVACY_OPTIONS: { value: TiktokPrivacy; label: string }[] = [
+const PRIVACY_OPTIONS: { value: TiktokPrivacy; label: string; auditRequired?: boolean }[] = [
   { value: "SELF_ONLY", label: "Privado (só eu)" },
-  { value: "FOLLOWER_OF_CREATOR", label: "Seguidores" },
-  { value: "MUTUAL_FOLLOW_FRIENDS", label: "Amigos" },
-  { value: "PUBLIC_TO_EVERYONE", label: "Público" },
+  { value: "FOLLOWER_OF_CREATOR", label: "Seguidores (requer auditoria TikTok)", auditRequired: true },
+  { value: "MUTUAL_FOLLOW_FRIENDS", label: "Amigos (requer auditoria TikTok)", auditRequired: true },
+  { value: "PUBLIC_TO_EVERYONE", label: "Público (requer auditoria TikTok)", auditRequired: true },
 ];
 
 function StatCard({
@@ -558,7 +558,7 @@ function UploadForm({
               </SelectTrigger>
               <SelectContent>
                 {PRIVACY_OPTIONS.map((o) => (
-                  <SelectItem key={o.value} value={o.value}>
+                  <SelectItem key={o.value} value={o.value} disabled={o.auditRequired}>
                     {o.label}
                   </SelectItem>
                 ))}

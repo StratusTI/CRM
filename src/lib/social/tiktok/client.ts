@@ -1,4 +1,4 @@
-import { socialOauthFailed } from "@/src/errors/app-error";
+import { badRequest, socialOauthFailed } from "@/src/errors/app-error";
 import { err, ok, type Result } from "@/src/lib/result";
 import type {
   PublishTiktokVideoResult,
@@ -248,6 +248,13 @@ export async function publishVideo(
     }>;
     if (!init.ok || isTikTokError(initJson.error)) {
       logFailure("publish/init", init.status, initJson);
+      if (initJson.error?.code === "unaudited_client_can_only_post_to_private_accounts") {
+        return err(
+          badRequest(
+            "App TikTok não auditado: só é permitido publicar como Privado (só eu). Altere a privacidade ou aguarde a aprovação do app pela TikTok.",
+          ),
+        );
+      }
       return err(socialOauthFailed());
     }
 
