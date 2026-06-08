@@ -42,7 +42,7 @@ export const GoogleAdsService = {
     }
     const customerId = resolveCustomerId(fresh.value.connection);
     if (!customerId) return err(socialConnectionNotFound(
-      "Nenhuma conta anunciante encontrada. Ative a sub-conta no Google Ads Manager e reconecte."
+      "Nenhuma conta anunciante encontrada. Verifique se a conta está ativa (não cancelada) e, se estiver sob uma Manager Account (MCC), se o vínculo foi aceito. Depois reconecte."
     ));
 
     return fetchOverview(fresh.value.accessToken, customerId);
