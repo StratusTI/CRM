@@ -23,7 +23,11 @@ function hasScope(connection: SocialConnection, needle: string): boolean {
 
 function resolveCustomerId(connection: SocialConnection): string | null {
   const id = connection.externalAccountId;
-  return id && id !== "unknown" ? id : null;
+  if (!id || id === "unknown") return null;
+  // "managerId|" sem subId = conta gerente sem sub-contas acessíveis
+  const sep = id.indexOf("|");
+  if (sep !== -1 && !id.slice(sep + 1)) return null;
+  return id;
 }
 
 export const GoogleAdsService = {
@@ -37,7 +41,9 @@ export const GoogleAdsService = {
       return err(socialScopeMissing());
     }
     const customerId = resolveCustomerId(fresh.value.connection);
-    if (!customerId) return err(socialConnectionNotFound());
+    if (!customerId) return err(socialConnectionNotFound(
+      "Nenhuma conta anunciante encontrada. Ative a sub-conta no Google Ads Manager e reconecte."
+    ));
 
     return fetchOverview(fresh.value.accessToken, customerId);
   },

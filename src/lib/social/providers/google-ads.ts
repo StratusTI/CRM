@@ -62,46 +62,76 @@ export const googleAdsProvider: SocialProvider = {
   },
 
   async fetchAccount(tokens): Promise<Result<SocialAccount>> {
-    // Lista as contas do Google Ads acessíveis pelo token — pega a primeira.
-    const result = await getJson<{
-      resourceNames?: string[]; // "customers/<id>"
-    }>(
-      "https://googleads.googleapis.com/v18/customers:listAccessibleCustomers",
+    const devToken = GOOGLE_ADS_DEVELOPER_TOKEN ?? "";
+    const bearer = `Bearer ${tokens.accessToken}`;
+    const base = "https://googleads.googleapis.com/v20";
+
+    // Lista todas as contas acessíveis pelo token.
+    const listResult = await getJson<{ resourceNames?: string[] }>(
+      `${base}/customers:listAccessibleCustomers`,
       tokens.accessToken,
-      { "developer-token": GOOGLE_ADS_DEVELOPER_TOKEN ?? "" },
+      { "developer-token": devToken },
     );
-    if (!result.ok) return result;
+    if (!listResult.ok) return listResult;
 
-    const firstResource = result.value.resourceNames?.[0];
-    const customerId = firstResource?.replace("customers/", "") ?? "unknown";
+    const firstResource = listResult.value.resourceNames?.[0];
+    const rootId = firstResource?.replace("customers/", "") ?? "unknown";
+    if (rootId === "unknown") return ok({ externalId: "unknown", name: null });
 
-    // Busca o nome descritivo da conta.
-    if (customerId === "unknown") {
-      return ok({ externalId: "unknown", name: null });
+    // Verifica se a conta raiz é uma Manager Account (MCC).
+    type CustomerRow = {
+      results?: { customer?: { id?: string; descriptiveName?: string; manager?: boolean } }[];
+    };
+    const infoRes = await fetch(`${base}/customers/${rootId}/googleAds:search`, {
+      method: "POST",
+      headers: { Authorization: bearer, "developer-token": devToken, "Content-Type": "application/json" },
+      body: JSON.stringify({ query: "SELECT customer.id, customer.descriptive_name, customer.manager FROM customer LIMIT 1" }),
+    }).catch(() => null);
+
+    const infoBody = infoRes?.ok ? await infoRes.json().catch(() => ({})) : {};
+    console.log("[google-ads/fetchAccount] infoRes status:", infoRes?.status, JSON.stringify(infoBody).slice(0, 400));
+    const infoData: CustomerRow = infoBody;
+    const rootCustomer = infoData.results?.[0]?.customer;
+    const isManager = rootCustomer?.manager === true;
+
+    console.log("[google-ads/fetchAccount] rootId:", rootId, "isManager:", isManager, "name:", rootCustomer?.descriptiveName);
+
+    if (!isManager) {
+      return ok({ externalId: rootId, name: rootCustomer?.descriptiveName ?? null });
     }
 
-    const infoResult = await getJson<{
-      results?: {
-        customer?: {
-          id?: string;
-          descriptiveName?: string;
-          currencyCode?: string;
-        };
-      }[];
-    }>(
-      `https://googleads.googleapis.com/v18/customers/${customerId}/googleAds:search?query=SELECT customer.id, customer.descriptive_name FROM customer LIMIT 1`,
-      tokens.accessToken,
-      { "developer-token": GOOGLE_ADS_DEVELOPER_TOKEN ?? "" },
-    );
+    // Manager Account: busca a primeira sub-conta não-gerente.
+    // Armazena como "managerId|subAccountId" para o client usar login-customer-id.
+    type ClientRow = {
+      results?: { customerClient?: { id?: string; descriptiveName?: string } }[];
+    };
+    const clientsRes = await fetch(`${base}/customers/${rootId}/googleAds:search`, {
+      method: "POST",
+      headers: {
+        Authorization: bearer,
+        "developer-token": devToken,
+        "login-customer-id": rootId,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        query: "SELECT customer_client.id, customer_client.descriptive_name, customer_client.manager FROM customer_client WHERE customer_client.manager = FALSE ORDER BY customer_client.level ASC LIMIT 5",
+      }),
+    }).catch(() => null);
 
-    if (!infoResult.ok) {
-      return ok({ externalId: customerId, name: null });
+    const clientsBody = clientsRes?.ok ? await clientsRes.json().catch(() => ({})) : {};
+    console.log("[google-ads/fetchAccount] clientsRes status:", clientsRes?.status, JSON.stringify(clientsBody).slice(0, 600));
+    const clientsData: ClientRow = clientsBody;
+    const firstClient = clientsData.results?.[0]?.customerClient;
+
+    if (!firstClient?.id) {
+      // Sem sub-contas acessíveis — conexão inútil para métricas.
+      console.log("[google-ads/fetchAccount] nenhuma sub-conta encontrada para manager", rootId);
+      return ok({ externalId: "unknown", name: rootCustomer?.descriptiveName ?? null });
     }
 
-    const customer = infoResult.value.results?.[0]?.customer;
     return ok({
-      externalId: customerId,
-      name: customer?.descriptiveName ?? null,
+      externalId: `${rootId}|${firstClient.id}`,
+      name: firstClient.descriptiveName ?? rootCustomer?.descriptiveName ?? null,
     });
   },
 

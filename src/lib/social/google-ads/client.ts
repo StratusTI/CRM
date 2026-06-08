@@ -9,7 +9,7 @@ import type {
 } from "@/src/schemas/google-ads.schema";
 import { GOOGLE_ADS_RANGE_DAYS } from "@/src/schemas/google-ads.schema";
 
-const BASE = "https://googleads.googleapis.com/v18";
+const BASE = "https://googleads.googleapis.com/v20";
 
 async function logFailure(label: string, response: Response): Promise<void> {
   const body = await response.text().catch(() => "");
@@ -20,12 +20,26 @@ async function logFailure(label: string, response: Response): Promise<void> {
   );
 }
 
-function authHeaders(accessToken: string): Record<string, string> {
+function authHeaders(accessToken: string, loginCustomerId?: string): Record<string, string> {
   return {
     Authorization: `Bearer ${accessToken}`,
     "developer-token": GOOGLE_ADS_DEVELOPER_TOKEN ?? "",
     "Content-Type": "application/json",
+    ...(loginCustomerId && { "login-customer-id": loginCustomerId }),
   };
+}
+
+/**
+ * Interpreta o externalAccountId armazenado no banco.
+ * Formato simples: "customerId"
+ * Formato Manager Account: "managerId|subAccountId"
+ */
+function parseCustomerId(raw: string): { customerId: string; loginCustomerId?: string } {
+  const sep = raw.indexOf("|");
+  if (sep !== -1) {
+    return { customerId: raw.slice(sep + 1), loginCustomerId: raw.slice(0, sep) };
+  }
+  return { customerId: raw };
 }
 
 /** Data UTC `YYYY-MM-DD` deslocada por `days` (negativo = no passado). */
@@ -64,17 +78,18 @@ type SearchResponse = {
   }[];
 };
 
-/** POST GAQL para a Google Ads API. */
+/** POST GAQL para a Google Ads API. Aceita customerId simples ou "managerId|subId". */
 async function gaqlSearch(
-  customerId: string,
+  rawCustomerId: string,
   accessToken: string,
   query: string,
 ): Promise<Result<SearchResponse>> {
+  const { customerId, loginCustomerId } = parseCustomerId(rawCustomerId);
   const response = await fetch(
     `${BASE}/customers/${customerId}/googleAds:search`,
     {
       method: "POST",
-      headers: authHeaders(accessToken),
+      headers: authHeaders(accessToken, loginCustomerId),
       body: JSON.stringify({ query }),
     },
   ).catch((e) => {
