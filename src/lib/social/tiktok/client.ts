@@ -201,8 +201,11 @@ export async function fetchVideos(
  * bytes do arquivo num único chunk. A TikTok processa o vídeo de forma
  * assíncrona — devolvemos o `publish_id` para rastrear, sem aguardar a conclusão.
  *
- * Restrição: apps não auditados pela TikTok só podem postar com `SELF_ONLY`
- * (privado); valores de privacidade não liberados são recusados na inicialização.
+ * Restrição (app não auditado): além de só aceitar `SELF_ONLY`, a TikTok exige
+ * que a própria conta esteja como privada no momento da publicação — postar
+ * `SELF_ONLY` numa conta pública ainda é recusado no init com
+ * `unaudited_client_can_only_post_to_private_accounts`. Só a auditoria do app
+ * libera contas públicas.
  */
 export async function publishVideo(
   accessToken: string,
@@ -251,7 +254,7 @@ export async function publishVideo(
       if (initJson.error?.code === "unaudited_client_can_only_post_to_private_accounts") {
         return err(
           badRequest(
-            "App TikTok não auditado: só é permitido publicar como Privado (só eu). Altere a privacidade ou aguarde a aprovação do app pela TikTok.",
+            "App TikTok não auditado: a conta precisa estar como Privada no app da TikTok no momento da publicação (só enviar o post como Privado não basta). Deixe a conta privada e tente de novo, ou submeta o app à auditoria da TikTok para liberar contas públicas.",
           ),
         );
       }
