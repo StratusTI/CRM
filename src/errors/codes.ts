@@ -81,6 +81,8 @@ export const ERROR_CODES = {
     code: "DASHBOARD_WIDGET_NOT_FOUND",
     status: 404,
   },
+  HOOK_VAULT_ITEM_NOT_FOUND: { code: "HOOK_VAULT_ITEM_NOT_FOUND", status: 404 },
+  COMPETITOR_NOT_FOUND: { code: "COMPETITOR_NOT_FOUND", status: 404 },
 
   // Social connection domain
   SOCIAL_CONNECTION_NOT_FOUND: {

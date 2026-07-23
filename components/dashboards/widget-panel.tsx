@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import {
   CHART_SOURCE_LABELS,
   CHART_TYPE_META,
+  COMPARE_RANGE_LABELS,
   SOCIAL_METRIC_LABELS,
   VIEW_SOURCE_FIELDS,
   VIEW_SOURCE_LABELS,
@@ -39,6 +40,7 @@ import {
   ChartConfigSchema,
   type ChartSource,
   type ChartType,
+  COMPARE_RANGES,
   type DashboardWidgetDTO,
   FILTER_OPERATORS,
   type IframeConfig,
@@ -744,6 +746,33 @@ function ChartEditor({
               onChange={(suffix) => set({ suffix })}
             />
           </div>
+          <Labeled label="Comparar com período anterior">
+            <Select
+              value={c.compareRange ?? NONE}
+              onValueChange={(v) =>
+                set({
+                  compareRange:
+                    v === NONE ? undefined : (v as ChartConfig["compareRange"]),
+                })
+              }
+            >
+              <SelectTrigger className="w-full">
+                <span>
+                  {c.compareRange
+                    ? COMPARE_RANGE_LABELS[c.compareRange]
+                    : "Nenhuma"}
+                </span>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={NONE}>Nenhuma</SelectItem>
+                {COMPARE_RANGES.map((r) => (
+                  <SelectItem key={r} value={r}>
+                    {COMPARE_RANGE_LABELS[r]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Labeled>
         </section>
       ) : (
         <section className="space-y-3">

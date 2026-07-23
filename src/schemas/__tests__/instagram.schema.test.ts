@@ -94,6 +94,8 @@ describe("PublishInstagramPostResultSchema / media list", () => {
             caption: null,
             timestamp: "2026-01-01",
             permalink: null,
+            likeCount: 0,
+            commentsCount: 0,
           },
         ],
       }).success,

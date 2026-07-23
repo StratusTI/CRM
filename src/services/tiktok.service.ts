@@ -1,6 +1,6 @@
 import type { SocialConnection } from "@prisma/client";
 import { socialScopeMissing } from "@/src/errors/app-error";
-import { err, type Result } from "@/src/lib/result";
+import { err, ok, type Result } from "@/src/lib/result";
 import {
   fetchCreatorOverview,
   fetchVideos,
@@ -11,6 +11,7 @@ import type {
   PublishTiktokVideoResult,
   TiktokCreatorOverview,
   TiktokVideos,
+  TiktokWeeklyEngagement,
 } from "@/src/schemas/tiktok.schema";
 import { getFreshAccessToken } from "@/src/services/social-token";
 
@@ -48,6 +49,39 @@ export const TiktokService = {
       return err(socialScopeMissing());
     }
     return fetchVideos(fresh.value.accessToken);
+  },
+
+  /**
+   * Resumo semanal para a aba Analytics: views (soma de `viewCount` dos
+   * vídeos publicados nos últimos 7 dias) + top 5 por engajamento (views +
+   * curtidas + comentários + compart.). Reaproveita a lista de vídeos
+   * recentes já buscada por `getVideos` — sem chamada extra à API.
+   */
+  async getWeeklyEngagement(
+    userId: string,
+    slug: string,
+  ): Promise<Result<TiktokWeeklyEngagement>> {
+    const videos = await TiktokService.getVideos(userId, slug);
+    if (!videos.ok) return videos;
+
+    const cutoff = Date.now() - 7 * 86_400_000;
+    const recent = videos.value.videos.filter((v) => {
+      if (!v.createdAt) return false;
+      const t = new Date(v.createdAt).getTime();
+      return Number.isFinite(t) && t >= cutoff;
+    });
+
+    const views7d = recent.reduce((sum, v) => sum + v.viewCount, 0);
+    const top5 = recent
+      .map((v) => ({
+        ...v,
+        engagementScore:
+          v.viewCount + v.likeCount + v.commentCount + v.shareCount,
+      }))
+      .sort((a, b) => b.engagementScore - a.engagementScore)
+      .slice(0, 5);
+
+    return ok({ views7d, top5 });
   },
 
   /** Publica um vídeo (Direct Post) com legenda e nível de privacidade. */

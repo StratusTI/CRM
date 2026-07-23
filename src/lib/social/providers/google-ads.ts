@@ -64,7 +64,7 @@ export const googleAdsProvider: SocialProvider = {
   async fetchAccount(tokens): Promise<Result<SocialAccount>> {
     const devToken = GOOGLE_ADS_DEVELOPER_TOKEN ?? "";
     const bearer = `Bearer ${tokens.accessToken}`;
-    const base = "https://googleads.googleapis.com/v20";
+    const base = "https://googleads.googleapis.com/v23";
 
     // Lista todas as contas acessíveis pelo token.
     const listResult = await getJson<{ resourceNames?: string[] }>(
@@ -77,30 +77,59 @@ export const googleAdsProvider: SocialProvider = {
     const rootIds = (listResult.value.resourceNames ?? []).map((r) =>
       r.replace("customers/", ""),
     );
-    console.log("[google-ads/fetchAccount] contas acessíveis:", rootIds.join(", ") || "(nenhuma)");
+    console.log(
+      "[google-ads/fetchAccount] contas acessíveis:",
+      rootIds.join(", ") || "(nenhuma)",
+    );
     if (rootIds.length === 0) return ok({ externalId: "unknown", name: null });
 
     type CustomerRow = {
-      results?: { customer?: { id?: string; descriptiveName?: string; manager?: boolean } }[];
+      results?: {
+        customer?: { id?: string; descriptiveName?: string; manager?: boolean };
+      }[];
     };
 
     // Classifica cada conta acessível: anunciante direta (não-gerente) ou MCC.
     // Preferimos uma conta anunciante direta; só descemos numa MCC se não houver.
     const managers: { id: string; name: string | null }[] = [];
     for (const rootId of rootIds) {
-      const infoRes = await fetch(`${base}/customers/${rootId}/googleAds:search`, {
-        method: "POST",
-        headers: { Authorization: bearer, "developer-token": devToken, "Content-Type": "application/json" },
-        body: JSON.stringify({ query: "SELECT customer.id, customer.descriptive_name, customer.manager FROM customer LIMIT 1" }),
-      }).catch(() => null);
-      const infoBody = infoRes?.ok ? await infoRes.json().catch(() => ({})) : {};
+      const infoRes = await fetch(
+        `${base}/customers/${rootId}/googleAds:search`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: bearer,
+            "developer-token": devToken,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            query:
+              "SELECT customer.id, customer.descriptive_name, customer.manager FROM customer LIMIT 1",
+          }),
+        },
+      ).catch(() => null);
+      const infoBody = infoRes?.ok
+        ? await infoRes.json().catch(() => ({}))
+        : {};
       const customer = (infoBody as CustomerRow).results?.[0]?.customer;
       const isManager = customer?.manager === true;
-      console.log("[google-ads/fetchAccount] conta", rootId, "status:", infoRes?.status, "manager:", isManager, "name:", customer?.descriptiveName);
+      console.log(
+        "[google-ads/fetchAccount] conta",
+        rootId,
+        "status:",
+        infoRes?.status,
+        "manager:",
+        isManager,
+        "name:",
+        customer?.descriptiveName,
+      );
 
       if (customer && !isManager) {
         // Conta anunciante direta — uso imediato, sem login-customer-id.
-        return ok({ externalId: rootId, name: customer.descriptiveName ?? null });
+        return ok({
+          externalId: rootId,
+          name: customer.descriptiveName ?? null,
+        });
       }
       managers.push({ id: rootId, name: customer?.descriptiveName ?? null });
     }
@@ -119,27 +148,39 @@ export const googleAdsProvider: SocialProvider = {
       }[];
     };
     for (const manager of managers) {
-      const clientsRes = await fetch(`${base}/customers/${manager.id}/googleAds:search`, {
-        method: "POST",
-        headers: {
-          Authorization: bearer,
-          "developer-token": devToken,
-          "login-customer-id": manager.id,
-          "Content-Type": "application/json",
+      const clientsRes = await fetch(
+        `${base}/customers/${manager.id}/googleAds:search`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: bearer,
+            "developer-token": devToken,
+            "login-customer-id": manager.id,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            query:
+              "SELECT customer_client.id, customer_client.descriptive_name, customer_client.status FROM customer_client WHERE customer_client.manager = FALSE LIMIT 50",
+          }),
         },
-        body: JSON.stringify({
-          query: "SELECT customer_client.id, customer_client.descriptive_name, customer_client.status FROM customer_client WHERE customer_client.manager = FALSE LIMIT 50",
-        }),
-      }).catch(() => null);
+      ).catch(() => null);
 
       // Loga o corpo SEMPRE (inclusive em erro) para diagnosticar 4xx do Google.
       const rawBody = clientsRes ? await clientsRes.text().catch(() => "") : "";
-      console.log("[google-ads/fetchAccount] sub-contas de", manager.id, "status:", clientsRes?.status, rawBody.slice(0, 600));
+      console.log(
+        "[google-ads/fetchAccount] sub-contas de",
+        manager.id,
+        "status:",
+        clientsRes?.status,
+        rawBody.slice(0, 600),
+      );
       if (!clientsRes?.ok) continue;
 
       const clients = (JSON.parse(rawBody || "{}") as ClientRow).results ?? [];
       // Prefere uma sub-conta ENABLED; se nenhuma vier marcada, aceita a primeira.
-      const enabled = clients.find((r) => r.customerClient?.status === "ENABLED");
+      const enabled = clients.find(
+        (r) => r.customerClient?.status === "ENABLED",
+      );
       const chosen = (enabled ?? clients[0])?.customerClient;
 
       if (chosen?.id) {
@@ -151,7 +192,9 @@ export const googleAdsProvider: SocialProvider = {
     }
 
     // Só MCCs sem sub-conta anunciante ativa — conexão inútil para métricas.
-    console.log("[google-ads/fetchAccount] nenhuma conta anunciante ativa encontrada");
+    console.log(
+      "[google-ads/fetchAccount] nenhuma conta anunciante ativa encontrada",
+    );
     return ok({ externalId: "unknown", name: managers[0]?.name ?? null });
   },
 

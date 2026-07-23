@@ -7,6 +7,7 @@ import type {
   InstagramInsightsRange,
   InstagramMediaList,
   InstagramProfileOverview,
+  InstagramWeeklyEngagement,
   PublishInstagramPostResult,
 } from "@/src/schemas/instagram.schema";
 
@@ -54,6 +55,8 @@ export function useInstagram(slug: string) {
   );
   const [media, setMedia] = useState<InstagramMediaList | null>(null);
   const [insights, setInsights] = useState<InstagramInsights | null>(null);
+  const [engagement, setEngagement] =
+    useState<InstagramWeeklyEngagement | null>(null);
   const [range, setRange] = useState<InstagramInsightsRange>("28d");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<InstagramError | null>(null);
@@ -62,12 +65,13 @@ export function useInstagram(slug: string) {
     async (selectedRange: InstagramInsightsRange) => {
       setIsLoading(true);
       setError(null);
-      const [ov, med, ins] = await Promise.all([
+      const [ov, med, ins, eng] = await Promise.all([
         getJson<InstagramProfileOverview>(`${BASE(slug)}/overview`),
         getJson<InstagramMediaList>(`${BASE(slug)}/videos`),
         getJson<InstagramInsights>(
           `${BASE(slug)}/insights?range=${selectedRange}`,
         ),
+        getJson<InstagramWeeklyEngagement>(`${BASE(slug)}/engagement`),
       ]);
 
       if (!ov.ok) {
@@ -75,11 +79,13 @@ export function useInstagram(slug: string) {
         setOverview(null);
         setMedia(null);
         setInsights(null);
+        setEngagement(null);
         setIsLoading(false);
         return;
       }
       setOverview(ov.data);
       setMedia(med.ok ? med.data : null);
+      setEngagement(eng.ok ? eng.data : null);
       if (ins.ok) setInsights(ins.data);
       else {
         setInsights(null);
@@ -132,6 +138,7 @@ export function useInstagram(slug: string) {
     overview,
     media,
     insights,
+    engagement,
     range,
     setRange,
     isLoading,

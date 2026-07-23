@@ -30,8 +30,11 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { type InstagramError, useInstagram } from "@/src/hooks/use-instagram";
-import type { InstagramInsightsRange } from "@/src/schemas/instagram.schema";
-import type { InstagramMedia } from "@/src/schemas/instagram.schema";
+import type {
+  InstagramInsightsRange,
+  InstagramMedia,
+  InstagramMediaEngagement,
+} from "@/src/schemas/instagram.schema";
 
 import {
   formatAxisLabel,
@@ -90,6 +93,64 @@ function StatCard({
         {nf.format(value)}
       </span>
     </Card>
+  );
+}
+
+/** Card de um post do "Top 5 mais quentes (7d)" — capa + métricas somadas. */
+function TopMediaCard({
+  item,
+  rank,
+}: {
+  item: InstagramMediaEngagement;
+  rank: number;
+}) {
+  const imgSrc = item.mediaType === "VIDEO" ? item.thumbnailUrl : item.mediaUrl;
+  const card = (
+    <Card className="group relative overflow-hidden p-0">
+      <span className="absolute top-2 left-2 z-10 flex size-5 items-center justify-center rounded-full bg-black/70 font-semibold text-[11px] text-white">
+        {rank}
+      </span>
+      <div className="aspect-square w-full bg-muted">
+        {imgSrc ? (
+          // biome-ignore lint/performance/noImgElement: mídia externa do Instagram
+          <img
+            src={imgSrc}
+            alt={item.caption ?? ""}
+            className="size-full object-cover transition-transform group-hover:scale-[1.03]"
+          />
+        ) : (
+          <div className="flex size-full items-center justify-center text-muted-foreground/30">
+            <HugeiconsIcon icon={InstagramIcon} className="size-8" />
+          </div>
+        )}
+        <div className="absolute inset-x-0 bottom-0 flex items-center gap-2 bg-gradient-to-t from-black/70 to-transparent px-2 pt-6 pb-1.5 text-white text-[11px]">
+          <span className="flex items-center gap-1 tabular-nums">
+            <HugeiconsIcon icon={FavouriteIcon} className="size-3" />
+            {nf.format(item.likeCount)}
+          </span>
+          <span className="flex items-center gap-1 tabular-nums">
+            <HugeiconsIcon icon={Comment01Icon} className="size-3" />
+            {nf.format(item.commentsCount)}
+          </span>
+          <span className="flex items-center gap-1 tabular-nums">
+            <HugeiconsIcon icon={BookmarkIcon} className="size-3" />
+            {nf.format(item.saved)}
+          </span>
+        </div>
+      </div>
+    </Card>
+  );
+
+  if (!item.permalink) return card;
+  return (
+    <a
+      href={item.permalink}
+      target="_blank"
+      rel="noreferrer"
+      className="block rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      {card}
+    </a>
   );
 }
 
@@ -400,6 +461,7 @@ export function InstagramStudio({ slug }: { slug: string }) {
     overview,
     media,
     insights,
+    engagement,
     range,
     setRange,
     isLoading,
@@ -703,6 +765,51 @@ export function InstagramStudio({ slug }: { slug: string }) {
           ) : (
             <Skeleton className="h-72 w-full" />
           )}
+
+          <div className="space-y-3 border-t border-border/60 pt-4">
+            <h3 className="font-heading font-semibold text-lg tracking-tight">
+              Engajamento (7 dias)
+            </h3>
+            {engagement ? (
+              <>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <StatCard
+                    icon={EyeIcon}
+                    label="Views"
+                    value={engagement.views7d}
+                  />
+                  <StatCard
+                    icon={BookmarkIcon}
+                    label="Saves"
+                    value={engagement.saves7d}
+                  />
+                  <StatCard
+                    icon={UserMultipleIcon}
+                    label="Visitar perfil"
+                    value={engagement.profileViews7d}
+                  />
+                </div>
+                {engagement.top5.length > 0 ? (
+                  <div className="space-y-2">
+                    <p className="text-muted-foreground text-sm">
+                      Top 5 mais quentes
+                    </p>
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+                      {engagement.top5.map((item, i) => (
+                        <TopMediaCard key={item.id} item={item} rank={i + 1} />
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <Card className="px-4 py-6 text-center text-muted-foreground text-sm">
+                    Nenhuma publicação nos últimos 7 dias.
+                  </Card>
+                )}
+              </>
+            ) : (
+              <Skeleton className="h-40 w-full" />
+            )}
+          </div>
         </TabsContent>
       </Tabs>
 

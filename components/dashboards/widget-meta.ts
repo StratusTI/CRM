@@ -13,6 +13,7 @@ import type { IconSvgElement } from "@hugeicons/react";
 import type {
   ChartSource,
   ChartType,
+  CompareRange,
   SocialMetric,
   ViewSource,
   WidgetType,
@@ -99,6 +100,14 @@ export const VIEW_SOURCE_FIELDS: Record<ViewSource, ViewField[]> = {
     { key: "closeDate", label: "Fechamento" },
     { key: "createdAt", label: "Criado em" },
   ],
+  leads: [
+    { key: "name", label: "Nome" },
+    { key: "company", label: "Empresa" },
+    { key: "source", label: "Origem" },
+    { key: "status", label: "Status" },
+    { key: "score", label: "Score" },
+    { key: "createdAt", label: "Criado em" },
+  ],
   tasks: [
     { key: "title", label: "Título" },
     { key: "status", label: "Status" },
@@ -146,6 +155,7 @@ export const VIEW_SOURCE_LABELS: Record<ViewSource, string> = {
   companies: "Empresas",
   people: "Pessoas",
   opportunities: "Oportunidades",
+  leads: "Leads",
   tasks: "Tarefas",
   notes: "Notas",
   forms: "Formulários",
@@ -168,6 +178,12 @@ export function sourceResource(source: ChartSource): string {
   if (source === "pages") return "marketing/pages";
   return source;
 }
+
+/** Rótulo PT-BR da janela de comparação do widget "aggregate". */
+export const COMPARE_RANGE_LABELS: Record<CompareRange, string> = {
+  "7d": "7 dias",
+  "30d": "30 dias",
+};
 
 /** Rótulo PT-BR da métrica de socials usada no painel/legenda. */
 export const SOCIAL_METRIC_LABELS: Record<SocialMetric, string> = {

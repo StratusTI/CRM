@@ -164,18 +164,74 @@ export function aggregateChart(rows: Row[], config: ChartConfig): ChartData {
   };
 }
 
-/** Valor único do widget "aggregate" (soma do campo numérico ou contagem). */
-export function aggregateTotal(rows: Row[], config: ChartConfig): number {
-  const filtered = rows.filter((row) => passesFilters(row, config.filters));
-  if (!config.yField) return filtered.length;
+/** Soma o campo numérico configurado, ou conta registros na ausência dele. */
+function sumOrCount(rows: Row[], config: ChartConfig): number {
+  if (!config.yField) return rows.length;
   let sum = 0;
   let sawNumber = false;
-  for (const row of filtered) {
+  for (const row of rows) {
     const n = toNumber(row[config.yField]);
     if (n !== null) {
       sum += n;
       sawNumber = true;
     }
   }
-  return sawNumber ? sum : filtered.length;
+  return sawNumber ? sum : rows.length;
+}
+
+/** Valor único do widget "aggregate" (soma do campo numérico ou contagem). */
+export function aggregateTotal(rows: Row[], config: ChartConfig): number {
+  const filtered = rows.filter((row) => passesFilters(row, config.filters));
+  return sumOrCount(filtered, config);
+}
+
+const COMPARE_RANGE_DAYS: Record<NonNullable<ChartConfig["compareRange"]>, number> = {
+  "7d": 7,
+  "30d": 30,
+};
+
+export type CompareResult = {
+  current: number;
+  previous: number;
+  changePct: number | null;
+};
+
+/**
+ * Compara o total do período atual (`compareRange` dias) com o período
+ * imediatamente anterior (mesmo tamanho). `null` quando `compareRange` não
+ * está configurado — widgets "aggregate" legados (sem janela) não são
+ * afetados. Campo de data: `date` para a fonte "socials" (série diária já
+ * vem nesse formato), `createdAt` para as demais fontes (DTOs de registro).
+ */
+export function aggregateCompare(
+  rows: Row[],
+  config: ChartConfig,
+): CompareResult | null {
+  if (!config.compareRange) return null;
+
+  const dateField = config.source === "socials" ? "date" : "createdAt";
+  const days = COMPARE_RANGE_DAYS[config.compareRange];
+  const now = Date.now();
+  const dayMs = 86_400_000;
+  const currentStart = now - days * dayMs;
+  const previousStart = now - days * 2 * dayMs;
+
+  const filtered = rows.filter((row) => passesFilters(row, config.filters));
+  const currentRows: Row[] = [];
+  const previousRows: Row[] = [];
+
+  for (const row of filtered) {
+    const raw = row[dateField];
+    if (typeof raw !== "string") continue;
+    const t = new Date(raw).getTime();
+    if (Number.isNaN(t)) continue;
+    if (t >= currentStart && t <= now) currentRows.push(row);
+    else if (t >= previousStart && t < currentStart) previousRows.push(row);
+  }
+
+  const current = sumOrCount(currentRows, config);
+  const previous = sumOrCount(previousRows, config);
+  const changePct = previous === 0 ? null : ((current - previous) / previous) * 100;
+
+  return { current, previous, changePct };
 }

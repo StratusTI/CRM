@@ -40,6 +40,21 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { type TiktokError, useTiktok } from "@/src/hooks/use-tiktok";
 import type { TiktokPrivacy, TiktokVideo } from "@/src/schemas/tiktok.schema";
 
+/** Vídeos publicados nos últimos 7 dias, ordenados por engajamento desc. */
+function topByEngagement(videos: TiktokVideo[]): TiktokVideo[] {
+  const cutoff = Date.now() - 7 * 86_400_000;
+  const recent = videos.filter((v) => {
+    if (!v.createdAt) return false;
+    const t = new Date(v.createdAt).getTime();
+    return Number.isFinite(t) && t >= cutoff;
+  });
+  return [...recent].sort(
+    (a, b) =>
+      b.viewCount + b.likeCount + b.commentCount + b.shareCount -
+      (a.viewCount + a.likeCount + a.commentCount + a.shareCount),
+  );
+}
+
 const nf = new Intl.NumberFormat("pt-BR");
 
 const RECONNECT_CODES = new Set([
@@ -875,6 +890,37 @@ export function TiktokStudio({ slug }: { slug: string }) {
                 A API do TikTok não fornece séries temporais de analytics.
                 Métricas acima referem-se aos vídeos recentes.
               </Card>
+
+              {(() => {
+                const top = topByEngagement(videos.videos);
+                const views7d = top.reduce((sum, v) => sum + v.viewCount, 0);
+                return (
+                  <div className="space-y-3 border-t border-border/60 pt-4">
+                    <h3 className="font-heading font-semibold text-lg tracking-tight">
+                      Engajamento (7 dias)
+                    </h3>
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                      <StatCard icon={EyeIcon} label="Views 7d" value={views7d} />
+                    </div>
+                    {top.length > 0 ? (
+                      <div className="space-y-2">
+                        <p className="text-muted-foreground text-sm">
+                          Top 5 mais quentes
+                        </p>
+                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+                          {top.slice(0, 5).map((video) => (
+                            <VideoCard key={video.id} video={video} />
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <Card className="px-4 py-6 text-center text-muted-foreground text-sm">
+                        Nenhum vídeo nos últimos 7 dias.
+                      </Card>
+                    )}
+                  </div>
+                );
+              })()}
             </>
           ) : (
             <Skeleton className="h-48 w-full" />

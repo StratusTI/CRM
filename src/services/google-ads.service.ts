@@ -41,9 +41,12 @@ export const GoogleAdsService = {
       return err(socialScopeMissing());
     }
     const customerId = resolveCustomerId(fresh.value.connection);
-    if (!customerId) return err(socialConnectionNotFound(
-      "Nenhuma conta anunciante encontrada. Verifique se a conta está ativa (não cancelada) e, se estiver sob uma Manager Account (MCC), se o vínculo foi aceito. Depois reconecte."
-    ));
+    if (!customerId)
+      return err(
+        socialConnectionNotFound(
+          "Nenhuma conta anunciante encontrada. Verifique se a conta está ativa (não cancelada) e, se estiver sob uma Manager Account (MCC), se o vínculo foi aceito. Depois reconecte.",
+        ),
+      );
 
     return fetchOverview(fresh.value.accessToken, customerId);
   },

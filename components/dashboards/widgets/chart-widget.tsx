@@ -1,11 +1,14 @@
 "use client";
 
+import { ArrowDown01Icon, ArrowUp01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { ResponsiveBar } from "@nivo/bar";
 import { ResponsiveLine } from "@nivo/line";
 import { ResponsivePie } from "@nivo/pie";
 import * as React from "react";
 import {
   aggregateChart,
+  aggregateCompare,
   aggregateTotal,
   type Row,
 } from "@/components/dashboards/widget-data";
@@ -62,8 +65,19 @@ export function ChartWidget({
       metric: config.yField || "views",
       platforms: config.platforms.join(","),
     });
+    // Com comparação de período, busca a maior janela (90d) para conseguir
+    // fatiar período atual vs anterior inteiramente no cliente.
+    if (config.chartType === "aggregate" && config.compareRange) {
+      params.set("range", "90d");
+    }
     return params.toString();
-  }, [config.source, config.platforms, config.yField]);
+  }, [
+    config.source,
+    config.platforms,
+    config.yField,
+    config.chartType,
+    config.compareRange,
+  ]);
 
   const { items, isLoading } = useResourceList<Row>(
     slug,
@@ -79,6 +93,10 @@ export function ChartWidget({
     () => aggregateTotal(items, config),
     [items, config],
   );
+  const compare = React.useMemo(
+    () => aggregateCompare(items, config),
+    [items, config],
+  );
 
   if (isLoading) return <Empty message="Carregando…" />;
 
@@ -88,7 +106,12 @@ export function ChartWidget({
 
   /* -------------------------------- aggregate ------------------------------ */
   if (config.chartType === "aggregate") {
-    const formatted = new Intl.NumberFormat("pt-BR").format(total);
+    // Com comparação, o número exibido é o total da janela atual (não o
+    // total geral) — `compare.current` já veio filtrado por `compareRange`.
+    const displayValue = compare ? compare.current : total;
+    const formatted = new Intl.NumberFormat("pt-BR").format(displayValue);
+    const changePct = compare?.changePct ?? null;
+    const isUp = changePct !== null && changePct >= 0;
     return (
       <div className="flex h-full flex-col items-center justify-center text-muted-foreground">
         <span className="font-heading font-semibold text-4xl text-foreground tabular-nums">
@@ -99,6 +122,25 @@ export function ChartWidget({
         {config.xAxisName ? (
           <span className="mt-1 text-xs uppercase tracking-wide">
             {config.xAxisName}
+          </span>
+        ) : null}
+        {changePct !== null ? (
+          <span
+            className={
+              "mt-1.5 inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 font-medium text-xs " +
+              (isUp
+                ? "bg-emerald-500/15 text-emerald-600"
+                : "bg-rose-500/15 text-rose-600")
+            }
+          >
+            <HugeiconsIcon
+              icon={isUp ? ArrowUp01Icon : ArrowDown01Icon}
+              className="size-3"
+            />
+            {new Intl.NumberFormat("pt-BR", {
+              maximumFractionDigits: 1,
+            }).format(Math.abs(changePct))}
+            %
           </span>
         ) : null}
       </div>

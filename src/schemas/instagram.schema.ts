@@ -119,6 +119,8 @@ export const InstagramMediaSchema = z.object({
   caption: z.string().nullable(),
   timestamp: z.string(),
   permalink: z.string().nullable(),
+  likeCount: z.number().int().nonnegative(),
+  commentsCount: z.number().int().nonnegative(),
 });
 
 export type InstagramMedia = z.infer<typeof InstagramMediaSchema>;
@@ -129,3 +131,25 @@ export const InstagramMediaListSchema = z.object({
 });
 
 export type InstagramMediaList = z.infer<typeof InstagramMediaListSchema>;
+
+/** Mídia recente + `saved` (insight por post) + score de engajamento. */
+export const InstagramMediaEngagementSchema = InstagramMediaSchema.extend({
+  saved: z.number().int().nonnegative(),
+  engagementScore: z.number().nonnegative(),
+});
+
+export type InstagramMediaEngagement = z.infer<
+  typeof InstagramMediaEngagementSchema
+>;
+
+/** Resumo semanal: views/saves/visitas ao perfil + top 5 posts mais quentes. */
+export const InstagramWeeklyEngagementSchema = z.object({
+  views7d: z.number().int().nonnegative(),
+  saves7d: z.number().int().nonnegative(),
+  profileViews7d: z.number().int().nonnegative(),
+  top5: z.array(InstagramMediaEngagementSchema).max(5),
+});
+
+export type InstagramWeeklyEngagement = z.infer<
+  typeof InstagramWeeklyEngagementSchema
+>;

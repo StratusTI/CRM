@@ -335,7 +335,8 @@ export async function fetchRecentMedia(
   Result<import("@/src/schemas/instagram.schema").InstagramMediaList>
 > {
   const params = new URLSearchParams({
-    fields: "id,media_type,media_url,thumbnail_url,caption,timestamp,permalink",
+    fields:
+      "id,media_type,media_url,thumbnail_url,caption,timestamp,permalink,like_count,comments_count",
     limit: "20",
     access_token: pageToken,
   });
@@ -348,6 +349,8 @@ export async function fetchRecentMedia(
       caption?: string;
       timestamp?: string;
       permalink?: string;
+      like_count?: number;
+      comments_count?: number;
     }[];
   }>("media", `${GRAPH}/${igAccountId}/media?${params.toString()}`);
   if (!result.ok) return result;
@@ -363,7 +366,37 @@ export async function fetchRecentMedia(
     caption: item.caption ?? null,
     timestamp: item.timestamp ?? "",
     permalink: item.permalink ?? null,
+    likeCount: toInt(item.like_count),
+    commentsCount: toInt(item.comments_count),
   }));
 
   return ok({ media });
+}
+
+/**
+ * `saved` de um post específico (métrica de insight por mídia). Nem todo tipo
+ * de mídia suporta — falha vira `0` (best-effort), não bloqueia o restante do
+ * cálculo de engajamento semanal.
+ */
+export async function fetchMediaSaved(
+  pageToken: string,
+  mediaId: string,
+): Promise<number> {
+  const params = new URLSearchParams({
+    metric: "saved",
+    access_token: pageToken,
+  });
+  try {
+    const res = await fetch(
+      `${GRAPH}/${mediaId}/insights?${params.toString()}`,
+      { headers: { Accept: "application/json" } },
+    );
+    if (!res.ok) return 0;
+    const json = (await res.json()) as {
+      data?: { values?: { value?: number }[] }[];
+    };
+    return toInt(json.data?.[0]?.values?.[0]?.value);
+  } catch {
+    return 0;
+  }
 }

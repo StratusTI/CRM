@@ -8,6 +8,7 @@ import {
   DashboardSquare01Icon,
   DocumentValidationIcon,
   Facebook01Icon,
+  FireIcon,
   GoogleIcon,
   InstagramIcon,
   Linkedin01Icon,
@@ -17,6 +18,7 @@ import {
   MegaphoneIcon,
   NewTwitterIcon,
   PackageIcon,
+  QuoteUpIcon,
   Settings02Icon,
   Share08Icon,
   StickyNote01Icon,
@@ -26,6 +28,7 @@ import {
   UserGroup02Icon,
   UserMultipleIcon,
   UserSearch01Icon,
+  UserSearch02Icon,
   WorkflowCircle01Icon,
   YoutubeIcon,
 } from "@hugeicons/core-free-icons";
@@ -170,6 +173,24 @@ export const WORKSPACE_NAV: NavNode[] = [
         segment: "social/scheduled",
         icon: Calendar01Icon,
         color: "bg-fuchsia-500",
+      },
+      {
+        title: "Hook Vault",
+        segment: "social/hook-vault",
+        icon: QuoteUpIcon,
+        color: "bg-violet-500",
+      },
+      {
+        title: "Concorrentes",
+        segment: "social/competitors",
+        icon: UserSearch02Icon,
+        color: "bg-amber-600",
+      },
+      {
+        title: "Em Alta",
+        segment: "social/trending",
+        icon: FireIcon,
+        color: "bg-red-500",
       },
       {
         title: "Instagram",

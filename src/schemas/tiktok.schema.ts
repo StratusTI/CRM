@@ -55,6 +55,26 @@ export const TiktokVideosSchema = z.object({
 
 export type TiktokVideos = z.infer<typeof TiktokVideosSchema>;
 
+/** Vídeo recente + score de engajamento (curtidas + comentários + compart.). */
+export const TiktokVideoEngagementSchema = TiktokVideoSchema.extend({
+  engagementScore: z.number().nonnegative(),
+});
+
+export type TiktokVideoEngagement = z.infer<typeof TiktokVideoEngagementSchema>;
+
+/**
+ * Resumo semanal: views (7d) + top 5 vídeos mais quentes. Sem `saves`/`visitas
+ * ao perfil` — a API pública do TikTok não expõe essas métricas.
+ */
+export const TiktokWeeklyEngagementSchema = z.object({
+  views7d: z.number().int().nonnegative(),
+  top5: z.array(TiktokVideoEngagementSchema).max(5),
+});
+
+export type TiktokWeeklyEngagement = z.infer<
+  typeof TiktokWeeklyEngagementSchema
+>;
+
 /**
  * Nível de privacidade do post. Default conservador: SELF_ONLY (privado) — é o
  * único permitido enquanto o app não passa pela auditoria da TikTok. Os demais

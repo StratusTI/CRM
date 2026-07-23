@@ -251,7 +251,10 @@ export async function publishVideo(
     }>;
     if (!init.ok || isTikTokError(initJson.error)) {
       logFailure("publish/init", init.status, initJson);
-      if (initJson.error?.code === "unaudited_client_can_only_post_to_private_accounts") {
+      if (
+        initJson.error?.code ===
+        "unaudited_client_can_only_post_to_private_accounts"
+      ) {
         return err(
           badRequest(
             "App TikTok não auditado: a conta precisa estar como Privada no app da TikTok no momento da publicação (só enviar o post como Privado não basta). Deixe a conta privada e tente de novo, ou submeta o app à auditoria da TikTok para liberar contas públicas.",

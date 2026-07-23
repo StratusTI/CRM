@@ -166,6 +166,10 @@ const MARKETING_INTRO = richText(
   `<h2>📈 Marketing & Captação</h2><p>Dashboard de exemplo que reúne suas iniciativas de aquisição. Os gráficos se preenchem conforme você publica <strong>landing pages</strong>, recebe respostas de <strong>formulários</strong> e conecta suas <strong>redes sociais</strong>.</p>`,
 );
 
+const SOCIAL_GROWTH_INTRO = richText(
+  `<h2>🚀 Visão Geral — Redes Sociais</h2><p>Dashboard de exemplo com os principais indicadores de crescimento social. Conecte suas contas em <strong>Social</strong> para os números aparecerem, e ajuste os filtros de cada card conforme sua necessidade.</p>`,
+);
+
 export const SEED_DASHBOARDS: SeedDashboard[] = [
   {
     title: "Visão Geral Comercial",
@@ -278,6 +282,62 @@ export const SEED_DASHBOARDS: SeedDashboard[] = [
           source: "socials",
           yField: "views",
           platforms: ["INSTAGRAM"],
+        }),
+      },
+    ],
+  },
+  {
+    title: "Visão Geral — Redes Sociais",
+    widgets: [
+      {
+        type: "RICH_TEXT",
+        x: 0,
+        y: 0,
+        w: 12,
+        h: 3,
+        config: SOCIAL_GROWTH_INTRO,
+      },
+      {
+        type: "CHART",
+        x: 0,
+        y: 3,
+        w: 4,
+        h: 6,
+        config: chart({
+          chartType: "aggregate",
+          source: "socials",
+          yField: "views",
+          platforms: ["INSTAGRAM", "TIKTOK"],
+          compareRange: "7d",
+          xAxisName: "Views (7 dias)",
+        }),
+      },
+      {
+        type: "CHART",
+        x: 4,
+        y: 3,
+        w: 4,
+        h: 6,
+        config: chart({
+          chartType: "aggregate",
+          source: "socials",
+          yField: "followers",
+          platforms: ["INSTAGRAM"],
+          compareRange: "30d",
+          xAxisName: "Ganho de seguidores (30 dias)",
+        }),
+      },
+      {
+        type: "CHART",
+        x: 8,
+        y: 3,
+        w: 4,
+        h: 6,
+        config: chart({
+          chartType: "aggregate",
+          source: "leads",
+          compareRange: "30d",
+          xAxisName: "Leads filtrados (30 dias)",
         }),
       },
     ],

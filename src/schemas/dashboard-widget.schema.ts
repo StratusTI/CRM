@@ -28,6 +28,7 @@ export const VIEW_SOURCES = [
   "companies",
   "people",
   "opportunities",
+  "leads",
   "tasks",
   "notes",
   "forms",
@@ -82,6 +83,16 @@ export const SORT_MODES = ["none", "asc", "desc"] as const;
 const SortModeSchema = z.enum(SORT_MODES);
 
 /**
+ * Janela de comparação do widget "aggregate": mostra o total do período atual
+ * (últimos N dias) + variação % vs os N dias imediatamente anteriores. Só se
+ * aplica a `chartType === "aggregate"`; ausente = comportamento legado (soma
+ * total, sem janela nem comparação).
+ */
+export const COMPARE_RANGES = ["7d", "30d"] as const;
+export type CompareRange = (typeof COMPARE_RANGES)[number];
+const CompareRangeSchema = z.enum(COMPARE_RANGES);
+
+/**
  * Customização completa do chart (ver custom-charts.md). Os campos relevantes
  * variam por `chartType`; campos não usados pelo tipo são ignorados no render.
  * Agregação do valor: soma quando o campo de valor é numérico, senão contagem.
@@ -94,6 +105,8 @@ export const ChartConfigSchema = z.object({
   filters: z.array(ViewFilterSchema).max(20).default([]),
   /** Redes a incluir quando source = "socials" (multi-select). */
   platforms: z.array(SocialPlatformSchema).max(5).default([]),
+  /** Só usado quando `chartType === "aggregate"`. Ver `CompareRange`. */
+  compareRange: CompareRangeSchema.optional(),
 
   // Eixos / dados
   /** Dimensão (categorias): X em vertical/line, Y em horizontal, fatias na pizza. */

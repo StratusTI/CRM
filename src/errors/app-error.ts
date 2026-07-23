@@ -174,6 +174,14 @@ export const taskNotFound = (message = "Tarefa não encontrada"): AppError =>
 export const noteNotFound = (message = "Anotação não encontrada"): AppError =>
   appError("NOTE_NOT_FOUND", message);
 
+export const hookVaultItemNotFound = (
+  message = "Hook não encontrado",
+): AppError => appError("HOOK_VAULT_ITEM_NOT_FOUND", message);
+
+export const competitorNotFound = (
+  message = "Concorrente não encontrado",
+): AppError => appError("COMPETITOR_NOT_FOUND", message);
+
 export const dashboardNotFound = (
   message = "Dashboard não encontrado",
 ): AppError => appError("DASHBOARD_NOT_FOUND", message);

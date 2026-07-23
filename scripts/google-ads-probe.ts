@@ -10,7 +10,7 @@ import { prisma } from "@/src/lib/prisma";
 import { decryptToken } from "@/src/lib/social/crypto";
 import { googleAdsProvider } from "@/src/lib/social/providers/google-ads";
 
-const BASE = "https://googleads.googleapis.com/v20";
+const BASE = "https://googleads.googleapis.com/v23";
 
 async function main() {
   const conn = await prisma.socialConnection.findFirst({
@@ -18,7 +18,9 @@ async function main() {
     orderBy: { updatedAt: "desc" },
   });
   if (!conn) {
-    console.log("Nenhuma conexão GOOGLE_ADS no banco (DATABASE_URL local não é o de produção?)");
+    console.log(
+      "Nenhuma conexão GOOGLE_ADS no banco (DATABASE_URL local não é o de produção?)",
+    );
     return;
   }
   console.log("conexão:", {
@@ -65,31 +67,49 @@ async function main() {
 
   for (const rootId of rootIds) {
     // 2) Info da conta (manager?).
-    const infoRes = await fetch(`${BASE}/customers/${rootId}/googleAds:search`, {
-      method: "POST",
-      headers: { Authorization: bearer, "developer-token": devToken, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        query:
-          "SELECT customer.id, customer.descriptive_name, customer.manager, customer.test_account FROM customer LIMIT 1",
-      }),
-    });
-    console.log(`\n[2] customer ${rootId}`, infoRes.status, await infoRes.text());
+    const infoRes = await fetch(
+      `${BASE}/customers/${rootId}/googleAds:search`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: bearer,
+          "developer-token": devToken,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          query:
+            "SELECT customer.id, customer.descriptive_name, customer.manager, customer.test_account FROM customer LIMIT 1",
+        }),
+      },
+    );
+    console.log(
+      `\n[2] customer ${rootId}`,
+      infoRes.status,
+      await infoRes.text(),
+    );
 
     // 3) Sub-contas (a query que dava 400) — login-customer-id = a própria MCC.
-    const clientsRes = await fetch(`${BASE}/customers/${rootId}/googleAds:search`, {
-      method: "POST",
-      headers: {
-        Authorization: bearer,
-        "developer-token": devToken,
-        "login-customer-id": rootId,
-        "Content-Type": "application/json",
+    const clientsRes = await fetch(
+      `${BASE}/customers/${rootId}/googleAds:search`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: bearer,
+          "developer-token": devToken,
+          "login-customer-id": rootId,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          query:
+            "SELECT customer_client.id, customer_client.descriptive_name, customer_client.manager, customer_client.status, customer_client.level FROM customer_client WHERE customer_client.manager = FALSE LIMIT 50",
+        }),
       },
-      body: JSON.stringify({
-        query:
-          "SELECT customer_client.id, customer_client.descriptive_name, customer_client.manager, customer_client.status, customer_client.level FROM customer_client WHERE customer_client.manager = FALSE LIMIT 50",
-      }),
-    });
-    console.log(`\n[3] customer_client de ${rootId}`, clientsRes.status, await clientsRes.text());
+    );
+    console.log(
+      `\n[3] customer_client de ${rootId}`,
+      clientsRes.status,
+      await clientsRes.text(),
+    );
   }
 }
 
